@@ -1,0 +1,13 @@
+SERVICES=""
+INITDSCRIPTS=""
+MOD_mod_ifsession=y
+MOD_mod_ldap=y
+MOD_mod_radius=y
+MOD_mod_ratio=y
+MOD_mod_readme=y
+MOD_mod_rewrite=y
+MOD_mod_sql=n
+MOD_mod_sql_mysql=n
+MOD_mod_sql_postgres=n
+MOD_mod_tls=y
+MOD_mod_wrap=y

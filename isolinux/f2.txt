@@ -1,0 +1,24 @@
+
+Lunar-%VERSION%.iso, 0cLunar (%CODENAME%)07, kernel 2.4.27
+
+0eWelcome07 to 05Lunar Linux07 Copyright (C) 2004 by the
+09Lunar-Linux team <maintainer@lunar-linux.org>07
+All Rights Reserved.
+
+Lunar Linux is distributed under the terms of the GNU GPLv2. Please see
+0dhttp://www.gnu.org/copyleft/gpl.html07 for the GNU GPL.
+
+Download Lunar Linux and docs from 0dhttp://lunar-linux.org/07
+
+SAFE MODE
+
+In order to boot with DMA disabled, type 02safe07 to the boot prompt and
+press enter. This option also disables MTRR, RAID, LVM, USB keyboard, 
+Pre-emptive kernel, Advanced Partitions and FireWire.  Kernel module loading
+may or may not work either.
+
+If you intent to use this ISO for rescue, select "Continue Boot" 
+from the init menu and choose "Shell" from the Installation menu.
+
+                             0aF107-Main Page07 00F200-Safe Mode07 0aF307-RAM Test00
+

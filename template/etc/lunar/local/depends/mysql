@@ -1,0 +1,3 @@
+INITDSCRIPTS=""
+CONFIGURED="y"
+OPTS="--with-innodb --with-berkeley-db --with-raid --with-openssl --with-embedded-server"

@@ -1,0 +1,24 @@
+
+Lunar-%VERSION%.iso, 0cLunar (%CODENAME%)07, kernel 2.4.27
+
+0eWelcome07 to 05Lunar Linux07 Copyright (C) 2004 by the
+09Lunar-Linux team <maintainer@lunar-linux.org>07
+All Rights Reserved.
+
+Lunar Linux is distributed under the terms of the GNU GPLv2. Please see
+0dhttp://www.gnu.org/copyleft/gpl.html07 for the GNU GPL.
+
+Download Lunar Linux and docs from 0dhttp://lunar-linux.org/07
+
+To continue press enter, or use the function keys to select other pages.
+
+Optionally, type: 02linux07 followed by kernel parameters. Kernel
+parameters might be required to properly recognize and initialize 
+0aSCSI07 hardware. For booting from iso kernel and mounting your root, type:
+linux root=/dev/discs/disc0/part1 devfs=nomount   (if your root is on part1)
+
+If you intend to use this ISO for rescue, select "Continue Boot" 
+from the init menu and choose "Shell" from the Installation menu.
+
+                             00F100-Main Page07 0aF207-Safe Mode07 0aF307-RAM Test00
+

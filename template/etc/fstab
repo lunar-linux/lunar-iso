@@ -1,0 +1,30 @@
+# /etc/fstab: static file system information.
+# <file system> <mount point> <type> <options> <dump> <pass>
+
+# proc is required pretty much on any linux system except embedded systems:
+proc	/proc		proc	defaults	0 0
+
+# devfs is the default for 2.4-based systems
+devfs   /dev            devfs   defaults        0 0
+
+# shmfs is surpassed and obsolete
+#shm	/dev/shm	shm	defaults	0 0
+
+# devfs and devpts are not friends, yet 2.6 needs devpts:
+devpts	/dev/pts	devpts	defaults	0 0
+
+# usb devfs can be helpfull on interactive (desktop) machines
+usbdevfs  /proc/bus/usb   usbdevfs defaults       0 0 
+
+# /tmp should be wiped on boot so by default it helps to have it on tmpfs
+tmpfs	/tmp		tmpfs	defaults,size=256m,nr_inodes=64m	0 0
+
+# /var/lock and /var/run need to be clean on reboot:
+tmpfs	/var/lock	tmpfs	size=4m	0 0
+tmpfs	/var/run	tmpfs	size=4m	0 0
+
+# /var/tmp should NOT be on tmpfs, LSB states that the contents of it must 
+# stay intact on reboot
+#tmpfs	/var/tmp	tmpfs	size=32m	0 0
+
+

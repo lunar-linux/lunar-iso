@@ -1,0 +1,3 @@
+IMAP="y"
+CONFIGURED="y"
+OPTS="--enable-ftp --enable-trans-sid --enable-sockets"

@@ -1,0 +1,3 @@
+CUSTOM=n
+SUIDPERL=y
+OPTS="--enable-gui=no --without-x --enable-gui=no"

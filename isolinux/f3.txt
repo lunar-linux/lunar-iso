@@ -1,0 +1,23 @@
+
+Lunar-%VERSION%.iso, 0cLunar (%CODENAME%)07, kernel 2.4.27
+
+0eWelcome07 to 05Lunar Linux07 Copyright (C) 2004 by the
+09Lunar-Linux team <maintainer@lunar-linux.org>07
+All Rights Reserved.
+
+Lunar Linux is distributed under the terms of the GNU GPLv2. Please see
+0dhttp://www.gnu.org/copyleft/gpl.html07 for the GNU GPL.
+
+Download Lunar Linux and docs from 0dhttp://lunar-linux.org/07
+
+MEMTEST
+
+In order to test RAMs with memtest86, type 02memtest07 to the boot prompt and
+press enter.
+
+
+If you intent to use this ISO for rescue, select "Continue Boot" 
+from the init menu and choose "Shell" from the Installation menu.
+
+                             0aF107-Main Page07 0aF207-Safe Mode07 00F300-RAM Test00
+

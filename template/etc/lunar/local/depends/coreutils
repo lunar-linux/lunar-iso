@@ -1,0 +1,2 @@
+CONFIGURED="y"
+OPTS=" --enable-largefile --enable-nls"

@@ -1,0 +1,12 @@
+linux
+linux-vanilla
+linux-stable
+linux-grsec
+makedev
+kernel-headers
+pcmcia-cs
+hostap-driver
+mwavem
+dhcp
+wlan-ng-driver
+isdn4k-utils

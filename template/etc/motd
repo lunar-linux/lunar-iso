@@ -1,0 +1,14 @@
+
+Welcome to Lunar Linux %VERSION% (%CODENAME%)!
+
+Read `man lfirsttime` if you are a new Lunar Linux user. It contains
+many hints that are useful if you do not know what to do next.
+
+Also read the unix manual pages for lunar, moonbase, lin and lrm.
+
+Please remember that the ISO is not a fully featured working system,
+you should install your favorite tools and packages yourself with `lin`.
+
+You are reading the contents of "/etc/motd", if you don't edit it, it will
+continue to bug you with the message above.
+
