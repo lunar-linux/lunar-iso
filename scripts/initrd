@@ -14,12 +14,22 @@ rm -rf BUILD
 # template first
 cp -a template BUILD
 
+echo "+ copying binaries and required files"
 # next up are the required stuff from the BUILD
 for ITEM in $(cat initrd.list); do
     mkdir -p "BUILD/$(dirname $ITEM)"
     cp -a "$ISO_TARGET/$ITEM" "BUILD/$(dirname $ITEM)"
 done
-cp -a "$ISO_TARGET/dev" "BUILD/"
+echo "+ filling /dev"
+# bare minimum of device nodes
+mkdir -p BUILD/dev
+cp -a $ISO_TARGET/etc/makedev.d/* BUILD/etc/makedev.d/
+cp template/etc/makedev.d/small BUILD/etc/makedev.d/generic
+$ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev generic
+# strip it down even more
+( cd BUILD/dev ; rm -f tty[a-zA-Z]* hd[i-z]* s[dg][i-z]* fd[2-9]* fd[0-1][a-zA-Z]* sd[a-z][a-z]* )
+rm -rf BUILD/etc/makedev.d/
+echo "+ stripping everything"
 for ITEM in $(find BUILD -type f); do
     strip $ITEM > /dev/null 2>&1
 done
@@ -28,7 +38,6 @@ for ITEM in $(find BUILD -type d -name "CVS"); do
 done
 rm -f BUILD/dev/install-devices.sh
 chroot BUILD /sbin/ldconfig
-read
 
 # compile the initrd image
 mkdir -p BUILD/lib/modules/${ISO_KVER}-ll-${ISO_KREL}/kernel/drivers/
@@ -51,22 +60,23 @@ done
 # calculate the size of the initrd image
 SIZE=$(du -kcs BUILD | tail -1 | cut -f1)
 echo "+ estimated $SIZE"
-SIZE=7220
+(( SIZE = SIZE ))
 echo "+ used size $SIZE"
 dd if=/dev/zero of=initrd.raw bs=1024 count=$SIZE
-mkfs.ext2 -b 1024 -m 0 -i 1024 -N 2100 initrd.raw
-mkdir BUILD.mnt
 losetup /dev/loop/0 initrd.raw
+mkfs.ext2 -b 1024 -m 0 -i 1024 -N 1024 /dev/loop/0
+mkdir BUILD.mnt
 mount /dev/loop/0 BUILD.mnt
 cp -a BUILD/* BUILD.mnt/
 df -h BUILD.mnt/
 
-umount BUILD.mnt
+umount BUILD.mnt || exit 1
 tune2fs -l /dev/loop/0 | grep -e 'Free'
 losetup -d /dev/loop/0
 
 [ -f initrd ] && rm initrd
 gzip -c initrd.raw > initrd  
 
-rm -rf initrd.raw BUILD.mnt BUILD
+rm -rf initrd.raw BUILD.mnt
+# BUILD
 
