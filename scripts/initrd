@@ -14,7 +14,7 @@ rm -rf BUILD
 # template first
 cp -a --no-dereference template BUILD
 find BUILD -type d -name CVS -exec rm -rf {} \;
-mkdir -p BUILD/mnt
+mkdir -p BUILD/mnt BUILD/proc BUILD/var/lib/discover
 
 echo "+ copying binaries and required files"
 # next up are the required stuff from the BUILD
