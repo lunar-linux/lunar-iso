@@ -1,7 +1,6 @@
 flex
 yawl
 XML-Parser
-net-tools
 rp-pppoe
 perl
 openssl
@@ -58,3 +57,5 @@ iptables
 xinetd
 make
 gcc
+nano
+e3

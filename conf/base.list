@@ -8,6 +8,7 @@ gawk
 ncurses
 vim
 dialog
+glib-2
 ed
 Linux-PAM
 readline
@@ -24,6 +25,7 @@ bash
 procps
 which
 modutils
+modutils-wrappers
 util-linux
 sysvinit
 gzip
@@ -46,3 +48,4 @@ setserial
 findutils
 pciutils
 hdparm
+net-tools
