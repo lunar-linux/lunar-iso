@@ -1,0 +1,22 @@
+#!/bin/bash
+
+. /etc/lunar/config
+unset VERBOSE
+optimize
+
+BUILD_DIRECTORY=${ISO_SOURCE}/memtest
+cd ${ISO_SOURCE}/memtest
+
+# build curl without ssl first statically
+(
+  run_details memtest86+
+  unpack $(sources memtest86+)
+
+  cd $SOURCE_DIRECTORY
+  make
+
+  cd ${ISO_SOURCE}/memtest
+  cp $SOURCE_DIRECTORY/memtest.bin memtest
+  rm -rf $SOURCE_DIRECTORY
+)
+

@@ -1,0 +1,3 @@
+#!/bin/bash -x
+
+cdrecord -dao -v dev=ATAPI:0,0,0 lunar-${ISO_VERSION}.iso

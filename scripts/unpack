@@ -1,0 +1,50 @@
+#!/bin/bash
+
+. /etc/lunar/config
+
+export VERBOSE=off
+optimize
+
+resurrect ()
+{
+  CACHE=$1-$(module_version $1)-$BUILD.tar.bz2
+  if [ ! -f cache/$CACHE ]; then
+    echo "# $CACHE"
+    cp /var/cache/lunar/$CACHE cache/
+  fi
+  if [ ! -f cache/$CACHE ] ; then
+    echo -e "\n! $1: $CACHE missing"
+  else
+    echo -n "+"
+    tar xjf cache/$CACHE -C $ISO_TARGET > /dev/null 2>&1
+    echo "$1:$ISO_DATE:installed:$(module_version $1):" >> $ISO_TARGET/var/state/lunar/packages
+    echo "$1:$ISO_DATE:installed:$(module_version $1):" >> $ISO_TARGET/var/state/lunar/packages.backup
+  fi
+}
+
+
+# unpack all the ISO required var/cache/lunar tarballs
+# in case of file conflict preserve glibc and gcc files first!
+for mods in ${ISO_LUNAR_MODULE} $(cat conf/base.list conf/extended.list) ; do
+  resurrect $mods
+done
+
+# fill var/spool/lunar dir
+for mod in $(cat conf/sources.list conf/base.list conf/extended.list) ; do
+  for file in $(lvu sources $mod) ; do
+    echo -n "."
+    if [ -f ${ISO_SOURCE}/spool/$file ] ; then
+      cp -p ${ISO_SOURCE}/spool/$file $ISO_TARGET/var/spool/lunar/
+    elif [ -f /var/spool/lunar/$file ] ; then
+      echo -e "\n# /var/spool/lunar/$file"
+      cp -p /var/spool/lunar/$file ${ISO_SOURCE}/spool/
+      cp -p /var/spool/lunar/$file $ISO_TARGET/var/spool/lunar/
+    else
+      echo -ne "\n! $mod: $file\n"
+    fi
+  done
+done
+echo 
+
+touch $ISO_TARGET/.unpack
+

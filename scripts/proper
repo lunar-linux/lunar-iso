@@ -1,0 +1,96 @@
+#!/bin/bash
+
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "+          PRIMARY COMPILE PHASE COMPLETED             +"
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo ""
+echo "Broken compiles:"
+(cd $ISO_TARGET/var/build && ls -1)
+echo ""
+echo "Press ENTER to continue with cleanup && .iso generation"
+read
+
+umount $ISO_TARGET/proc
+
+. /etc/lunar/config
+unset VERBOSE
+optimize
+
+echo "+ setting sane ccache limits"
+chroot $ISO_TARGET ccache -C
+chroot $ISO_TARGET ccache -M 256M
+
+# store the list of stuff in /var/cache that needs to be resurrected:
+echo "+ creating list of prepackaged modules"
+> $ISO_TARGET/prepackaged
+for mod in $(cat conf/base.list conf/extended.list) ; do
+  grep "^$mod:" $ISO_TARGET/var/state/lunar/packages >> $ISO_TARGET/prepackaged
+done
+
+echo "+ wiping sources"
+rm -f $ISO_TARGET/var/spool/lunar/*
+for mod in $(cat sources.list) ; do
+  for file in $(lvu sources $mod) ; do
+    echo -n "."
+    if [ -f ${ISO_SOURCE}/spool/$file ] ; then
+      cp -p ${ISO_SOURCE}/spool/$file $ISO_TARGET/var/spool/lunar/
+    fi
+  done
+done
+
+echo "+ cleaning out file structure"
+cat $ISO_TARGET/var/log/lunar/install/* | sort | tac | while read LINE; do
+  rm -f "$ISO_TARGET$LINE" 2> /dev/null
+done
+ 
+echo "+ cleaning temporary and unneeded files"
+rm -rf $ISO_TARGET/var/log/lunar/*/* > /dev/null
+rm -f $ISO_TARGET/var/log/ccache > /dev/null
+rm -rf $ISO_TARGET/usr/share/{info,man,doc}/* > /dev/null
+rm -rf $ISO_TARGET/usr/include > /dev/null
+rm -rf $ISO_TARGET/etc/ssh/ssh_host_*key $ISO_TARGET/etc/ssh/ssh_host_*key.pub
+rm -rf $ISO_TARGET/tmp/* 
+rm -rf $ISO_TARGET/var/tmp/*
+rm -rf $ISO_TARGET/var/lock/*
+rm -rf $ISO_TARGET/var/run/*
+rm -rf $ISO_TARGET/var/state/lunar/module_history/*
+> $ISO_TARGET/var/log/lunar/activity
+rm -f $ISO_TARGET/root/.bash_history
+
+# this is a space killer:
+echo "+ stripping binaries"
+find $ISO_TARGET -name "*.a" -o -name "*.so*" -exec strip {} \; 2> /dev/null
+
+# moonbase
+echo "+ archiving moonbase"
+if [ -d $ISO_TARGET/var/lib/lunar/moonbase ] ; then (
+  cd $ISO_TARGET/var/lib/lunar
+  tar cjf moonbase.tar.bz2 moonbase/
+  rm -rf moonbase
+); fi
+
+# kernel src!
+##echo "+ archiving kernel source"
+##if [ -d $ISO_TARGET/usr/src/linux-${ISO_KVER} ]; then (
+##  chroot $ISO_TARGET depmod -F /usr/src/linux/System.map
+##  cd $ISO_TARGET/usr/src &&
+##  tar cjf linux-${ISO_KVER}.tar.bz2 linux-${ISO_KVER}/
+##  rm -rf linux-${ISO_KVER}
+##); fi
+
+echo "+ finishing up"
+chroot $ISO_TARGET ldconfig
+
+# copy the installed code over:
+cp lunar-install/init.d/lunar-install $ISO_TARGET/etc/init.d/ 
+ln -s /etc/init.d/lunar-install $ISO_TARGET/etc/rc3.d/S20lunar-install
+cp lunar-install/sbin/lunar-install $ISO_TARGET/sbin/
+sedit "s:%VERSION%:${ISO_VERSION}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
+sedit "s:%CODENAME%:${ISO_CODENAME}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
+	
+# need more:
+ln -s ../init.d/discover $ISO_TARGET/etc/rcS.d/S30discover
+
+
+touch BUILD/.proper
+

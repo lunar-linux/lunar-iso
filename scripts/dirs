@@ -1,0 +1,31 @@
+#!/bin/bash
+
+(
+  cd $ISO_TARGET
+
+  mkdir -p bin boot dev etc home lib mnt media
+  mkdir -p proc root sbin srv tmp usr var opt
+  mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
+  mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
+  mkdir -p usr/share/man/man{1,2,3,4,5,6,7,8}
+  ln -sf share/doc usr/doc
+  ln -sf share/man usr/man
+  ln -sf share/info usr/info
+
+  mkdir -p etc/init.d etc/rc{0,1,2,3,4,5,6,S}.d 
+  mkdir -p etc/lunar/local/depends
+  ln -s . etc/rc.d
+
+  mkdir -p var/log/lunar/{install,md5sum,compile}
+  mkdir -p var/{cache,empty,lib,lock,log,run,spool,state,tmp}
+  mkdir -p var/{cache,lib,log,spool,state}/lunar
+  mkdir -p var/state/discover
+  mkdir -p var/spool/mail
+  mkdir -p media/{cdrom0,cdrom1,floppy0,floppy1,mem0,mem1}
+
+  chmod 0700 root
+  chmod 1777 tmp var/tmp
+)
+
+touch $ISO_TARGET/.dirs
+

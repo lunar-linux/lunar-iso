@@ -1,0 +1,57 @@
+#!/bin/bash
+
+echo "+ Starting rebuild of all modules"
+. /etc/lunar/config
+
+export VERBOSE=off
+optimize
+
+# first things first
+chroot $ISO_TARGET /sbin/ldconfig
+
+# rebuild all modules
+chroot $ISO_TARGET lunar set ARCHIVE on
+
+chroot $ISO_TARGET lin kernel-headers
+chroot $ISO_TARGET lin makedev
+
+mount -t proc proc $ISO_TARGET/proc
+
+chroot $ISO_TARGET /dev/install-devices.sh
+chroot $ISO_TARGET rm -rf /var/build/makedev-*
+
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "+          STARTING KERNEL COMPILE                     +"
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo ""
+
+chroot $ISO_TARGET lin linux
+
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "+          STARTING CONFIGURING MODULES                +"
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo ""
+
+for mod in $(cat conf/base.list conf/extended.list) ; do
+  chroot $ISO_TARGET /sbin/lin --deps $mod
+done
+
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "+          STARTING COMPILE PHASE OF ALL MODULES       +"
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo ""
+
+chroot $ISO_TARGET lin perl
+
+for mod in $(cat conf/base.list conf/extended.list) ; do
+  chroot $ISO_TARGET /sbin/lin -c $mod
+done
+
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "+          REBUILD FINISHED                            +"
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+
+umount $ISO_TARGET/proc
+
+touch $ISO_TARGET/.rebuild
+

@@ -1,0 +1,50 @@
+#!/bin/bash
+
+. /etc/lunar/config
+
+cd $ISO_SOURCE/initrd
+
+umount template/dev
+umount template/proc
+rm -rf BUILD
+cp -a template BUILD
+# compile the initrd image
+mkdir -p BUILD/lib/modules/${ISO_KVER}-ll-${ISO_KREL}/kernel/drivers/
+cp -a $ISO_TARGET/lib/modules/${ISO_KVER}-ll-${ISO_KREL}/kernel/drivers/{ide,scsi} BUILD/lib/modules/${ISO_KVER}-ll-${ISO_KREL}/kernel/drivers/
+# TODO compile multiple kernels:
+depmod -b BUILD/ -a -F $ISO_TARGET/usr/src/linux-${ISO_KVER}/System.map
+
+# install discover in the initrd BUILD
+mkdir -p BUILD/{bin,etc} BUILD/usr/share/discover/dtd 
+cp $ISO_SOURCE/discover/discover BUILD/bin/
+cp $ISO_SOURCE/discover/discover.conf BUILD/etc/
+cp $ISO_SOURCE/discover/conffile.dtd BUILD/usr/share/discover/dtd/
+cp $ISO_SOURCE/discover/discover.dtd BUILD/usr/share/discover/dtd/
+cp $ISO_SOURCE/discover/data/* BUILD/usr/share/discover/
+# make sure this is absolutely minimal:
+for file in $(find BUILD/{lib,bin,sbin,usr}); do
+  strip $file 2> /dev/null
+done
+  
+# calculate the size of the initrd image
+SIZE=$(du -kcs BUILD | tail -1 | cut -f1)
+echo "+ estimated $SIZE"
+SIZE=7220
+echo "+ used size $SIZE"
+dd if=/dev/zero of=initrd.raw bs=1024 count=$SIZE
+mkfs.ext2 -b 1024 -m 0 -i 1024 -N 2100 initrd.raw
+mkdir BUILD.mnt
+losetup /dev/loop/0 initrd.raw
+mount /dev/loop/0 BUILD.mnt
+cp -a BUILD/* BUILD.mnt/
+df -h BUILD.mnt/
+
+umount BUILD.mnt
+tune2fs -l /dev/loop/0 | grep -e 'Free'
+losetup -d /dev/loop/0
+
+[ -f initrd ] && rm initrd
+gzip -c initrd.raw > initrd  
+
+rm -rf initrd.raw BUILD.mnt BUILD
+

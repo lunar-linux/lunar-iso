@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if grep -qw $ISO_TARGET/proc /proc/mounts ; then
+  umount $ISO_TARGET/proc
+fi
+
+if [ -d "$ISO_TARGET" ] ; then
+  rm -rf $ISO_TARGET
+fi
+
+mkdir -p $ISO_TARGET
+
+touch $ISO_TARGET/.init
+
