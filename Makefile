@@ -2,24 +2,16 @@
 # Makefile to make ISO's
 #
 
+#
+# all user configurable options are in conf/config
+#
+include conf/config
 
-# define the absolute place where these tools reside
 # need to make this defined during run-time
 ISO_SOURCE = $(shell bash -c "pwd -P")
 
 # define the location where the ISO will be generated
 ISO_TARGET = $(ISO_SOURCE)/BUILD
-
-# define the version numbers and tags etc:
-ISO_VERSION = NOVERSION
-ISO_CODENAME = UNNAMED
-ISO_DATE = $(shell date -u +%Y%m%d)
-ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
-
-ISO_KVER = 2.4.28
-ISO_PVER = r8.0rc3
-
-ISO_LUNAR_MODULE = lunar
 
 export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_KREL ISO_LUNAR_MODULE
 
@@ -97,6 +89,8 @@ $(ISO_TARGET)/.init:
 	@echo "Creating BUILD root"
 	@scripts/init
 
+clean:
+	rm -rf BUILD
 
 blank:
 	@scripts/blank
