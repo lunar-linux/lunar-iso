@@ -82,8 +82,8 @@ sedit "s:%CODENAME%:${ISO_CODENAME}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGE
 ln -s ../init.d/discover $ISO_TARGET/etc/rcS.d/S30discover
 
 # more more more!
-rm -rf $ISO_TARGET/usr/src
-mkdir -p $ISO_TARGET/usr/src
+rm -rf $ISO_TARGET/usr/src $ISO_TARGET/var/build
+mkdir -p $ISO_TARGET/usr/src $ISO_TARGET/var/build
 
 touch BUILD/.proper
 
