@@ -52,10 +52,15 @@ $(ISO_SOURCE)/memtest/memtest:
 	@echo "Generating memtest boot image"
 	@scripts/memtest
 
-proper: rebuild $(ISO_TARGET)/.proper
+proper: aaa_base $(ISO_TARGET)/.proper
 $(ISO_TARGET)/.proper:
 	@echo "Cleaning BUILD"
 	@scripts/proper
+
+aaa_base: rebuild $(ISO_TARGET)/var/cache/lunar/aaa_base.tar.bz2
+$(ISO_TARGET)/var/cache/lunar/aaa_base.tar.bz2:
+	@echo "Creating aaa_base.tar.bz2"
+	@scripts/aaa_base
 
 rebuild: etc $(ISO_TARGET)/.rebuild
 $(ISO_TARGET)/.rebuild:
