@@ -39,7 +39,6 @@ lib/libncurses.so.5.4
 sbin/pivot_root
 sbin/depmod
 sbin/halt
-sbin/init
 sbin/insmod
 sbin/ldconfig
 sbin/lsmod
