@@ -16,6 +16,8 @@ bin/sleep
 etc/mtab
 etc/fstab
 etc/ld.so.conf
+lib/libblkid.so.1
+lib/libuuid.so.1
 lib/libreadline.so.5.0
 lib/libm.so.6
 lib/libc.so.6
