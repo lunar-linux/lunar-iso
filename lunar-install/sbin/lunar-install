@@ -587,7 +587,7 @@ transfer()
                   (
                     cd $TARGET/var/lib/lunar
                     tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
-		    tar j --list /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%VERSION%
+		    tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%VERSION%
                   )
             fi
 	) | $DIALOG --title "Installing $NUM packages" --gauge "" 10 70 0 
