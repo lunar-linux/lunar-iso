@@ -32,6 +32,7 @@ echo "+ creating aaa_base.tar.bz2"
 find $ISO_TARGET/{bin,boot,etc,home,lib,mnt,opt,root,sbin,srv,usr,var} | sort | uniq | sed "s:^$ISO_TARGET::g" | grep -v -e "^/var/cache/lunar/" -e "^/var/state/lunar/" -e "^/var/build/" -e "^/usr/share/doc" -e "^/usr/src/" -e "^/lib/modules/" -e "^/usr/include/" -e "^/usr/lib/perl" -e "^/var/lib/lunar" -e "^/etc/lunar" -e "^/var/spool" -e "^/var/log/" -e "^/var/tmp" -e "^/usr/share/" -e "^/var/lock/" -e "^/var/lib/" -e "^/var/run/"  > $ISO_TARGET/.present
 cat $ISO_TARGET/var/log/lunar/install/* | sort | uniq > $ISO_TARGET/.tracked
 diff -Bad $ISO_TARGET/.present $ISO_TARGET/.tracked | grep -e "^< " | cut -c 3- > $ISO_TARGET/.aaa_base.list
+echo "/etc/lunar/local/optimizations" >> $ISO_TARGET/.aaa_base.list
 
 # make the tarball
 chroot $ISO_TARGET tar cjf /var/cache/lunar/aaa_base.tar.bz2 -T .aaa_base.list --no-recursion
