@@ -7,6 +7,7 @@ optimize
 
 prepare()
 {
+    echo "unpacking..."
     cd $ISO_SOURCE/kernels
     rm -rf linux-$ISO_KVER
     tar jxf /var/spool/lunar/linux-$ISO_KVER.tar.bz2
@@ -20,7 +21,9 @@ prepare_patch()
 {
     cd $ISO_SOURCE/kernels/linux-$ISO_KVER
     for P in $@; do
-        patch_it $P 1
+        for PP in patches/$P/*; do
+            patch_it $PP 1
+	done
     done
 }
 
@@ -49,6 +52,7 @@ prepare_version()
 
 build_kernel()
 {
+    echo "+ building $ISO_KVER$1"
     cd $ISO_SOURCE/kernels/linux-$ISO_KVER
     yes n | make oldconfig &&
     make dep &&
@@ -65,48 +69,29 @@ build_kernel()
     cp -aL $ISO_SOURCE/kernels/linux-$ISO_KVER/include/asm $ISO_SOURCE/kernels/BUILD/usr/include/linux-$ISO_KVER$1/asm
     cp -aL $ISO_SOURCE/kernels/linux-$ISO_KVER/include/linux $ISO_SOURCE/kernels/BUILD/usr/include/linux-$ISO_KVER$1/linux
     cd $ISO_SOURCE/kernels/BUILD
-    tar cjvf $ISO_SOURCE/kernels/$ISO_KVER$1.tar.bz2 boot/ lib/ usr/
+    tar cjf $ISO_SOURCE/kernels/$ISO_KVER$1.tar.bz2 boot/ lib/ usr/
     cd $ISO_SOURCE/kernels
     rm -rf $ISO_SOURCE/kernels/BUILD
     rm -rf $ISO_SOURCE/kernels/linux-$ISO_KVER
 }
 
+build()
+{
+    prepare
+    prepare_patch $(echo $3)
+    prepare_options $(echo $2)
+    prepare_version $1
+    build_kernel $1
+}
+
 VERBSOSE=on
 
-prepare
-prepare_patch patches/fix/* patches/main/*
-prepare_options nosmp lowmem
-prepare_version -nosmp
-build_kernel -nosmp
+build -nosmp "nosmp lowmem" "fix main"
+build -smp-4gb "smp mem" "fix main"
+build -stb-nosmp "nosmp lowmem" "fix"
+build -stb-smp-4gb "smp mem" "fix"
+build -grs-nosmp "nosmp lowmem grsec" "fix main grsecurity"
+build -grs-smp-4gb "smp mem grsec" "fix main grsecurity"
+build -safe "nosmp lowmem safe" "fix"
 
-prepare
-prepare_patch patches/fix/* patches/main/*
-prepare_options smp mem
-prepare_version -smp-4gb
-build_kernel -smp-4gb
-
-prepare
-prepare_patch patches/fix/*
-prepare_options nosmp lowmem
-prepare_version -stb-nosmp
-build_kernel -stb-nosmp
-
-prepare
-prepare_patch patches/fix/* 
-prepare_options smp mem
-prepare_version -stb-smp-4gb
-build_kernel -stb-smp-4gb
-
-prepare
-prepare_patch patches/fix/* patches/main/* patches/grsecurity/*
-prepare_options nosmp lowmem grsec
-prepare_version -grs-nosmp
-build_kernel -grs-nosmp
-
-prepare
-prepare_patch patches/fix/* patches/main/* patches/grsecurity/*
-prepare_options smp mem grsec
-prepare_version -grs-smp-4gb
-build_kernel -grs-smp-4gb
-
-touch BUILD/.kernels
+touch $ISO_TARGET/.kernels
