@@ -543,7 +543,7 @@ make_lilo_conf()
 
 
 
-cp_axv()
+transfer()
 {
     PROMPT="Are you done mounting file systems?"
     if confirm "$PROMPT";  then
@@ -571,23 +571,47 @@ cp_axv()
         chmod 0700 root
         chmod 1777 tmp var/tmp
 
-	echo "Extracting packages..."
-	for TAR in /var/cache/lunar/* ; do
-	    echo "  $TAR"
-	    tar xjf $TAR 2> /dev/null
-	done
-	cat /prepackaged >> $TARGET/var/state/lunar/packages
-	cat /prepackaged >> $TARGET/var/state/lunar/packages.backup
-   
-        if [ -f $TARGET/var/lib/lunar/moonbase.tar.bz2 ] ; then
-            echo "Extracting moonbase..."
-              (
-                cd $TARGET/var/lib/lunar
-                tar xjf moonbase.tar.bz2
-                rm moonbase.tar.bz2
-              )
-        fi
+	# calculate the total so we can display progress
+        NUM=$(wc -l /.packages | awk '{print $1}')
+	(( NUM = NUM + 2 ))
+        (
+            if [ -f $TARGET/var/cache/lunar/aaa_base.tar.bz2 ]; then
+		echo XXX
+	        echo 1
+	        echo "\nInstalling aaa_base: base directories and files\n"
+		echo XXX
+	        tar xjf /var/cache/lunar/aaa_base.tar.bz2 2> /dev/null
+            fi
 
+	    for LINE in $(cat .packages) ; do
+	        MOD=$(echo $LINE | cut -d: -f1)
+	        VER=$(echo $LINE | cut -d: -f4)
+	        SIZ=$(echo $LINE | cut -d: -f5)
+		echo XXX
+	        echo $(( CNT * 100 / NUM ))
+	        echo "\nInstalling $MOD-$VER ($SIZ)\n\n($(basename /var/cache/lunar/$MOD-$VER-*.tar.bz2))\n"
+		echo XXX
+	        tar xjf /var/cache/lunar/$MOD-$VER-*.tar.bz2 2> /dev/null
+	        (( CNT++ ))
+
+            done
+            if [ -f $TARGET/var/lib/lunar/moonbase.tar.bz2 ] ; then
+		echo XXX
+	        echo 99
+                echo "\nInstalling moonbase"
+		echo XXX
+                  (
+                    cd $TARGET/var/lib/lunar
+                    tar xjf moonbase.tar.bz2 2> /dev/null
+                    rm -f moonbase.tar.bz2
+                  )
+            fi
+	) | $DIALOG --title "Installing $NUM packages" --gauge "" 10 70 0 
+	cat /.packages >> $TARGET/var/state/lunar/packages
+	cat /.packages >> $TARGET/var/state/lunar/packages.backup
+pwd
+echo "end"
+read
         # pass through some of the configuration at this point:
 	[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
 	[ -z "$CONSOLEFONT" ] || echo "$CONSOLEFONT" > $TARGET/etc/consolefont
@@ -1150,7 +1174,7 @@ cd-rom tray and reboot. See you at the login prompt!"
       P)  fdisc                  ;;
       M)  mount_partitions       ;;
       S)  mk_swap_file           ;;
-      T)  cp_axv                 ;;
+      T)  transfer               ;;
 
       O)  chroot $TARGET lunar optimize ;;
       K)  install_kernels        ;;
@@ -1198,8 +1222,18 @@ main()
 
 . /etc/lunar/config
 
-#no screen blanking
+# no screen blanking
 /usr/bin/setterm -blank 0
+
+# start shells on vt's
+for i in 2 3 4; do
+  (
+    export PS1="[vt$i] \033[0;36m\]\u@\h \w $ \[\033[0m\]"
+    cd /
+    /sbin/agetty -n -l /bin/bash 38400 tty$i &
+  )
+done
+export PS1="[vt1] \033[0;36m\]\u@\h \w $ \[\033[0m\]"
 
 export  IFS="	
 "
