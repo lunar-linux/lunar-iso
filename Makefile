@@ -92,6 +92,7 @@ $(ISO_TARGET)/.init:
 	@scripts/init
 
 clean:
+	umount BUILD/dev BUILD/proc
 	rm -rf BUILD
 
 blank:
