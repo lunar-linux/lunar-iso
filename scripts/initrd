@@ -40,7 +40,7 @@ done
 rm -rf BUILD/etc/makedev.d/
 
 # we also generate aaa_dev.tar.bz2 now
-mkdir -p aaa_dev
+mkdir -p $ISO_SOURCE/aaa_dev
 tar cj -C BUILD -f $ISO_SOURCE/aaa_dev/aaa_dev.tar.bz2 dev/
 
 echo "+ stripping everything"
