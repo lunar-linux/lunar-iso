@@ -68,6 +68,9 @@ build_kernel()
       cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/$2
     fi
     cp System.map $ISO_SOURCE/kernels/BUILD/boot/System.map-$ISO_KVER$1
+    if [ -n "$2" ] ; then
+      cp System.map $ISO_SOURCE/kernels/$2.map
+    fi
     cp .config $ISO_SOURCE/kernels/BUILD/boot/config-$ISO_KVER$1
     gzip $ISO_SOURCE/kernels/BUILD/boot/config-$ISO_KVER$1
     cp -aL $ISO_SOURCE/kernels/linux-$ISO_KVER/include/asm $ISO_SOURCE/kernels/BUILD/usr/include/linux-$ISO_KVER$1/asm

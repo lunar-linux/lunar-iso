@@ -40,10 +40,12 @@ rm -f BUILD/dev/install-devices.sh
 chroot BUILD /sbin/ldconfig
 
 # compile the initrd image
-mkdir -p BUILD/lib/modules/${ISO_KVER}-ll-${ISO_KREL}/kernel/drivers/
-cp -a $ISO_TARGET/lib/modules/${ISO_KVER}-ll-${ISO_KREL}/kernel/drivers/{ide,scsi} BUILD/lib/modules/${ISO_KVER}-ll-${ISO_KREL}/kernel/drivers/
-# TODO compile multiple kernels:
-depmod -b BUILD/ -a -F $ISO_TARGET/usr/src/linux-${ISO_KVER}/System.map
+for KERNEL in linux safe ; do
+  KVER=$(file -k $ISO_SOURCE/kernels/$KERNEL | sed 's/.*\(version .*\)/\1/' | cut -d' ' -f2)
+  mkdir -p BUILD/lib/modules/$KVER/kernel/drivers/
+  cp -a $ISO_TARGET/lib/modules/$KVER/kernel/drivers/{ide,scsi} BUILD/lib/modules/$KVER/kernel/drivers/
+  depmod -b BUILD/ -a -F $KERNEL.map
+done
 
 # install discover in the initrd BUILD
 mkdir -p BUILD/{bin,etc} BUILD/usr/share/discover/dtd 
@@ -56,6 +58,8 @@ cp $ISO_SOURCE/discover/data/* BUILD/usr/share/discover/
 for file in $(find BUILD/{lib,bin,sbin,usr}); do
   strip $file 2> /dev/null
 done
+
+chown -R root:root BUILD/*
   
 # calculate the size of the initrd image
 SIZE=$(du -kcs BUILD | tail -1 | cut -f1)
