@@ -4,8 +4,8 @@
 
 cd $ISO_SOURCE/initrd
 
-umount $ISO_SOURCE/BUILD/dev &> /dev/null
-umount $ISO_SOURCE/BUILD/proc &> /dev/null
+umount $ISO_TARGET/dev &> /dev/null
+umount $ISO_TARGET/proc &> /dev/null
 umount template/dev &> /dev/null
 umount template/proc &> /dev/null
 
@@ -14,30 +14,50 @@ rm -rf BUILD
 # template first
 cp -a --no-dereference template BUILD
 find BUILD -type d -name CVS -exec rm -rf {} \;
-mkdir -p BUILD/mnt BUILD/proc BUILD/var/lib/discover
+mkdir -p BUILD/{mnt,proc,var/lib/discover}
 
 echo "+ copying binaries and required files"
 # next up are the required stuff from the BUILD
-for ITEM in $(cat initrd.list); do
-    mkdir -p "BUILD/$(dirname $ITEM)"
-    cp -a --no-dereference "$ISO_TARGET/$ITEM" "BUILD/$(dirname $ITEM)"
+cat initrd.list initrd.list-$ISO_KSUFFIX | while read ITEM DIR; do
+	if [ -n "$DIR" ]; then
+		mkdir -p BUILD/$DIR
+		cp -a --no-dereference "$ISO_TARGET/$ITEM" "BUILD/$DIR"
+	else
+	    mkdir -p "BUILD/$(dirname $ITEM)"
+    	cp -a --no-dereference "$ISO_TARGET/$ITEM" "BUILD/$(dirname $ITEM)"
+	fi
 done
 echo "+ filling /dev"
 
 # bare minimum of device nodes
 mkdir -p BUILD/dev
-cp -a --no-dereference $ISO_TARGET/etc/makedev.d/* BUILD/etc/makedev.d/
-cp template/etc/makedev.d/small BUILD/etc/makedev.d/generic
-$ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev generic
-$ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev console
-$ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev tty
-( cd BUILD/dev ; rm -f tty[a-zA-Z]* hd[i-z]* s[dg][i-z]* fd[2-9]* fd[0-1][a-zA-Z]* sd[a-z][a-z]* )
-mkdir BUILD/dev/vc
-for node in BUILD/dev/tty* ; do
-  ln -s $node $(echo $node | sed 's:tty:vc/:')
-done
-# strip it down even more
-rm -rf BUILD/etc/makedev.d/
+
+if [ "${ISO_KSUFFIX}" = "2.4" ]; then
+   cp -a --no-dereference $ISO_TARGET/etc/makedev.d/* BUILD/etc/makedev.d/
+   cp template/etc/makedev.d/small BUILD/etc/makedev.d/generic
+   $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev generic
+   $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev console
+   $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev tty
+   ( cd BUILD/dev ; rm -f tty[a-zA-Z]* hd[i-z]* s[dg][i-z]* fd[2-9]* fd[0-1][a-zA-Z]* sd[a-z][a-z]* )
+   mkdir BUILD/dev/vc
+   for node in BUILD/dev/tty* ; do
+     ln -s $node $(echo $node | sed 's:tty:vc/:')
+   done
+   # strip it down even more
+   rm -rf BUILD/etc/makedev.d/
+
+   rm -f BUILD/dev/install-devices.sh
+
+else
+  (
+      cd BUILD/dev
+      mknod -m 0600 console c 5 1
+      mknod -m 0666 null    c 1 3
+      mknod -m 0600 ram0    b 1 0
+      ln -s ram0 ram
+      mknod -m 0600 ram1    b 1 1
+  )
+fi
 
 # we also generate aaa_dev.tar.bz2 now
 mkdir -p $ISO_SOURCE/aaa_dev
@@ -50,14 +70,13 @@ done
 for ITEM in $(find BUILD -type d -name "CVS"); do
     rm -rf $ITEM
 done
-rm -f BUILD/dev/install-devices.sh
 chroot BUILD /sbin/ldconfig
 rm -f BUILD/etc/mtab
 ln -s /proc/mounts BUILD/etc/mtab
 
 # compile the initrd image
 for KERNEL in linux safe ; do
-  KVER=$(file -k $ISO_SOURCE/kernels/$KERNEL | sed 's/.*\(version .*\)/\1/' | cut -d' ' -f2)
+  KVER=$(grep "^$KERNEL" $ISO_SOURCE/kernels/.initrd_kernels | cut -d" " -f2)
   mkdir TMP
   (
     cd TMP
@@ -87,7 +106,7 @@ chown -R root:root BUILD/*
 # calculate the size of the initrd image
 SIZE=$(du -kcs BUILD | tail -1 | cut -f1)
 echo "+ estimated $SIZE"
-(( SIZE = SIZE ))
+(( SIZE = SIZE + 1 ))
 echo "+ used size $SIZE"
 dd if=/dev/zero of=initrd.raw bs=1024 count=$SIZE
 losetup /dev/loop/0 initrd.raw

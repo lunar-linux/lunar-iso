@@ -10,7 +10,8 @@ echo ""
 echo "Press ENTER to continue with cleanup && .iso generation"
 read
 
-umount $ISO_TARGET/proc
+umount $ISO_TARGET/proc &> /dev/null
+umount $ISO_TARGET/dev &> /dev/null
 
 . /etc/lunar/config
 unset VERBOSE
@@ -80,5 +81,5 @@ cp $ISO_SOURCE/cache/${ISO_LUNAR_MODULE}-*.tar.bz2 $ISO_TARGET/var/cache/lunar/
 rm -rf $ISO_TARGET/usr/src $ISO_TARGET/var/build
 mkdir -p $ISO_TARGET/usr/src $ISO_TARGET/var/build
 
-touch BUILD/.proper
+touch $ISO_TARGET/.proper
 

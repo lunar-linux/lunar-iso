@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd template
+cd $ISO_SOURCE/template
 wget http://lunar-linux.org/lunar/moonbase.tar.bz2
 lin moonbase
 

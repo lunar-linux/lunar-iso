@@ -5,7 +5,10 @@
 #
 # all user configurable options are in conf/config
 #
+
 include conf/config
+
+ISO_KSUFFIX = $(shell if echo $(ISO_KVER) | grep -q "^2\.6\." ; then echo 2.6 ; else echo 2.4 ; fi ;)
 
 # need to make this defined during run-time
 ISO_SOURCE = $(shell bash -c "pwd -P")
@@ -13,7 +16,7 @@ ISO_SOURCE = $(shell bash -c "pwd -P")
 # define the location where the ISO will be generated
 ISO_TARGET = $(ISO_SOURCE)/BUILD
 
-export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_PVER ISO_LUNAR_MODULE
+export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_PVER ISO_LUNAR_MODULE ISO_KSUFFIX
 
 all: iso
 
@@ -101,6 +104,8 @@ clean:
 	rm -f template/moonbase.tar.bz2
 	rm -f discover/discover
 	rm -f memtest/memtest
+	rm -f kernels/linux kernels/linux.map
+	rm -f kernels/safe kernels/safe.map
 
 blank:
 	@scripts/blank

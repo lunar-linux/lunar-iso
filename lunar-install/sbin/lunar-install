@@ -406,8 +406,6 @@ select_partition()
 
         if [ "$MNTPNT" == "/" ]; then
             ROOT=$PART
-        elif [ "$MNTPNT" == "/boot" ]; then
-            BOOT=$PART
         fi
     done
 }
@@ -442,21 +440,16 @@ means that your root or boot filesystem should be ext2." 20 60
 }
 
 
-
 make_lilo_conf()
 {
     if [ ! -f $TARGET/etc/lilo.conf ]; then
         cp /etc/lilo.conf $TARGET/etc/lilo.conf
     fi
-    if [ -z "$BOOT" ]; then
-        BOOT=${ROOT/part[0-9]*/disc}
-    fi
     echo "" >> $TARGET/etc/lilo.conf
-    echo "boot=/dev/discs/$BOOT" >> $TARGET/etc/lilo.conf
+    echo "boot=/dev/discs/disc" >> $TARGET/etc/lilo.conf
     echo "root=/dev/discs/$ROOT" >> $TARGET/etc/lilo.conf
     echo "" >> $TARGET/etc/lilo.conf
 }
-
 
 
 transfer()
@@ -490,12 +483,6 @@ transfer()
 		            $DIALOG --msgbox "Problem creating filesystem on /dev/discs/$PART. Installation will continue." 8 50
 		        fi
     	            fi
-		    # then mount if needed and make fstab lines
-		    if [ "$MNT_OPTS" != "defaults" ]; then
-		        MNT_OPTS="-o $MNT_OPTS"
-		    else
-		        MNT_OPTS=
-		    fi
 		    # again, weed out swap first
 		    if [ "$FSYS" == "swap" ]; then
 		        if swapon /dev/discs/$PART; then
@@ -505,8 +492,8 @@ transfer()
 		            $DIALOG --msgbox "Problem mounting swap on /dev/discs/$PART. Installation will continue." 8 50
 			fi
 		    # then try to mount normal FS's
-		    elif mkdir -p $TARGET$MOUNTPOINT && mount -n -t $FSYS /dev/discs/$PART $TARGET$MOUNTPOINT $MNT_OPTS &> /dev/null; then
-		        FSTAB="$FSTAB\n/dev/discs/$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+		    elif mkdir -p $TARGET$MOUNTPOINT && mount -n -t $FSYS /dev/discs/$PART $TARGET$MOUNTPOINT ${MNT_OPTS:+ -o $MNT_OPTS} &> /dev/null; then
+		        FSTAB="$FSTAB\n/dev/discs/$PART\t$MOUNTPOINT\t$FSYS\t${MNT_OPTS:-defaults}\t0 $FSCK_PASS"
 		    else
 		        sleep 3
 		        $DIALOG --msgbox "Problem mounting filesystem on /dev/discs/$PART. Installation will continue." 8 50
@@ -556,14 +543,14 @@ transfer()
         (
             if [ -f /var/cache/lunar/aaa_base.tar.bz2 ]; then
 		echo XXX
-	        echo 1
+	        echo $(( 1 * 100 / $NUM ))
 	        echo "\nInstalling aaa_base: base directories and files\n"
 		echo XXX
 	        tar xjf /var/cache/lunar/aaa_base.tar.bz2 2> /dev/null
             fi
 	    if [ -f /var/cache/lunar/aaa_dev.tar.bz2 ]; then
 	        echo XXX
-		echo 2
+	        echo $(( 2 * 100 / $NUM ))
 		echo "\nInstalling aaa_dev: device nodes\n"
 		echo XXX
 		tar xjf /var/cache/lunar/aaa_dev.tar.bz2 2> /dev/null
@@ -581,7 +568,7 @@ transfer()
             done
             if [ -f /var/lib/lunar/moonbase.tar.bz2 ] ; then
 		echo XXX
-	        echo 99
+	        echo $(( CNT * 100 / NUM ))
                 echo "\nInstalling moonbase"
 		echo XXX
                   (

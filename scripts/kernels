@@ -14,7 +14,9 @@ prepare()
     cd linux-$ISO_KVER
     mkdir patches
     cd patches
-    tar jxf /var/spool/lunar/ll-$ISO_PVER.tar.bz2
+    if [ -f /var/spool/lunar/ll-$ISO_PVER.tar.bz2 ]; then
+		tar jxf /var/spool/lunar/ll-$ISO_PVER.tar.bz2
+	fi
 }
 
 prepare_patch()
@@ -29,9 +31,9 @@ prepare_patch()
 
 prepare_options()
 {
-    cp $ISO_SOURCE/kernels/baseconfig $ISO_SOURCE/kernels/linux-$ISO_KVER/.config 
+    cp $ISO_SOURCE/kernels/baseconfig-${ISO_KSUFFIX} $ISO_SOURCE/kernels/linux-$ISO_KVER/.config 
     for OPT in $@; do
-        cat $ISO_SOURCE/kernels/config_$OPT | while read O; do 
+        cat $ISO_SOURCE/kernels/config_$OPT-${ISO_KSUFFIX} | while read O; do 
             OPT=$(echo $O|cut -d= -f1)
             VAL=$(echo $O|cut -d= -f2)
             sedit "/$OPT=/d" $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
@@ -55,7 +57,9 @@ build_kernel()
     echo "+ building $ISO_KVER$1"
     cd $ISO_SOURCE/kernels/linux-$ISO_KVER
     yes n | make oldconfig &&
-    make dep &&
+	if [ "${ISO_KSUFFIX}" = "2.4" ]; then
+		make dep
+	fi &&
     make bzImage &&
     make modules &&
     mkdir -p $ISO_SOURCE/kernels/TAR
@@ -95,38 +99,61 @@ build()
     prepare_version $1
     build_kernel $1 $5
     echo "$ISO_KVER$1:$4" >> $ISO_SOURCE/kernels/.kernels
+	if [ -n "$5" ]; then
+		echo "$5 $ISO_KVER$1" >> $ISO_SOURCE/kernels/.initrd_kernel
+	fi
 }
 
 VERBSOSE=on
 
 > $ISO_SOURCE/kernels/.kernels
+> $ISO_SOURCE/kernels/.initrd_kernels
 
-# required
-build -safe-i386 "i386 nosmp lowmem safe" "fix" \
-	"Very safe i386 (default is i686) minimal kernel (no ACPI, DMA, SMP)" "safe"
-# recommended
-build -normal "nosmp lowmem" "fix main" \
-	"Normal kernel (no SMP) (RECOMMENDED)" "linux"
-build -smp-4gb "smp mem" "fix main" \
-	"Normal SMP kernel with large memory (4GB)"
-# build -agr "nosmp lowmem lowlat" "fix main aggressive" \
-# 	"Low latency patch"
-build -agr-smp-4gb "smp mem lowlat" "fix main aggressive" \
-	"Low latency patch, SMP, 4GB"
-# build -stb "nosmp lowmem" "fix" \
-# 	"Minimally patched"
-# build -stb-smp-4gb "smp mem" "fix" \
-# 	"Minimally patched, SMP, 4GB"
-# build -vnl "nosmp lowmem" "" \
-# 	"Unpatched"
-build -vnl-smp-4gb "smp mem" "" \
-	"Unpatched, SMP, 4GB"
-# build -grs "nosmp lowmem grsec" "fix main grsecurity" \
-# 	"Grsecurity patch"
-build -grs-smp-4gb "smp mem grsec" "fix main grsecurity" \
-	"Grsecurity patch, SMP, 4GB"
-# build -om "nosmp lowmem om" "fix om" \
-# 	"OpenMosix clustering"
-build -om-smp-4gb "smp mem om" "fix om" \
-	"OpenMosix clustering, SMP, 4GB"
+
+if [ "${ISO_KSUFFIX}" = "2.4" ]; then
+	
+	# required
+	build -safe-i386 "i386 nosmp lowmem safe" "fix" \
+		"Very safe i386 (default is i686) minimal kernel (no ACPI, DMA, SMP)" "safe"
+	# recommended
+	build -normal "nosmp lowmem" "fix main" \
+		"Normal kernel (no SMP) (RECOMMENDED)" "linux"
+	build -smp-4gb "smp mem" "fix main" \
+		"Normal SMP kernel with large memory (4GB)"
+	# build -agr "nosmp lowmem lowlat" "fix main aggressive" \
+	# 	"Low latency patch"
+	build -agr-smp-4gb "smp mem lowlat" "fix main aggressive" \
+		"Low latency patch, SMP, 4GB"
+	# build -stb "nosmp lowmem" "fix" \
+	# 	"Minimally patched"
+	# build -stb-smp-4gb "smp mem" "fix" \
+	# 	"Minimally patched, SMP, 4GB"
+	# build -vnl "nosmp lowmem" "" \
+	# 	"Unpatched"
+	build -vnl-smp-4gb "smp mem" "" \
+		"Unpatched, SMP, 4GB"
+	# build -grs "nosmp lowmem grsec" "fix main grsecurity" \
+	# 	"Grsecurity patch"
+	build -grs-smp-4gb "smp mem grsec" "fix main grsecurity" \
+		"Grsecurity patch, SMP, 4GB"
+	# build -om "nosmp lowmem om" "fix om" \
+	# 	"OpenMosix clustering"
+	build -om-smp-4gb "smp mem om" "fix om" \
+		"OpenMosix clustering, SMP, 4GB"
+
+else
+
+	build -safe-i386 "i386 nosmp lowmem safe" "" \
+		"Very safe i386 (default is i686) minimal kernel (no ACPI, DMA, SMP)" "safe"
+	build -normal "nosmp lowmem" "" \
+		"Normal kernel (no SMP) (RECOMMENDED)" "linux"
+	build -smp-4gb "smp mem" "" \
+		"Normal SMP kernel with large memory (4GB)"
+	#build -grs "nosmp lowmem grsec" "grsec" \
+	#	"Grsecurity patch"
+	#build -grs-smp-4gb "smp mem grsec" "grsec" \
+	#	"Grsecurity patch, SMP, 4GB"
+
+fi
+
 
