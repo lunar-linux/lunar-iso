@@ -61,8 +61,11 @@ build_kernel()
     cp System.map $ISO_SOURCE/kernels/BUILD/boot/System.map-$ISO_KVER$1
     cp .config $ISO_SOURCE/kernels/BUILD/boot/config-$ISO_KVER$1
     gzip $ISO_SOURCE/kernels/BUILD/boot/config-$ISO_KVER$1
+    mkdir -p $ISO_SOURCE/kernels/BUILD/usr/include/linux-$ISO_KVER$1
+    cp -aL $ISO_SOURCE/kernels/BUILD/include/asm $ISO_SOURCE/kernels/BUILD/usr/include/linux-$ISO_KVER$1/asm
+    cp -aL $ISO_SOURCE/kernels/BUILD/include/linux $ISO_SOURCE/kernels/BUILD/usr/include/linux-$ISO_KVER$1/linux
     cd $ISO_SOURCE/kernels/BUILD
-    tar cjvf $ISO_SOURCE/kernels/$ISO_KVER$1.tar.bz2 boot/ lib/
+    tar cjvf $ISO_SOURCE/kernels/$ISO_KVER$1.tar.bz2 boot/ lib/ usr/
     cd $ISO_SOURCE/kernels
     rm -rf $ISO_SOURCE/kernels/BUILD
     rm -rf $ISO_SOURCE/kernels/linux-$ISO_KVER
@@ -106,6 +109,4 @@ prepare_options smp mem grsec
 prepare_version -grs-smp-4gb
 build_kernel -grs-smp-4gb
 
-
-
-# touch BUILD/.kernels
+touch BUILD/.kernels
