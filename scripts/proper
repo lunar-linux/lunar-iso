@@ -16,9 +16,12 @@ umount $ISO_TARGET/proc
 unset VERBOSE
 optimize
 
+echo "+ running ldconfig"
+chroot $ISO_TARGET ldconfig
+
 echo "+ wiping sources"
 rm -f $ISO_TARGET/var/spool/lunar/*
-for mod in $(cat sources.list) ; do
+for mod in $(cat ${ISO_SOURCE}/conf/sources.list) ; do
   for file in $(lvu sources $mod) ; do
     echo -n "."
     if [ -f ${ISO_SOURCE}/spool/$file ] ; then
@@ -66,9 +69,6 @@ if [ -d $ISO_TARGET/var/lib/lunar/moonbase ] ; then (
 ##  tar cjf linux-${ISO_KVER}.tar.bz2 linux-${ISO_KVER}/
 ##  rm -rf linux-${ISO_KVER}
 ##); fi
-
-echo "+ finishing up"
-chroot $ISO_TARGET ldconfig
 
 # copy the installed code over:
 cp lunar-install/init.d/lunar-install $ISO_TARGET/etc/init.d/ 
