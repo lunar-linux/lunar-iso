@@ -28,7 +28,6 @@ contain:
  o A moonbase snapshot
  o A proper cache tar.bz2 of every required package (including core tools)
  o A full set of sorurces for each module
- o A initrd image template with a selection of binaries
  
 You will need to provide this in order to succesfully perform all steps.
 The cache copies wiil be used to bootstrap your ISO, after which basically
@@ -42,8 +41,6 @@ The cache tar.bz2's may be left in /var/cache/lunar and will automatically as
 needed be copied to cache/
 
 The same goes for the sources, they end up in spool/
-
-The initrd image template goes into initrd/template/
 
 
 -- Building it
