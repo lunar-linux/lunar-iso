@@ -4,21 +4,22 @@
 
 
 # define the absolute place where these tools reside
+# need to make this defined during run-time
 ISO_SOURCE = /var/build/isotools
 
 # define the location where the ISO will be generated
-ISO_TARGET = /var/build/isotools/BUILD
+ISO_TARGET = ./BUILD
 
 # define the version numbers and tags etc:
-ISO_VERSION = 1.4.1
-ISO_CODENAME = Dark Side
-ISO_DATE = 20041113
+ISO_VERSION = NOVERSION
+ISO_CODENAME = UNNAMED
+ISO_DATE = NODATE
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
 ISO_KVER = 2.4.27
 ISO_KREL = r7.0.0
 
-ISO_LUNAR_MODULE = theedge
+ISO_LUNAR_MODULE = lunar
 
 export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_KREL ISO_LUNAR_MODULE
 
