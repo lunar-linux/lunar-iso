@@ -16,6 +16,7 @@ rmdir /usr/lib/locale/*
 
 # store the list of stuff in /var/cache that needs to be resurrected:
 echo "+ creating list of prepackaged modules"
+mkdir -p $ISO_SOURCE/aaa_base
 > $ISO_SOURCE/aaa_base/packages
 for mod in $(cat conf/base.list conf/extended.list) ; do
   grep "^$mod:" $ISO_TARGET/var/state/lunar/packages >> $ISO_SOURCE/aaa_base/packages
