@@ -1,0 +1,10 @@
+# Support for the older "generic" devices.
+a generic std
+a generic fd
+a generic hda
+a generic hdb
+a generic hdc
+a generic hdd
+a generic tty
+a generic sd
+a generic sg
