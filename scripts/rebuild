@@ -12,9 +12,19 @@ chroot $ISO_TARGET /sbin/ldconfig
 # rebuild all modules
 chroot $ISO_TARGET lunar set ARCHIVE on
 
-chroot $ISO_TARGET lin kernel-headers
-chroot $ISO_TARGET lin makedev
+mount -t proc proc $ISO_TARGET/proc
 
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "+          STARTING CONFIGURING MODULES                +"
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo ""
+
+for mod in $(cat conf/base.list conf/extended.list) ; do
+  chroot $ISO_TARGET /sbin/lin --deps $mod
+done
+
+umount $ISO_TARGET/proc
+chroot $ISO_TARGET lin makedev
 mount -t proc proc $ISO_TARGET/proc
 
 chroot $ISO_TARGET /dev/install-devices.sh
@@ -25,16 +35,8 @@ echo "+          STARTING KERNEL COMPILE                     +"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo ""
 
-chroot $ISO_TARGET lin linux
-
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "+          STARTING CONFIGURING MODULES                +"
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo ""
-
-for mod in $(cat conf/base.list conf/extended.list) ; do
-  chroot $ISO_TARGET /sbin/lin --deps $mod
-done
+chroot $ISO_TARGET lin linux-2.4
+chroot $ISO_TARGET lin kernel-headers-2.4
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          STARTING COMPILE PHASE OF ALL MODULES       +"

@@ -29,6 +29,9 @@ for mods in ${ISO_LUNAR_MODULE} $(cat conf/base.list conf/extended.list) ; do
   resurrect $mods
 done
 
+rm -rf $ISO_TARGET/usr/include/{linux,asm}
+cp -a /usr/include/{linux,asm} $ISO_TARGET/usr/include/
+
 # fill var/spool/lunar dir
 for mod in $(cat conf/sources.list conf/base.list conf/extended.list) ; do
   for file in $(lvu sources $mod) ; do
