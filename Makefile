@@ -5,10 +5,10 @@
 
 # define the absolute place where these tools reside
 # need to make this defined during run-time
-ISO_SOURCE = $(shell pwd)
+ISO_SOURCE = $(shell bash -c "pwd -P")
 
 # define the location where the ISO will be generated
-ISO_TARGET = ./BUILD
+ISO_TARGET = $(ISO_SOURCE)/BUILD
 
 # define the version numbers and tags etc:
 ISO_VERSION = NOVERSION

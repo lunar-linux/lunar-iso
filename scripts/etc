@@ -15,18 +15,12 @@ echo "Lunar Linux ${ISO_CNAME}" > $ISO_TARGET/etc/lunar.release
 touch $ISO_TARGET/etc/ld.so.conf
 chroot $ISO_TARGET ldconfig
 
-# prepare our moonbase!
-if [ ! -f $ISO_SOURCE/template/moonbase.tar.bz2 ]; then
-  echo "Cannot find template/moonbase.tar.bz2!"
-  exit 1
-fi
-
 (
   echo "+ installing moonbase"
-  cd $ISO_TARGET/var/lib/lunar
-  tar xjf $ISO_SOURCE/template/moonbase.tar.bz2
-  tar tjlf $ISO_SOURCE/template/moonbase.tar.bz2 | sed 's/^/\/var\/lib\/lunar\//g' > $ISO_TARGET/var/log/lunar/install/moonbase-${ISO_DATE}
-  cd $ISO_SOURCE
+  cd $ISO_TARGET/var/lib/lunar && (
+    tar xjf $ISO_SOURCE/template/moonbase.tar.bz2
+    tar tjlf $ISO_SOURCE/template/moonbase.tar.bz2 | sed 's/^/\/var\/lib\/lunar\//g' > $ISO_TARGET/var/log/lunar/install/moonbase-${ISO_DATE}
+  )
   chroot $ISO_TARGET /sbin/lsh add_module moonbase installed $ISO_DATE
   echo "+ installing module.index"
   chroot $ISO_TARGET /sbin/lsh create_module_index
