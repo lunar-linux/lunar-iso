@@ -5,7 +5,7 @@
 
 # define the absolute place where these tools reside
 # need to make this defined during run-time
-ISO_SOURCE = /var/build/isotools
+ISO_SOURCE = $(shell pwd)
 
 # define the location where the ISO will be generated
 ISO_TARGET = ./BUILD
@@ -13,7 +13,7 @@ ISO_TARGET = ./BUILD
 # define the version numbers and tags etc:
 ISO_VERSION = NOVERSION
 ISO_CODENAME = UNNAMED
-ISO_DATE = NODATE
+ISO_DATE = $(shell date -u +%Y%m%d)
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
 ISO_KVER = 2.4.27
@@ -62,10 +62,16 @@ $(ISO_TARGET)/.rebuild:
 	@echo "Starting rebuild process"
 	@scripts/rebuild
 
-etc: unpack $(ISO_TARGET)/.etcf
+etc: moonbase unpack $(ISO_TARGET)/.etcf
 $(ISO_TARGET)/.etcf:
 	@echo "Copying miscfiles"
 	@scripts/etc
+
+moonbase: $(ISO_SOURCE)/template/moonbase.tar.bz2
+$(ISO_SOURCE)/template/moonbase.tar.bz2:
+	@echo "Getting a proper moonbase"
+	@scripts/moonbase
+
 
 unpack: dirs $(ISO_TARGET)/.unpack
 $(ISO_TARGET)/.unpack:
