@@ -12,18 +12,18 @@ umount template/proc
 rm -rf BUILD
 
 # template first
-cp -a template BUILD
+cp -a --no-dereference template BUILD
 
 echo "+ copying binaries and required files"
 # next up are the required stuff from the BUILD
 for ITEM in $(cat initrd.list); do
     mkdir -p "BUILD/$(dirname $ITEM)"
-    cp -a "$ISO_TARGET/$ITEM" "BUILD/$(dirname $ITEM)"
+    cp -a --no-dereference "$ISO_TARGET/$ITEM" "BUILD/$(dirname $ITEM)"
 done
 echo "+ filling /dev"
 # bare minimum of device nodes
 mkdir -p BUILD/dev
-cp -a $ISO_TARGET/etc/makedev.d/* BUILD/etc/makedev.d/
+cp -a --no-dereference $ISO_TARGET/etc/makedev.d/* BUILD/etc/makedev.d/
 cp template/etc/makedev.d/small BUILD/etc/makedev.d/generic
 $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev generic
 # strip it down even more
@@ -42,9 +42,16 @@ chroot BUILD /sbin/ldconfig
 # compile the initrd image
 for KERNEL in linux safe ; do
   KVER=$(file -k $ISO_SOURCE/kernels/$KERNEL | sed 's/.*\(version .*\)/\1/' | cut -d' ' -f2)
-  mkdir -p BUILD/lib/modules/$KVER/kernel/drivers/
-  cp -a $ISO_TARGET/lib/modules/$KVER/kernel/drivers/{ide,scsi} BUILD/lib/modules/$KVER/kernel/drivers/
-  depmod -b BUILD/ -a -F $KERNEL.map
+  mkdir TMP
+  (
+    cd TMP
+    tar xjf $ISO_SOURCE/kernels/TAR/$KVER.tar.bz2
+    mkdir -p $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
+    depmod -b . -a -F $ISO_SOURCE/kernels/$KERNEL.map $KVER
+    cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{ide,scsi} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
+    cp lib/modules/$KVER/* $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/
+  )
+  rm -rf TMP
 done
 
 # install discover in the initrd BUILD

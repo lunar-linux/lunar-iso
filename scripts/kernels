@@ -88,7 +88,7 @@ build()
     prepare_patch $(echo $3)
     prepare_options $(echo $2)
     prepare_version $1
-    build_kernel $1 $6
+    build_kernel $1 $5
     echo "$ISO_KVER$1:$4" >> $ISO_SOURCE/kernels/.kernels
 }
 
