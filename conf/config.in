@@ -1,0 +1,28 @@
+
+#
+# config.in - default lunar ISO variables
+#
+
+# copy this file to 'config' and edit your settings as needed
+
+# the ISO FULL version number
+ISO_VERSION = NOVERSION
+
+# the ISO codename (i.e. Gen. P. Fault)
+ISO_CODENAME = UNNAMED
+
+# the release/offical date tag
+ISO_DATE = $(shell date -u +%Y%m%d)
+
+# this copncatenates the full name
+ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
+
+# the kernel version used on the ISO
+ISO_KVER = 2.4.28
+
+# the patch name (should refer to the patch tarball used)
+ISO_PVER = r8.0
+
+# which lunar core tools do we want on the ISO
+ISO_LUNAR_MODULE = lunar
+
