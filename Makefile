@@ -92,8 +92,8 @@ $(ISO_TARGET)/.init:
 	@scripts/init
 
 clean:
-	umount BUILD/dev BUILD/proc
-	rm -rf BUILD
+	umount BUILD/dev BUILD/proc &> /dev/null || true
+	rm -rf BUILD aaa_base aaa_dev template/moonbase.tar.bz2
 
 blank:
 	@scripts/blank
