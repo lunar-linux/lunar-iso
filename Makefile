@@ -92,8 +92,15 @@ $(ISO_TARGET)/.init:
 	@scripts/init
 
 clean:
-	umount BUILD/dev BUILD/proc &> /dev/null || true
-	rm -rf BUILD aaa_base aaa_dev template/moonbase.tar.bz2
+	umount BUILD/dev &> /dev/null || true
+	umount BUILD/proc &> /dev/null || true
+	rm -rf BUILD
+	rm -rf initrd/BUILD initrd/initrd
+	rm -rf aaa_base aaa_dev
+	rm -rf kernels/TAR kernels/*.tar.bz2 kernels/.kernels
+	rm -f template/moonbase.tar.bz2
+	rm -f discover/discover
+	rm -f memtest/memtest
 
 blank:
 	@scripts/blank
