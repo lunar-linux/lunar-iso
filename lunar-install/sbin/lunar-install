@@ -1,0 +1,1214 @@
+#!/bin/bash
+#############################################################
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003, 2004 by tchan, kc8apf            #
+# portions Copyright 2004 Auke Kok                          #
+#                                                           #
+# This file in released under the GPL                       #
+#############################################################
+
+introduction()
+{
+    $DIALOG --title "Welcome to Lunar Linux" --msgbox \
+"The purpose of Lunar Linux is to return control to System Administrators that the wizards and maintainers of modern distributions have steadily chipped away." 8 65
+
+    $DIALOG --cr-wrap --title "The Benefits of Lunar Linux" --msgbox \
+"Lunar Linux empowers System Administrators to choose:
+
+ the architecture that programs are compiled for,
+ the dependencies a program is compiled with,
+ compiler optimizations, and compile time options.
+
+And it provides the conveniences of:
+
+ command line and menu driven package management,
+ ASCII configuration and data files,
+ FSH 2.2 compliant filesystem hierarchy,
+ LSB 1.1 compliance,
+ System V Init, and Networking." 18 65
+    I_OK="\\Z2"
+    if (( STEP == 1 )); then
+        (( STEP++ ))
+    fi
+}
+
+
+inputbox()
+{
+    $DIALOG --nocancel --inputbox "$1" 0 0 "$2"
+}
+
+
+chroot_build()
+{
+    chroot $TARGET mount -t proc proc /proc
+    chroot $TARGET mount -t devfs devfs /dev
+    chroot $TARGET mount -t tmpfs tmpfs /tmp
+    chroot $TARGET swapon -a
+    chroot $TARGET lin -r $1
+    chroot $TARGET swapoff -a
+    chroot $TARGET umount /tmp
+    chroot $TARGET umount /dev
+    chroot $TARGET umount /proc
+}
+
+
+confirm()
+{
+    if [ "$CONFIRM" == "off" ]; then
+        if [ -n "$2" ]; then
+            false
+        else
+            true
+        fi
+    else
+        $DIALOG $2 --yesno "$1" 8 50
+    fi
+}
+
+
+goodbye()
+{
+    # lets make the initscripts executable
+    chroot $TARGET chmod +x /etc/init.d/*
+    PROMPT="Reboot now?"
+    if confirm "$PROMPT" "--defaultno"; then
+        shutdown -r now
+    else
+        exit  0
+    fi
+}
+
+
+show_modules()
+{
+    if [ "$(pwd)" != "/lib/modules" ]; then
+        echo ".."
+        echo "Directory"
+    fi
+    for ITEM in *; do
+        case $ITEM in
+            modules.*) continue ;;
+        esac
+        /bin/echo "$ITEM"
+        if [ -d "$ITEM" ]; then
+            /bin/echo "Directory"
+        else
+            /bin/echo "Module"
+        fi
+    done
+}
+
+
+input_module_parameters()
+{
+    HELP="Optionally, enter module parameters"
+    $DIALOG --nocancel --inputbox "$HELP" 0 0
+}
+
+
+load_module()
+{
+  (
+    MODULES_ROOT="/lib/modules"
+    cd $MODULES_ROOT/$(uname -r)/kernel/drivers
+    TITLE="Module Menu"
+    HELP="Select a module to load or enter a subdirectory (pwd = $(pwd))"
+    CHOICE=""
+
+    while true; do
+        MODULES=`show_modules $(pwd)`
+        CHOICE=`$DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 $MODULES`
+        if [ $? != 0 ]; then
+            return
+        fi
+        if [ -f "$CHOICE" ]; then
+            MODULE=`/bin/basename $MODULE | /bin/sed -e "s/\.o$//" -e "s/\.ko$//"`
+            PARAMETERS=`input_module_parameters` &&
+            /sbin/modprobe $CHOICE $PARAMETERS
+            /bin/sleep 5
+        elif [ -d "$CHOICE" ]; then
+            cd "$CHOICE"
+        fi
+    done
+  )
+}
+
+
+list_discs()
+{
+    LIST=$(ls /dev/discs)
+    for LINE in $LIST; do
+        echo "$LINE"
+        echo "disk"
+    done
+}
+
+
+list_parts()
+{
+    for PART in $(ls -L /dev/discs/*/part*); do
+        if [ -e $PART ]; then
+            echo "${PART/\/dev\/discs\//}"
+            echo "partition"
+        fi
+    done
+}
+
+
+get_part()
+{
+    TITLE="Partition Selection Menu"
+    HELP="Please select a partition"
+    $DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 `list_parts`
+}
+
+
+get_disc()
+{
+    TITLE="Disk Selection Menu"
+    HELP="Please select a disk"
+    $DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 `list_discs`
+}
+
+
+get_filesystem()
+{
+    TITLE="Filesystem Selection Menu"
+    HELP="Please select a filesystem"
+    
+    EXT3="Third Extended journaling file system"
+    EXT2="Second Extended file system"
+    REISER="Reiserfs journaling file system"
+    XFS="XFS journaling file system"
+    JFS="JFS journaling file system"
+    SWAP="Swap Partition"
+
+    $DIALOG --title "$TITLE" --default-item "ext3" --menu "$HELP" 0 0 0 \
+           "ext3"      "$EXT3"    \
+           "ext2"      "$EXT2"    \
+           "reiserfs"  "$REISER"  \
+           "xfs"       "$XFS"     \
+           "jfs"       "$JFS"     \
+           "swap"      "$SWAP"
+}
+
+
+show_keymaps()
+{
+    KEYDIR="/usr/share/keymaps/i386"
+
+    azerty="$(ls $KEYDIR/azerty)"
+    dvorak="$(ls $KEYDIR/dvorak)"
+    fgGIod="$(ls $KEYDIR/fgGIod)"
+    qwerty="$(ls $KEYDIR/qwerty)"
+    qwertz="$(ls $KEYDIR/qwertz)"
+
+    MAP_FILES=$(echo -e "$azerty\n$dvorak\n$fgGIod\n$qwerty\n$qwertz" | sort | sed "s/\.kmap\.gz//")
+
+    for MAP in $MAP_FILES; do
+        echo $MAP
+        echo keymap                        
+    done
+}
+
+
+keymap_menu()
+{
+    TITLE="Keymap Selection Menu"
+    HELP="Please select your preferred keymapping."
+    KEYMAPS=$(show_keymaps)
+    KEYMAP=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 $KEYMAPS`
+    C_OK=\\Z2
+    DEFAULT=D
+}
+
+
+fdisc()
+{
+    CFDISK="Curses based disk partition table manipulator"  
+    FDISK="Partition table manipulator"
+    PARTED="Create, destroy, resize, and copy partitions"
+    HELP="Please create a boot and root partition."
+    TITLE="Partitioning Menu"
+    ALPHA="Your drive must be partitioned with a BSD-style partition.  At the first prompt in fdisk, type 'b'."
+    PPC="Your drive must have an Apple partition scheme and have at least one HFS partition of at least 10MB for booting.  Do not mount this partition!"
+
+    DISC=$(get_disc) &&
+    case $ARCH in
+        "alpha")
+            PROG="fdisk"
+	    $DIALOG --msgbox "$ALPHA"
+            ;;
+	"ppc")
+	    PROG="parted"
+	    $DIALOG --msgbox "$PPC"
+	    ;;
+	*)
+            PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
+                    "cfdisk"  "$CFDISK"                          \
+                    "fdisk"   "$FDISK"                           \
+                    "parted"  "$PARTED"`                         
+	    ;;
+    esac &&	
+    PROMPT="Are you certain that you want to run $PROG on $DISC" &&
+    if confirm "$PROMPT"; then
+        $PROG /dev/discs/$DISC/disc
+	if (( STEP = 1 )); then
+	    (( STEP++ ))
+	fi
+    fi
+}
+
+
+get_mk_prog()
+{
+    if [ "$1" == "swap" ]; then
+        echo "mkswap"
+    else
+        echo "mkfs"
+    fi
+}
+
+
+check_partition()
+{
+    PROMPT="Check for errors?"
+    case $1 in  
+        ext2|ext3|swap)
+            if confirm "$PROMPT" "--defaultno"; then
+                echo "-c";  
+            fi
+            ;;
+        *)
+            true
+            ;;
+    esac
+}
+
+
+get_fstype()
+{
+    case $1 in
+        ext2|ext3|jfs|xfs|reiserfs)
+            echo -e "-t\t$1"
+            ;;
+        *)
+            true
+            ;;
+    esac
+}
+
+
+use_the_force()
+{
+    case $1 in
+        xfs)
+            echo -e "-l\tsize="$XFS_LOG_SIZE"b\t-f"
+            ;;
+        *)
+            true
+            ;;
+    esac
+}
+
+
+mk_swap_file()
+{
+    LOCATION_PROMPT="Please enter the location for the swapfile."
+    SIZE_PROMPT="Lunar Linux recommends 2X of physical RAM.  Please enter the number of megabytes to use for this swapfile. TMPFS users will need more swapfile."
+    SUCCESS="Swapfile created."
+    FAILURE="Problem creating swapfile."
+    ZERO="/dev/zero"
+
+    DEVICE=$(inputbox "$LOCATION_PROMPT" "/swapfile") &&
+    SWAPFILE="$TARGET$DEVICE" &&
+
+    # strange calculation but it ends up being ~ 2xRAM rounded up to 256MB blocks
+    SIZE=$(grep MemTotal: /proc/meminfo | awk '{print $2}' | sed 's/[0-9][0-9][0-9]$//') &&
+    (( SIZE = ( ( SIZE / 128 ) + 1 ) * 256 )) &&
+
+    SIZE=$(inputbox "$SIZE_PROMPT" "$SIZE") &&
+    PROMPT="Make swapfile $SWAPFILE of $SIZE megabytes?" &&
+
+    if confirm "$PROMPT"; then
+        mkdir -p $(dirname $SWAPFILE) &&
+            if dd of=$SWAPFILE if=$ZERO bs=1M count=$SIZE &&
+            mkswap $SWAPFILE &&
+            chmod 000 $SWAPFILE
+        then
+            DP="$DEVICE	none"
+            FOL="swap	sw	0 0"
+            LINE="$DP	$FOL"
+            FS_LIST=$(echo  -e  "$LINE\n$FS_LIST")
+            $DIALOG --msgbox "$SUCCESS" 8 50
+            if (( STEP == 4 )); then
+	        (( STEP++ ))
+	    fi
+        else
+            sleep 10
+            $DIALOG --msgbox "$FAILURE" 8 50
+            if (( STEP == 4 )); then
+	        (( STEP++ ))
+	    fi
+            return 1
+        fi
+    fi
+}
+
+
+make_fsys()
+{
+    SUCCESS="Filesystem created"
+    FAILURE="Filesystem creation failed"
+    PROG=$(get_mk_prog  $FSYS)
+    COMMAND="$PROG $FSTYPE $CHECK $FORCE $DEVICE"
+    NOTICE="You MUST select NO if you are mounting a working filesystem!
+If you select NO, the filesystem will be mounted w/o being formatted.\n\n
+Do you want to execute the command below?\n"
+
+    if $DIALOG --defaultno --yesno "$NOTICE \n $COMMAND" 11 65; then
+        if $PROG $FSTYPE $CHECK $FORCE $DEVICE;  then
+            $DIALOG --msgbox "$SUCCESS" 9 50
+        else
+	    echo -e "\nFilesystem creation failed!\nPress ENTER to continue."
+	    read
+            return 1
+        fi
+    fi
+}
+
+
+mount_fsys()
+{
+    MOUNT=$TARGET$POINT
+    SUCCESS="Mounted $DEVICE on $MOUNT"
+    FAILURE="Failed mounting $DEVICE on $MOUNT"
+
+    case  $FSYS  in
+        ext2|ext3|reiserfs|xfs|jfs)
+            if mkdir -p $MOUNT && mount -t $FSYS -o $OPTIONS $DEVICE $MOUNT; then
+                case $POINT in
+                    /)
+                        ROOT=$DEVICE
+                        ;;
+                esac
+                $DIALOG --msgbox "$SUCCESS" 8 50
+            else
+                sleep 10
+                $DIALOG --msgbox "$FAILURE" 8 50
+                return 1
+            fi
+            ;;
+        swap)
+            true
+            ;;
+    esac
+}
+
+
+make_fstab_line()
+{
+    DP="$DEVICE	$POINT" &&
+    FOL="$FSYS	$OPTIONS" &&
+    LINE="$DP	$FOL	$LAST" &&
+    FS_LIST=$(echo -e "$LINE\n$FS_LIST")
+}
+
+
+get_xfs_logsize()
+{
+    XFS_LOG_SIZE=${XFS_LOG_SIZE:=1200}
+    XFS_LOG_SIZE_PROMPT="Logsize in 4K blocks, 1000 to 32768, consider the partition size!"
+
+    XFS_LOG_SIZE=`inputbox  "$XFS_LOG_SIZE_PROMPT" $XFS_LOG_SIZE` &&
+    if (( $XFS_LOG_SIZE < 1000)); then
+        XFS_LOG_SIZE=1000
+    fi
+    if  (( $XFS_LOG_SIZE > 32768)); then
+        XFS_LOG_SIZE=32768
+    fi
+    export XFS_LOG_SIZE
+}
+
+
+determine_fstab_settings()
+{
+    LAST="0 0"
+    case $FSYS in
+        swap)
+            OPTIONS="sw"
+            ;;
+        jfs|reiserfs|ext3|xfs|ext2)
+	    OPTIONS="defaults"
+            if [ "$POINT" == "/" ]; then
+                LAST="0 1"
+            else
+                LAST="0 2"
+            fi
+            ;;
+    esac
+}
+
+
+get_mount_point()
+{
+    PROMPT="Please enter a mount point"
+    if [ -z "$ROOT" ]; then
+        POINT="/"
+    elif [ "$FSYS" == "swap" ]; then
+        POINT="none"
+    else
+        POINT=$(inputbox "$PROMPT" "/") &&
+        if [ -z "$POINT" -a -z "$ROOT" ]; then
+            POINT="/"
+        fi
+    fi
+}
+
+
+mount_partition()
+{
+    PART=$(get_part) 
+    if [ -z "$PART" ]; then
+        return 
+    fi &&
+    FSYS=$(get_filesystem) 
+    if [ -z "$FSYS" ]; then
+        return; 
+    fi &&
+
+    if [ "$FSYS" == "xfs" ]; then 
+        get_xfs_logsize
+    fi
+
+    CHECK=$(check_partition $FSYS) &&
+    FORCE=$(use_the_force $FSYS) &&
+    FSTYPE=$(get_fstype $FSYS) &&
+    DEVICE=/dev/discs/$DISC/$PART &&
+
+    determine_fstab_settings &&
+    get_mount_point &&
+    make_fsys &&
+    mount_fsys &&
+    make_fstab_line
+}
+
+
+mount_partitions()
+{
+    if [ -z "$ROOT" ]; then
+        if confirm "Are you done making partitions?"; then
+            $DIALOG --msgbox "The root partition must be mounted first" 8 40
+            case $ARCH in
+    	        "alpha")
+      	            $DIALOG --cr-warp --msgbox \
+"The partition on which the kernel is located must
+be formatted with the ext2 filesystem. Normally this
+means that your root or boot filesystem should be ext2." 20 60
+	            ;;
+            esac
+            mount_partition
+        fi
+    else
+        mount_partition
+    fi
+
+    if [ -n "$ROOT" ]; then
+        if (( STEP == 3 )); then
+            (( STEP++ ))
+	    S_OK=
+        T_OK=
+        fi
+    fi
+}
+
+
+make_fstab()
+{
+    echo -e "$FS_LIST" >> $TARGET/etc/fstab
+}
+
+
+make_lilo_conf()
+{
+    if [ -z "$BOOT" ]; then
+        BOOT=${ROOT/part[0-9]*/disc}
+    fi
+    echo "boot=$BOOT" >> $TARGET/etc/lilo.conf
+    echo "root=$ROOT" >> $TARGET/etc/lilo.conf
+}
+
+
+
+cp_axv()
+{
+    PROMPT="Are you done mounting file systems?"
+    if confirm "$PROMPT";  then
+    
+        cd $TARGET
+	
+	echo "Creating base LSB directories..."
+        mkdir -p bin boot dev etc home lib mnt media
+        mkdir -p proc root sbin srv tmp usr var opt
+        mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
+        mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
+        mkdir -p usr/share/man/man{1,2,3,4,5,6,7,8}
+        ln -sf share/doc usr/doc
+        ln -sf share/man usr/man
+        ln -sf share/info usr/info
+        mkdir -p etc/lunar/local/depends
+        ln -s . etc/rc.d
+        mkdir -p etc/init.d etc/rc{0,1,2,3,4,5,6,S}.d 
+        mkdir -p var/log/lunar/{install,md5sum,compile}
+        mkdir -p var/{cache,empty,lib,lock,log,run,spool,state,tmp}
+        mkdir -p var/{cache,lib,log,spool,state}/lunar
+        mkdir -p var/state/discover
+        mkdir -p var/spool/mail
+        mkdir -p media/{cdrom0,cdrom1,floppy0,floppy1,mem0,mem1}
+        chmod 0700 root
+        chmod 1777 tmp var/tmp
+
+	echo "Extracting packages..."
+	for TAR in /var/cache/lunar/* ; do
+	    echo "  $TAR"
+	    tar xjf $TAR 2> /dev/null
+	done
+	cat /prepackaged >> $TARGET/var/state/lunar/packages
+	cat /prepackaged >> $TARGET/var/state/lunar/packages.backup
+   
+        if [ -f $TARGET/var/lib/lunar/moonbase.tar.bz2 ] ; then
+            echo "Extracting moonbase..."
+              (
+                cd $TARGET/var/lib/lunar
+                tar xjf moonbase.tar.bz2
+                rm moonbase.tar.bz2
+              )
+        fi
+
+        # pass through some of the configuration at this point:
+	[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
+	[ -z "$CONSOLEFONT" ] || echo "$CONSOLEFONT" > $TARGET/etc/consolefont
+	[ -z "$LANG" ] || echo -e "# you can add declarations for LC_ALL etc in here\n\nexport LANG=\"$LANG\"\n" > $TARGET/etc/LOCALE
+	
+        [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
+	
+        if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
+	    > $TARGET/etc/profile.d/proxy.rc
+	    [ -z "$HPROXY" ] || echo "export http_proxy=\"$HPROXY\"" >> $TARGET/etc/profile.d/proxy.rc
+            [ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\"" >> $TARGET/etc/profile.d
+            [ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\"" >> $TARGET/etc/profile.d
+        fi
+
+        make_fstab
+        make_lilo_conf
+        DONE_COPIED="YES"
+        echo "Done transferring."
+        if (( STEP == 5 )); then
+	    (( STEP++ ))
+	    O_OK=
+	    K_OK=
+	fi
+    fi
+}
+
+
+shell()
+{
+    echo "Press CTRL-D or type exit to return to the installer"
+    /bin/bash -ls
+}
+
+
+##########BEGIN PROXY CONFIGURATION FUNCTIONS##########
+configure_proxy()
+{
+    HTTP_PROMPT="Please enter the HTTP proxy server\nExample: http://192.168.1.1:8080/"
+    FTP_PROMPT="Please enter the FTP proxy server\nExample: http://192.168.1.1:8080/"
+    NO_PROMPT="Please enter all domains/ip addresses (comma-seperated) proxy should NOT be used for:\nExample: .mit.edu,mysite.com"
+    HPROXY=`inputbox "$HTTP_PROMPT"`           &&
+    FPROXY=`inputbox "$FTP_PROMPT" "$HPROXY"`  &&
+    NPROXY=`inputbox "$NO_PROMPT"` 
+}
+
+
+confirm_proxy_settings()
+{
+    FINISHED=NO
+    while [ "$FINISHED" != "YES" ]; do
+	PROMPT="Are these settings correct?"
+	PROMPT="$PROMPT\nHTTP Proxy:  $HPROXY"
+	PROMPT="$PROMPT\n FTP Proxy:  $FPROXY"
+	PROMPT="$PROMPT\n  No Proxy:  $NPROXY"
+
+	if confirm "$PROMPT" "--cr-wrap"; then
+	    FINISHED=YES
+	else
+	    configure_proxy
+	    FINISHED=NO
+	fi
+    done
+}
+
+
+proxy_exit_message()
+{
+    $DIALOG --cr-wrap --title "Lunar Proxy Settings Complete" --msgbox \
+        "Your proxy configuration has been saved. 
+
+Please note that these proxy settings will only be used
+by Lunar (wget) and possibly some other command-line utilities.
+
+You will still have to configure proxy settings in your favorite
+web browser, etc..." 12 65
+
+}
+
+
+toggle()
+{
+    if [ `eval echo \\$$1` == "on" ]; then
+        eval $1=off
+    else
+        eval $1=on
+    fi
+}
+
+
+inst_mbr()
+{
+  $DIALOG  --cr-wrap                      \
+           --title  "Quick info on MBR"   \
+           --msgbox                       \
+"The purpose of a Master Boot Record is to run the code 
+on the first sector of the first bootable partition.
+
+This procedure is required if your disk does not have
+a master boot record (ie, fresh disk) OR if you want to 
+replace the MBR (as fdisk /mbr). If you install lilo on an active
+partition you do not need to perform this procedure.
+
+Lunar, by default, does not overwrites your MBR. If you are
+installing on an empty disc you and wish to boot from the MBR
+you will need to perform this procedure. This process will
+overwrite your MBR and trash any bootmanagers you may be using.
+
+You will be presented a CANCEL option before replacing the MBR
+on the first disk."  20 65
+
+  if  DISC=`get_disc`;  then
+    chroot  $TARGET  mount    -t  proc   proc   /proc
+    chroot  $TARGET  mount    -t  devfs  devfs  /dev
+    chroot  $TARGET  mount    -t  tmpfs  tmpfs  /tmp
+    dd if=/dev/zero of=/dev/discs/$DISC/disc bs=446 count=1
+    /sbin/lilo -M /dev/discs/$DISC/disc
+    chroot  $TARGET  umount                     /tmp
+    chroot  $TARGET  umount                     /dev
+    chroot  $TARGET  umount                     /proc
+    sleep   1
+    echo -e "\n/sbin/lilo run\nPress ENTER to continue."
+    read
+  fi
+}
+
+
+show_consolefonts()
+{
+    FONTDIR="/usr/share/consolefonts"
+    cd $FONTDIR
+    FONTS=`ls *.gz | sed "s/\.psf\.gz//"`
+
+    for FONT in $FONTS; do
+        echo $FONT
+        echo font
+    done
+}
+
+
+font_menu()
+{
+    TITLE="Console Font Selection Menu"
+    HELP="Please select your preferred console fonts."
+    FONTS=`show_consolefonts`
+    CONSOLEFONT=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 $FONTS`
+    D_OK=\\Z2
+    DEFAULT=E
+}
+
+
+cut_charmaps()
+{
+    while [ -n "$1" ]; do
+        echo "$1" | cut -d/ -f1
+        echo "$2"
+        shift 2
+    done
+}
+
+
+show_languages()
+{
+    if [ -d $MOONBASE ]; then
+        SECTION=`find_section glibc`
+        cut_charmaps `cat $MOONBASE/$SECTION/glibc/locales`
+    else
+        cut_charmaps `cat /etc/lunar/local/locales`
+    fi
+}
+
+
+select_lang()
+{
+    $DIALOG --title "Language Selection Menu" --menu "$HELP" 0 0 0 `show_languages`
+}
+
+
+lang_menu()
+{
+    TITLE="Language Selection Menu"
+    HELP="While lunar is entirely in English 
+it is possible to change the languages of many other programs.
+Please select your preferred langauge.
+
+This process will ONLY set the LANG environment variable. Do
+not expect any changes till you finish and reboot."
+
+    LANG=`select_lang`
+    export LANG
+    [ ! -e "$TARGET/etc" ] || echo -e "# you can add declarations for LC_ALL etc in here\n\nexport LANG=\"$LANG\"\n" > $TARGET/etc/LOCALE
+    E_OK=\\Z2
+    DEFAULT=J
+}
+
+
+editor_menu()
+{
+    VI_HELP="good old vi"
+    NANO_HELP="nano is an enchanced free pico clone"
+    JOE_HELP="joe is a WS compatible editor"
+
+    HELP="Actually all are same, we are using e3, only keys differ."
+    TITLE="Editor Selection Menu"
+
+    EDITOR=`$DIALOG --title "Editor Selection Menu" --item-help --menu "$HELP" 0 0 0 \
+                   "vi"     ""  "$VI_HELP"     \
+                   "joe"    ""  "$JOE_HELP"    \
+                   "nano"   ""  "$NANO_HELP"`
+
+    export EDITOR
+    [ ! -e "$TARGET/etc" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
+    J_OK=\\Z2
+    DEFAULT=Z
+}
+
+
+show_timezones()
+{
+    for ITEM in `ls $LOCALTIME/$1`; do
+        if [ -n "$1" ]; then
+	    echo "$1/$ITEM"
+        else
+	    echo "$ITEM"
+	fi
+        if [ -d $LOCALTIME/$1/$ITEM ]; then
+	    echo "Directory"
+	else
+	    echo "Timezone"
+	fi
+    done
+}
+
+
+timezone()
+{
+    LOCALTIME=/usr/share/zoneinfo
+    TITLE="Time Zone Selection Menu"
+    HELP="Select timezone or directory"
+    ZONE=""
+
+    while
+      TIMEZONES=`show_timezones $ZONE`  &&
+      ZONE=`$DIALOG  --title  "$TITLE"  \
+                     --menu             \
+                     "$HELP"            \
+                     0 0 0              \
+                     $TIMEZONES`        &&
+      [ -d $LOCALTIME/$ZONE ]
+      do
+        true
+    done
+
+    if [ -f "$LOCALTIME/$ZONE" ]; then
+        ln -sf $LOCALTIME/$ZONE $TARGET/etc/localtime
+
+        TITLE="GMT or Local"
+        HELP="Does the hardware clock store time in GMT or local?"
+
+        CLOCK=`$DIALOG --title "$TITLE"   \
+                       --menu "$HELP"     \
+                       0 0 0              \
+                       "GMT"    ""        \
+                       "Local"  ""`       &&
+        case $CLOCK in
+            GMT) true ;;
+            Local) HWCLOCK="/sbin/hwclock --hctosys --localtime"
+                echo "#!/bin/sh" > $TARGET/etc/init.d/localtime
+                echo "$HWCLOCK" >> $TARGET/etc/init.d/localtime
+                chmod a+x $TARGET/etc/init.d/localtime
+                ln -s ../init.d/localtime $TARGET/etc/rcS.d/S15localtime
+                ;;
+        esac
+        A_OK=\\Z2
+	DEFAULT=C
+    fi
+}
+
+
+reconfig_lilo()
+{
+    chroot $TARGET mount -t proc proc /proc
+    chroot $TARGET mount -t devfs devfs /dev
+    chroot $TARGET ${EDITOR:-vim} /etc/lilo.conf
+    chroot $TARGET /sbin/lilo
+    chroot $TARGET umount /dev
+    chroot $TARGET umount /proc
+    echo -e "\n/sbin/lilo run\nPress ENTER to continue "
+    read
+}
+
+
+reconfig_grub()
+{
+    chroot $TARGET mount -t proc proc /proc
+    chroot $TARGET mount -t devfs devfs /dev
+    chroot $TARGET grub
+    chroot $TARGET umount /dev
+    chroot $TARGET umount /proc
+    echo -e "\n/sbin/grub run\nPress ENTER to continue "
+    read
+}
+
+
+install_kernels()
+{
+    echo "not implemented yet, press enter"
+    read
+    if (( STEP == 6 )); then
+        (( STEP++ ))
+	L_OK=
+	R_OK=
+	H_OK=
+	U_OK=
+	V_OK=
+	G_OK=
+	A_OK=
+	C_OK=
+	D_OK=
+	E_OK=
+	J_OK=
+    fi
+    KERNELS=( `echo ${KERNELS[@]}` "$KERNEL_LABEL:$KERNEL_IMAGE" )
+}
+
+
+use_lilo()
+{
+    echo "not implemented yet."
+    read
+}
+
+
+use_grub()
+{
+    echo "not implemented yet."
+    read
+}
+
+
+install_bootloader() {
+    while true ; do
+        BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "L" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
+       "L" "lilo" "Use lilo as boot loader" \
+       "G" "grub" "Use grub as boot loader" \
+       "N" "none" "Do not install a boot loader (now)"`
+
+        if [ $? != 0 ] ; then
+            return
+        fi
+
+        case $BCOMMAND in
+            L) use_lilo ;;
+            G) use_grub ;;
+	    N) if (( STEP == 7 )); then
+	           (( STEP++ ))
+	       fi
+	       ;;
+        esac
+    done
+}
+
+make_server_keys()  {
+  chroot $TARGET make -C /etc/ssh server-keys
+  echo -e "\nSSH server keys were created\nPress ENTER to continue."
+  read
+  if (( STEP == 12 )); then
+      (( STEP++ ))
+  fi
+  G_OK=\\Z2
+  DEFAULT=A
+}
+
+
+install_menu()
+{
+    if [ -z "$STEPS" ]; then
+        # the total number of steps in the installer:
+        STEPS=14
+
+        SH[1]="Please read the introduction if you are new to lunar-linux.
+If you want to know more about the installation procedure
+and recent changes please visit http://lunar-linux.org/
+before proceeding."
+        SH[2]="You need to create partitions if you are installing on
+a new disc or in free space. If you want to delete other
+operating systems you will also need to partition your disc."
+        SH[3]="You need to mount a filesystem so that lunar can be
+transferred to it. Usually you make 3 to 5 separate
+partitions like /boot, /var and /usr. After mounting
+them the lunar packages can be transferred to them."
+        SH[4]="Swap is like temporary memory. It improves your
+systems performance. You can create a swapfile or
+even whole swap partitions."
+        SH[5]="During the transfer all programs and files that you
+need to run lunar-linux will be copied to your system."
+        SH[6]="You cannot boot linux without the kernel. You will
+need to install at least one. You can choose between
+several factory kernels or compile one yourself."
+        SH[7]="To be able to boot linux on reboot, you need to have
+a boot loader that loads the kernel when you power on
+your computer. Without it linux does not run."
+        SH[8]="Make sure you set good passwords, especially for
+the root user. Everyone who knows this password can
+destroy your system. By default the root password is
+epmty so you should really change it"
+        SH[9]="You can now set the name and domain of the machine
+and configure it's networking connections."
+        SH[10]="You should always normally do work on your system
+as a non-root user. In order to do so, you need to create
+user accounts and set various properties for users."
+        SH[11]="By default there are no services installed and
+running. With this tool you can add or remove them to
+the list of startup services and enable or disable them."
+        SH[12]="If you want to run a ssh server (recommended) then
+you must once create unique keys for this system. These
+keys are the identification of your system and make it
+recognizeable across the network."
+        SH[13]="You can now set various system defaults that
+are not vital but make your linux system more friendly
+to your users."
+        SH[14]="You are done! you should remove the ISO from the
+cd-rom tray and reboot. See you at the login prompt!"
+    
+        B_LABEL="One step back"
+        B_HELP="Go back one step in the installation procedure"
+        F_LABEL="One step forward"
+        F_HELP="Go forward one step in the installation procedure"
+
+        I_LABEL="Introduction into lunar-linux"
+        I_HELP="Read about the advantages of using Lunar Linux"
+        P_LABEL="Partition discs"
+        P_HELP="Use fdisk or cfdisk to prepare hard drive partitions"
+        M_LABEL="Mount filesystems"
+        M_HELP="Mount and initialize file systems"
+        S_LABEL="Setup a swapfile"
+        S_HELP="You don't need to setup a separate swap partition but can use a swapfile"
+        S_OK="\\Z1"
+        T_LABEL="Transfer lunar"
+        T_HELP="Copy the distro from CDROM to fixed disk"
+        T_OK="\\Z1"
+        O_LABEL="Configure compiler optimizations"
+        O_HELP="Select architecture and optimizations"
+        O_OK="\\Z1"
+        K_LABEL="Install kernel(s)"
+        K_HELP="Install kernel(s) on the new installation"
+        K_OK="\\Z1"
+        L_LABEL="Install boot loader"
+        L_HELP="Install a boot loader to boot into Lunar"
+        L_OK="\\Z1"
+    
+        R_LABEL="Set root password"
+        R_HELP="Set the default root password needed to access this system (the default password is empty)"
+        R_OK="\\Z1"
+        H_LABEL="Setup hostname and networking"
+        H_HELP="Configure your network devices and hostname settings"
+        H_OK="\\Z1"
+        U_LABEL="Administrate users"
+        U_HELP="Edit and create user accounts, groups"
+        U_OK="\\Z1"
+        V_LABEL="Administrate services"
+        V_HELP="Configure services to start automatically at boot time"
+        V_OK="\\Z1"
+        G_LABEL="Create SSH server keys"
+        G_HELP="Generate the SSH server keys"
+        G_OK="\\Z1"
+
+        A_LABEL="Select a timezone"
+        A_HELP="Select a timezone"
+        A_OK="\\Z1"
+        C_LABEL="Select a keyboard map"
+        C_HELP="Select keyboard map"
+        C_OK="\\Z1"
+        D_LABEL="Select a console font"
+        D_HELP="Select a console font"
+        D_OK="\\Z1"
+        E_LABEL="Set global language"
+        E_HELP="Set global language"
+        E_OK="\\Z1"
+        J_LABEL="Select a default editor"
+        J_HELP="Select a default editor"
+        J_OK="\\Z1"
+
+        Z_LABEL="Finished installing!"
+        Z_HELP="You're done! Now go reboot and use lunar-linux!"
+        Z_OK="\\Z0"
+
+        STEP=1
+    fi
+
+    choices()
+    {
+      (
+        unset IFS
+        for CHOICE in $(echo $@); do
+	    echo $CHOICE
+	    eval echo \$${CHOICE}_OK\$${CHOICE}_LABEL\\\\Z0
+	    eval echo \$${CHOICE}_HELP
+	done
+      )
+    }
+   
+    if [ "$GUIDE" == "off" ]; then
+        CHOICES="I P M S T O K L R H U V G A C D E J Z"
+	STEPHELP="Step $STEP of $STEPS:"
+    else
+        case $STEP in
+            1)  DEFAULT=I ; CHOICES="I F" ;;
+	    2)  DEFAULT=P ; CHOICES="B P M F" ;;
+	    3)  DEFAULT=M ; CHOICES="B P M F" ;;
+	    4)  DEFAULT=S ; CHOICES="B P M S F" ;;
+	    5)  DEFAULT=T ; CHOICES="B P M S T F" ;;
+	    6)  DEFAULT=K ; CHOICES="B O K F" ;;
+	    7)  DEFAULT=L ; CHOICES="B O K L F" ;;
+	    8)  DEFAULT=R ; CHOICES="B R F" ;;
+	    9)  DEFAULT=H ; CHOICES="B H F" ;;
+	    10) DEFAULT=U ; CHOICES="B H U F" ;;
+	    11) DEFAULT=V ; CHOICES="B H U V F" ;;
+	    12) DEFAULT=G ; CHOICES="B H U V G F" ;;
+	    13) CHOICES="B A C D E J F" ;;
+	    14) DEFAULT=Z ; CHOICES="B Z"
+        esac
+    fi
+    COMMAND=`$DIALOG --title "$TITLE" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)` 
+
+    case $? in 
+        3)
+	    while true; do
+	        COMMAND=`$DIALOG --title "$TITLE" --cancel-label "Exit" --menu "Installer settings and misc. options" 0 0 0 "G" "Toggle guided menus on/off (currently $GUIDE)" "C" "Toggle asking of confirmations on/off (currently $CONFIRM)" "D" "Toggle disabling the ability to perform steps (currently $DISABLE)" "M" "Load more kernel modules" "S" "Temporarily run a shell" "Q" "Quit the installer"`
+	        if [ $? != 0 ]; then
+	            return
+                fi
+                case $COMMAND in
+                    G) toggle GUIDE ;;
+                    C) toggle CONFIRM ;;
+		    D) toggle DISABLE ;;
+		    S) shell ;;
+		    M) load_module ;;
+		    Q) goodbye ;;
+	        esac
+	    done
+	    ;;
+    esac
+
+    TEST="TEST=\$${COMMAND}_OK"
+    eval $TEST
+    if [ "$DISABLE" == "on" -a "$TEST" == "\\Z1" ]; then
+        $DIALOG --title "Cannot perform this step yet" --colors --msgbox "This action cannot be performed yet. You need to complete one of the earlier steps succesfully first before you can try this action. Please go a step back and perform all the necessary actions before trying this item again. As a guide, the actions that you have performed are \Z2colored green\Z0. The ones that you cannot perform yet are \Z1colored red\Z0." 15 65
+	return
+    fi
+
+    case $COMMAND in
+      F)  if (( STEP < 14 )); then
+              (( STEP++ ))
+	  fi ;;
+      B)  if (( STEP > 0 )); then
+              (( STEP-- ))
+	  fi ;;
+
+      I)  introduction           ;;
+      P)  fdisc                  ;;
+      M)  mount_partitions       ;;
+      S)  mk_swap_file           ;;
+      T)  cp_axv                 ;;
+
+      O)  chroot $TARGET lunar optimize ;;
+      K)  install_kernels        ;;
+      L)  install_bootloader     ;;
+
+      R)  chroot $TARGET passwd ; if (( STEP == 8 )); then (( STEP++ )); fi ; R_OK=\\Z2 ;;
+
+      H)  chroot $TARGET lnet ; (( STEP++ )) ; H_OK=\\Z2 ;;
+      U)  chroot $TARGET luser ; (( STEP++ )) ; U_OK=\\Z2 ;;
+      V)  chroot $TARGET lservices ; (( STEP++ )) ; V_OK=\\Z2 ;;
+      G)  make_server_keys       ;;
+
+      A)  timezone               ;;
+      C)  keymap_menu            ;;
+      D)  font_menu              ;;
+      E)  lang_menu              ;;
+      J)  editor_menu            ;;
+
+      Z)  goodbye                ;;
+    esac
+}
+
+
+main()
+{
+    export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin"
+    # setting this var is supposed to prevent the enviro_check code now!
+    export LUNAR_INSTALL=1
+
+    TARGET="/mnt"
+    CONFIRM=on
+    GUIDE=on
+    DISABLE=on
+    PREFIX="root@Lunar:/#"
+
+    touch "/mnt/read_write_check" 2>/dev/null &&
+    rm /mnt/read_write_check ||
+    mount -n -t tmpfs tmpfs /mnt
+    mount -n -t devfs devfs /dev
+    while true; do
+      install_menu
+    done
+}  
+
+
+. /etc/lunar/config
+
+#no screen blanking
+/usr/bin/setterm -blank 0
+
+export  IFS="	
+"
+DIALOG="dialog
+--backtitle
+Lunar Linux Installer %VERSION% - %CODENAME%
+--stdout"
+ARCH=`arch`
+
+trap ":" INT QUIT
+
+main
