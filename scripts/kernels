@@ -64,6 +64,9 @@ build_kernel()
     mkdir -p $ISO_SOURCE/kernels/BUILD/usr/include/linux-$ISO_KVER$1
     make INSTALL_MOD_PATH=$ISO_SOURCE/kernels/BUILD modules_install
     cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/BUILD/boot/$ISO_KVER$1
+    if [ -n "$2" ] ; then
+      cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/$2
+    fi
     cp System.map $ISO_SOURCE/kernels/BUILD/boot/System.map-$ISO_KVER$1
     cp .config $ISO_SOURCE/kernels/BUILD/boot/config-$ISO_KVER$1
     gzip $ISO_SOURCE/kernels/BUILD/boot/config-$ISO_KVER$1
@@ -82,7 +85,7 @@ build()
     prepare_patch $(echo $3)
     prepare_options $(echo $2)
     prepare_version $1
-    build_kernel $1
+    build_kernel $1 $6
     echo "$ISO_KVER$1:$4" >> $ISO_SOURCE/kernels/.kernels
 }
 
@@ -91,9 +94,9 @@ VERBSOSE=on
 > $ISO_SOURCE/kernels/.kernels
 
 build -safe-i386 "i386 nosmp lowmem safe" "fix" \
-	"Very safe i386 (default is i686) minimal kernel (no ACPI, DMA, SMP)"
+	"Very safe i386 (default is i686) minimal kernel (no ACPI, DMA, SMP)" "safe"
 build -normal "nosmp lowmem" "fix main" \
-	"Normal kernel (no SMP) (RECOMMENDED)"
+	"Normal kernel (no SMP) (RECOMMENDED)" "linux"
 build -smp-4gb "smp mem" "fix main" \
 	"Normal SMP kernel with large memory (4GB)"
 build -agr "nosmp lowmem lowlat" "fix main aggressive" \

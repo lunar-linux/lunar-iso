@@ -6,8 +6,8 @@ rm -rf $ISO_TARGET/isolinux
 mkdir $ISO_TARGET/isolinux
 
 cp $ISO_SOURCE/initrd/initrd $ISO_TARGET/isolinux/
-cp $ISO_SOURCE/kernel/linux $ISO_TARGET/isolinux/
-cp $ISO_SOURCE/kernel/safe $ISO_TARGET/isolinux/
+cp $ISO_SOURCE/kernels/linux $ISO_TARGET/isolinux/
+cp $ISO_SOURCE/kernels/safe $ISO_TARGET/isolinux/
 cp $ISO_SOURCE/memtest/memtest $ISO_TARGET/isolinux/
 
 cd $ISO_SOURCE/isolinux
