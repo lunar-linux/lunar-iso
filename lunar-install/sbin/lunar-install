@@ -41,17 +41,17 @@ inputbox()
 }
 
 
-chroot_build()
+chroot_run()
 {
-    chroot $TARGET mount -t proc proc /proc
-    chroot $TARGET mount -t devfs devfs /dev
-    chroot $TARGET mount -t tmpfs tmpfs /tmp
+    mount -t proc proc $TARGET/proc
+    mount -t devfs devfs $TARGET/dev
+    mount -t tmpfs tmpfs $TARGET/tmp
     chroot $TARGET swapon -a
-    chroot $TARGET lin -r $1
+    chroot $TARGET $1 $2 $3 $4 $5 $6 $7 $8 $9
     chroot $TARGET swapoff -a
-    chroot $TARGET umount /tmp
-    chroot $TARGET umount /dev
-    chroot $TARGET umount /proc
+    umount $TARGET/tmp
+    umount $TARGET/dev
+    umount $TARGET/proc
 }
 
 
@@ -587,12 +587,17 @@ transfer()
                   (
                     cd $TARGET/var/lib/lunar
                     tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
-                    rm -f moonbase.tar.bz2
+		    tar j --list /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%VERSION%
                   )
             fi
 	) | $DIALOG --title "Installing $NUM packages" --gauge "" 10 70 0 
+
+        # setup list of installed packages etc.
+        echo "moonbase:%VERSION%:installed:%VERSION%:37M" >> $TARGET/var/state/lunar/packages
 	cat /.packages >> $TARGET/var/state/lunar/packages
-	cat /.packages >> $TARGET/var/state/lunar/packages.backup
+	cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
+	chroot_run lsh create_depends_cache
+	chroot_run lunar fixdepends
 
         # pass through some of the configuration at this point:
 	[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
@@ -706,16 +711,10 @@ overwrite your MBR and trash any bootmanagers you may be using.
 You will be presented a CANCEL option before replacing the MBR
 on the first disk."  20 65
 
-  if  DISC=`get_disc`;  then
-    chroot  $TARGET  mount    -t  proc   proc   /proc
-    chroot  $TARGET  mount    -t  devfs  devfs  /dev
-    chroot  $TARGET  mount    -t  tmpfs  tmpfs  /tmp
-    dd if=/dev/zero of=/dev/discs/$DISC/disc bs=446 count=1
-    /sbin/lilo -M /dev/discs/$DISC/disc
-    chroot  $TARGET  umount                     /tmp
-    chroot  $TARGET  umount                     /dev
-    chroot  $TARGET  umount                     /proc
-    sleep   1
+  if DISC=$(get_disc); then
+    chroot_run dd if=/dev/zero of=/dev/discs/$DISC/disc bs=446 count=1
+    chroot_run /sbin/lilo -M /dev/discs/$DISC/disc
+    sleep 1
     echo -e "\n/sbin/lilo run\nPress ENTER to continue."
     read
   fi
@@ -865,12 +864,7 @@ timezone()
 
 reconfig_lilo()
 {
-    chroot $TARGET mount -t proc proc /proc
-    chroot $TARGET mount -t devfs devfs /dev
-    chroot $TARGET ${EDITOR:-vim} /etc/lilo.conf
-    chroot $TARGET /sbin/lilo
-    chroot $TARGET umount /dev
-    chroot $TARGET umount /proc
+    chroot_run ${EDITOR:-vim} /etc/lilo.conf
     echo -e "\n/sbin/lilo run\nPress ENTER to continue "
     read
 }
@@ -878,11 +872,7 @@ reconfig_lilo()
 
 reconfig_grub()
 {
-    chroot $TARGET mount -t proc proc /proc
-    chroot $TARGET mount -t devfs devfs /dev
-    chroot $TARGET grub
-    chroot $TARGET umount /dev
-    chroot $TARGET umount /proc
+    chroot_run grub
     echo -e "\n/sbin/grub run\nPress ENTER to continue "
     read
 }
@@ -919,12 +909,12 @@ install_kernels()
 		"O" "linux-2.4-om" "OpenMosix clustering kernel"`
 
 		case $CCOMMAND in
-		    L) chroot_build linux-2.4            ;;
-		    S) chroot_build linux-2.4-stable     ;;
-		    V) chroot_build linuz-2.4-vanilla    ;;
-		    G) chroot_build linux-2.4-grsec      ;;
-		    A) chroot_build linux-2.4-aggressive ;;
-		    O) chroot_build linux-2.4-om         ;;
+		    L) chroot_run lin -r linux-2.4            ;;
+		    S) chroot_run lin -r linux-2.4-stable     ;;
+		    V) chroot_run lin -r linuz-2.4-vanilla    ;;
+		    G) chroot_run lin -r linux-2.4-grsec      ;;
+		    A) chroot_run lin -r linux-2.4-aggressive ;;
+		    O) chroot_run lin -r linux-2.4-om         ;;
 		esac
 	    ;;
 	    P)
@@ -1200,15 +1190,15 @@ cd-rom tray and reboot. See you at the login prompt!"
       S)  select_swap_file       ;;
       T)  transfer               ;;
 
-      O)  chroot $TARGET lunar optimize ;;
+      O)  chroot_run lunar optimize ;;
       K)  install_kernels        ;;
       L)  install_bootloader     ;;
 
-      R)  chroot $TARGET passwd ; if (( STEP == 8 )); then (( STEP++ )); fi ; R_OK=\\Z2 ;;
+      R)  chroot_run passwd ; if (( STEP == 8 )); then (( STEP++ )); fi ; R_OK=\\Z2 ;;
 
-      H)  chroot $TARGET lnet ; (( STEP++ )) ; H_OK=\\Z2 ;;
-      U)  chroot $TARGET luser ; (( STEP++ )) ; U_OK=\\Z2 ;;
-      V)  chroot $TARGET lservices ; (( STEP++ )) ; V_OK=\\Z2 ;;
+      H)  chroot_run lnet ; (( STEP++ )) ; H_OK=\\Z2 ;;
+      U)  chroot_run luser ; (( STEP++ )) ; U_OK=\\Z2 ;;
+      V)  chroot_run lservices ; (( STEP++ )) ; V_OK=\\Z2 ;;
       G)  make_server_keys       ;;
 
       A)  timezone               ;;
