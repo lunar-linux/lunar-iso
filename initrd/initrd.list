@@ -49,6 +49,8 @@ sbin/rmmod
 sbin/devfsd
 usr/bin/ldd
 usr/bin/e3
+usr/bin/e3em
+usr/bin/e3vi
 usr/bin/nano
 usr/bin/dialog
 usr/bin/less
