@@ -34,8 +34,8 @@ The cache copies wiil be used to bootstrap your ISO, after which basically
 the scripts perform a rebuild of every package and create the optimum
 least-common denominator dependency-based install. 
 
-The moonbase needs to be the same as on your system. Copy the moonbase.tar.bz2
-to the templates/ directory and leave packed.
+A fresh moonbase will be installed on your computer and a copy kept to be
+transferred onto the target automatically.
 
 The cache tar.bz2's may be left in /var/cache/lunar and will automatically as
 needed be copied to cache/
@@ -49,6 +49,7 @@ Here's a brief explanation of the make targets:
 
 init		setup the buildroot
 dirs		make LSB dirs and a few more needed
+moonbase	fetch a copy of moonbase.tar.bz2 and install it
 unpack		extract the cache tar.bz2's
 etcf		copy the template files that are not provided by modules
 rebuild		rebuild all modules at least once
