@@ -14,7 +14,7 @@ prepare()
     cd linux-$ISO_KVER
     mkdir patches
     cd patches
-    tar jxf /var/spool/lunar/ll-r8.0rc2.tar.bz2
+    tar jxf /var/spool/lunar/ll-r8.0rc3.tar.bz2
 }
 
 prepare_patch()
@@ -86,12 +86,18 @@ build()
 
 VERBSOSE=on
 
+build -safe "nosmp lowmem safe" "fix"
 build -nosmp "nosmp lowmem" "fix main"
 build -smp-4gb "smp mem" "fix main"
+build -agr-nosmp "nosmp lowmem lowlat" "fix main aggressive"
+build -agr-smp-4gb "smp mem lowlat" "fix main aggressive"
 build -stb-nosmp "nosmp lowmem" "fix"
 build -stb-smp-4gb "smp mem" "fix"
+build -vnl-nosmp "nosmp lowmem" ""
+build -vnl-smp-4gb "smp mem" ""
 build -grs-nosmp "nosmp lowmem grsec" "fix main grsecurity"
 build -grs-smp-4gb "smp mem grsec" "fix main grsecurity"
-build -safe "nosmp lowmem safe" "fix"
+build -om-nosmp "nosmp lowmem om" "fix om"
+build -omsmp-4gb "smp mem om" "fix om"
 
 touch $ISO_TARGET/.kernels
