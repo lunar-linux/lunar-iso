@@ -1,0 +1,218 @@
+#!/bin/sh
+
+#
+# Parts (C) K. Sallee 2002
+# Parts (C) K. Kongar 2002,2003
+# Parts (c) Lunar-Linux 2002,2003,2004
+#
+# This document is licensed under the GPL
+#
+
+
+shell()
+{
+    echo "Press CTRL-D or type exit to return"
+    /bin/sh
+}
+
+
+show_modules()
+{
+    if [ "$(pwd)" != "/lib/modules" ]; then
+        echo ".."
+        echo "Directory"
+    fi
+    for ITEM in *; do
+        case $ITEM in
+	    modules.*) continue ;;
+	esac
+	/bin/echo "$ITEM"
+        if [ -d "$ITEM" ]; then
+	    /bin/echo "Directory"
+	else
+            /bin/echo "Module"
+        fi
+    done
+}
+
+
+input_module_parameters()
+{
+    HELP="Optionally, enter module parameters"
+    $DIALOG --nocancel --inputbox "$HELP" 0 0
+}
+
+auto_load_modules()
+{
+    MODULES=$(/bin/discover --data-path=linux/module/name --format="%s" --data-version=`uname -r` fixeddisk optical removabledisk tape)
+
+    MODULES=`$DIALOG --inputbox "The following modules will be attempted to load. Press enter to load them, or edit the list manually. To cancel select 'Cancel'." 10 60 "$MODULES"`
+    for MODULE in $MODULES ; do
+      echo "Attempting to load \"$MODULE\":"
+      modprobe $MODULE
+      sleep 2
+    done
+    echo "Finished loading modules!"
+    sleep 5
+}
+
+
+load_modules()
+{
+  (
+    MODULES_ROOT="/lib/modules"
+    cd $MODULES_ROOT/$(uname -r)/kernel/drivers
+    TITLE="Module Menu"
+    HELP="Select a module to load or enter a subdirectory (pwd = $(pwd))"
+    CHOICE=""
+
+    while true; do
+        MODULES=`show_modules $(pwd)`
+	CHOICE=`$DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 $MODULES`
+        if [ $? != 0 ]; then
+	    return
+	fi
+        if [ -f "$CHOICE" ]; then
+            MODULE=`/bin/basename $MODULE | /bin/sed -e "s/\.o$//" -e "s/\.ko$//"`
+            PARAMETERS=`input_module_parameters` &&
+            /sbin/modprobe $CHOICE $PARAMETERS
+            /bin/sleep 5
+	elif [ -d "$CHOICE" ]; then
+	    cd "$CHOICE"
+	fi
+    done
+  )
+}
+
+
+scan_cdroms()
+{
+    if [ -z "$LUNAR_CD" ]; then
+        COUNT=0
+        while [ -e "$DEVICE$COUNT" ]; do
+            /bin/mount -n -r -t iso9660 $DEVICE$COUNT $MOUNT 2>/dev/null
+            if [ -e "$ID" ]; then
+                /bin/umount -n $MOUNT 2>/dev/null
+                LUNAR_CD=$DEVICE$COUNT
+                break
+            else
+                (( COUNT++ ))
+                /bin/umount -n $MOUNT 2>/dev/null
+            fi
+        done
+    fi
+}
+
+
+show_filesystems()
+{
+    for FILESYSTEM in `/bin/cat /proc/filesystems | /bin/grep -v nodev`; do
+        echo $FILESYSTEM
+        echo filesystem
+    done
+}
+
+
+select_root()
+{
+    FILESYSTEMS=`show_filesystems` &&
+    ROOT=`$DIALOG --inputbox "Please enter the root device." 10 60 $LUNAR_CD` &&
+    VFSTYPE=`$DIALOG --nocancel --menu "Please select a file system." 0 0 0 $FILESYSTEMS` &&
+    OPTIONS=`$DIALOG --nocancel --inputbox "Please enter mounting options" 10 60 "defaults,ro"`
+}
+
+
+main_menu()
+{
+    while
+        M_HELP="Select modules to load"
+        S_HELP="Shell out for a moment"
+        D_HELP="Continue boot process."
+
+        scan_cdroms
+
+        if [ -z "$LUNAR_CD" ] && [ -z "$ROOT" ]; then
+	    HELP="Load the additional PCI/IDE/SCSI kernel module(s) to be able to detect and read the Lunar-Linux CDROM."
+	    DEFAULT_ITEM="A"
+	elif [ -z "$ROOT" ]; then
+	    HELP="Lunar-Linux Install/Rescue CDROM is detected on $LUNAR_CD"
+	    DEFAULT_ITEM="C"
+	else
+	    HELP="You have selected to mount $ROOT as the root file system."
+	    DEFAULT_ITEM="C"
+	fi             
+
+        COMMAND=`$DIALOG --title "Initrd Menu" --nocancel --item-help \
+	    --default-item "$DEFAULT_ITEM" --menu "$HELP" 0 0 0 \
+                      "A"  "Automatically load modules"  "$M_HELP"  \
+                      "M"  "Manually load modules"       "$M_HELP"  \
+                      "C"  "Continue booting"            "$D_HELP"  \
+                      "R"  "Choose root device"          "$R_HELP"  \
+                      "S"  "Shell"                       "$S_HELP"`
+
+    do
+        case $COMMAND in
+	    A) auto_load_modules ;;
+            M) load_modules ;;
+            S) shell ;;
+            R) select_root ;;
+            C) break ;;
+        esac
+    done
+
+}
+
+
+main()
+{
+    main_menu
+
+    if [ -z "$ROOT" ] && [ -z "$LUNAR_CD" ]; then
+        $DIALOG --msgbox "Unable to boot without a root." 0 0
+        main $*
+    fi
+
+    if [ -z "$ROOT" ]; then
+        ROOT=$LUNAR_CD
+    fi
+    if [ -z "$VFSTYPE" ]; then
+        VFSTYPE=iso9660
+    fi
+    if [ -z "$OPTIONS" ]; then
+        OPTIONS="defaults,ro"
+    fi
+
+    if /bin/mount -t $VFSTYPE -o $OPTIONS $ROOT $MOUNT && [ -x $MOUNT/sbin/init ]; then
+        cd $MOUNT
+        if [ -d mnt/initrd ]; then
+            /sbin/pivot_root . mnt/initrd
+        else
+            /sbin/pivot_root . mnt
+        fi
+        exec  /sbin/init  $*
+    else
+        $DIALOG --msgbox "Unable to locate /sbin/init on $ROOT." 0 0
+	/bin/umount $MOUNT
+        main $*
+    fi
+}
+
+
+export IFS="	
+"
+export DIALOGRC=/etc/dialogrc
+DIALOG="/bin/dialog
+--backtitle
+Lunar Linux Install/Rescue CDROM
+--stdout"
+
+/sbin/devfsd /dev &
+/bin/mount -t devfs devfs /dev
+/bin/mount -t proc proc /proc
+
+KERNEL=`/bin/uname -r`
+DEVICE="/dev/cdroms/cdrom"
+MOUNT="/mnt"
+ID="$MOUNT/.lunar-cd"
+
+main $*
