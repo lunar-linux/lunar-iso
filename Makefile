@@ -41,7 +41,6 @@ kernels: $(ISO_TARGET)/.kernels
 $(ISO_TARGET)/.kernels:
 	@echo "Building precompiled kernels"
 	@scripts/kernels
-	# $(ISO_SOURCE)/kernel/safe $(ISO_SOURCE)/kernel/linux
 
 memtest: $(ISO_SOURCE)/memtest/memtest
 $(ISO_SOURCE)/memtest/memtest:
