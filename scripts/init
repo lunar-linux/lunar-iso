@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -e $ISO_TARGET/proc ; then
+if [ -e $ISO_TARGET/proc ] ; then
   umount $ISO_TARGET/proc &> /dev/null
   umount $ISO_TARGET/dev &> /dev/null
 fi
