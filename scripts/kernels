@@ -1,0 +1,111 @@
+#!/bin/bash
+
+echo "+ Starting compile of kernels"
+. /etc/lunar/config
+export VERBOSE=off
+optimize
+
+prepare()
+{
+    cd $ISO_SOURCE/kernels
+    rm -rf linux-$ISO_KVER
+    tar jxf /var/spool/lunar/linux-$ISO_KVER.tar.bz2
+    cd linux-$ISO_KVER
+    mkdir patches
+    cd patches
+    tar jxf /var/spool/lunar/ll-r8.0rc2.tar.bz2
+}
+
+prepare_patch()
+{
+    cd $ISO_SOURCE/kernels/linux-$ISO_KVER
+    for P in $@; do
+        patch_it $P 1
+    done
+}
+
+prepare_options()
+{
+    cp $ISO_SOURCE/kernels/baseconfig $ISO_SOURCE/kernels/linux-$ISO_KVER/.config 
+    for OPT in $@; do
+        cat $ISO_SOURCE/kernels/config_$OPT | while read O; do 
+            OPT=$(echo $O|cut -d= -f1)
+            VAL=$(echo $O|cut -d= -f2)
+            sedit "/$OPT=/d" $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
+	    sedit "/$OPT is not set/d" $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
+	    if [ "$VAL" == "n" ]; then
+	        echo "# $OPT is not set" >> $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
+	    else
+	        echo "$OPT=$VAL" >> $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
+	    fi
+	done
+    done
+}
+
+prepare_version()
+{
+    sedit "s/^EXTRAVERSION =.*/EXTRAVERSION = $1/" $ISO_SOURCE/kernels/linux-$ISO_KVER/Makefile
+}
+
+build_kernel()
+{
+    cd $ISO_SOURCE/kernels/linux-$ISO_KVER
+    yes n | make oldconfig &&
+    make dep &&
+    make bzImage &&
+    make modules &&
+    mkdir -p $ISO_SOURCE/kernels/BUILD
+    mkdir -p $ISO_SOURCE/kernels/BUILD/boot
+    make INSTALL_MOD_PATH=$ISO_SOURCE/kernels/BUILD modules_install
+    cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/BUILD/boot/$ISO_KVER$1
+    cp System.map $ISO_SOURCE/kernels/BUILD/boot/System.map-$ISO_KVER$1
+    cp .config $ISO_SOURCE/kernels/BUILD/boot/config-$ISO_KVER$1
+    gzip $ISO_SOURCE/kernels/BUILD/boot/config-$ISO_KVER$1
+    cd $ISO_SOURCE/kernels/BUILD
+    tar cjvf $ISO_SOURCE/kernels/$ISO_KVER$1.tar.bz2 boot/ lib/
+    cd $ISO_SOURCE/kernels
+    rm -rf $ISO_SOURCE/kernels/BUILD
+    rm -rf $ISO_SOURCE/kernels/linux-$ISO_KVER
+}
+
+VERBSOSE=on
+
+prepare
+prepare_patch patches/fix/* patches/main/*
+prepare_options nosmp lowmem
+prepare_version -nosmp
+build_kernel -nosmp
+
+prepare
+prepare_patch patches/fix/* patches/main/*
+prepare_options smp mem
+prepare_version -smp-4gb
+build_kernel -smp-4gb
+
+prepare
+prepare_patch patches/fix/*
+prepare_options nosmp lowmem
+prepare_version -stb-nosmp
+build_kernel -stb-nosmp
+
+prepare
+prepare_patch patches/fix/* 
+prepare_options smp mem
+prepare_version -stb-smp-4gb
+build_kernel -stb-smp-4gb
+
+prepare
+prepare_patch patches/fix/* patches/main/* patches/grsecurity/*
+prepare_options nosmp lowmem grsec
+prepare_version -grs-nosmp
+build_kernel -grs-nosmp
+
+prepare
+prepare_patch patches/fix/* patches/main/* patches/grsecurity/*
+prepare_options smp mem grsec
+prepare_version -grs-smp-4gb
+build_kernel -grs-smp-4gb
+
+
+
+# touch BUILD/.kernels

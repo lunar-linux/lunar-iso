@@ -16,8 +16,8 @@ ISO_CODENAME = UNNAMED
 ISO_DATE = $(shell date -u +%Y%m%d)
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
-ISO_KVER = 2.4.27
-ISO_KREL = r7.0.0
+ISO_KVER = 2.4.28
+ISO_KREL = r8.0.0
 
 ISO_LUNAR_MODULE = lunar
 
@@ -45,7 +45,11 @@ $(ISO_SOURCE)/discover/discover:
 	@echo "Generating static discover"
 	@scripts/discover
 
-kernels: $(ISO_SOURCE)/kernel/safe $(ISO_SOURCE)/kernel/linux
+kernels: $(ISO_TARGET)/.kernels
+$(ISO_TARGET)/.kernels:
+	@echo "Building precompiled kernels"
+	@scripts/kernels
+	# $(ISO_SOURCE)/kernel/safe $(ISO_SOURCE)/kernel/linux
 
 memtest: $(ISO_SOURCE)/memtest/memtest
 $(ISO_SOURCE)/memtest/memtest:
