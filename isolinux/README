@@ -1,0 +1,34 @@
+
+  lunar-iso ISOLINUX stuff README
+
+  The files in this directory are needed to generate the .iso file from
+  a tree of files. The code to build the entire system isn't present in
+  this directory, but you can still re-create the .ISO file and make
+  personal adjustments to it.
+
+
+  *** WARNING! ***
+
+  Please do NOT distribute your personal modifications as being 'the'
+  lunar ISO. We do not accept any responsability whatsoever for any ISO
+  we bring out, especially if it's a non-original version.
+
+
+  Usage:
+
+  To recreate the ISO, you will need to unpack the contents of the ISO
+  into a tree, edit it according to your wishes, and regenerate the .iso
+  image. This can then be burned to a CDR, after which it should be
+  bootable and running parts of the lunar installer (or something else).
+
+  To recreate the iso, cd into the directory with this README file and
+  issue `sh generate-iso.sh`. It will leave te image file in the parent
+  directory of the unpacked ISO tree, so after the command that would
+  be in ../../
+
+
+  Tip:
+
+  After booting, the ISO installer code will exit and run any file called
+  '/run.sh' present in the ISO if it's executable. It expects this to be
+  a shell script, not a binary. Use it with caution.
