@@ -7,20 +7,24 @@ umount $ISO_TARGET/dev
 unset VERBOSE
 optimize
 
-echo "+ setting sane ccache limits"
+echo "+ cleaning up file structure"
 rm -rf $ISO_TARGET/var/cache/ccache/*
 chroot $ISO_TARGET ccache -C
 chroot $ISO_TARGET ccache -M 256M
+rm -rf $ISO_TARGET/etc/ssh/ssh_host_*key $ISO_TARGET/etc/ssh/ssh_host_*key.pub
+rmdir /usr/lib/locale/*
 
 # store the list of stuff in /var/cache that needs to be resurrected:
 echo "+ creating list of prepackaged modules"
-> $ISO_TARGET/.packages
+> $ISO_SOURCE/aaa_base/packages
 for mod in $(cat conf/base.list conf/extended.list) ; do
-  grep "^$mod:" $ISO_TARGET/var/state/lunar/packages >> $ISO_TARGET/.packages
+  grep "^$mod:" $ISO_TARGET/var/state/lunar/packages >> $ISO_SOURCE/aaa_base/packages
 done
+# add core tools to the list:
+echo "$ISO_LUNAR_MODULE:$ISO_DATE:installed:$ISO_DATE:" >> $ISO_SOURCE/aaa_base/packages
 
 # delete CVS dirs from templates
-find $ISO_TARGET -type d -name "CVS" -exec rm -rf {} \;
+find $ISO_TARGET -type d -name "CVS" -exec rm -rf {} \; &> /dev/null
 
 echo "+ creating aaa_base.tar.bz2"
 # gather present files
@@ -30,7 +34,7 @@ diff -Bad $ISO_TARGET/.present $ISO_TARGET/.tracked | grep -e "^< " | cut -c 3- 
 
 # make the tarball
 chroot $ISO_TARGET tar cjf /var/cache/lunar/aaa_base.tar.bz2 -T .aaa_base.list --no-recursion
-ls -lh $ISO_TARGET/var/cache/lunar/aaa_base.tar.bz2
+mv $ISO_TARGET/var/cache/lunar/aaa_base.tar.bz2 $ISO_SOURCE/aaa_base/aaa_base.tar.bz2
 
 # clean up
 rm $ISO_TARGET/.present $ISO_TARGET/.tracked $ISO_TARGET/.aaa_base.list

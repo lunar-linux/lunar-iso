@@ -96,14 +96,14 @@ scan_cdroms()
     if [ -z "$LUNAR_CD" ]; then
         COUNT=0
         while [ -e "$DEVICE$COUNT" ]; do
-            /bin/mount -n -r -t iso9660 $DEVICE$COUNT $MOUNT 2>/dev/null
-            if [ -e "$ID" ]; then
-                /bin/umount -n $MOUNT 2>/dev/null
+            /bin/mount -n -r -t iso9660 $DEVICE$COUNT /mnt 2>/dev/null
+            if [ -e "/mnt/.lunar-cd" ]; then
+                /bin/umount -n /mnt 2>/dev/null
                 LUNAR_CD=$DEVICE$COUNT
                 break
             else
                 (( COUNT++ ))
-                /bin/umount -n $MOUNT 2>/dev/null
+                /bin/umount -n /mnt 2>/dev/null
             fi
         done
     fi
@@ -186,17 +186,16 @@ main()
         OPTIONS="defaults,ro"
     fi
 
-    if /bin/mount -t $VFSTYPE -o $OPTIONS $ROOT $MOUNT && [ -x $MOUNT/sbin/init ]; then
-        cd $MOUNT
-        if [ -d mnt/initrd ]; then
-            /sbin/pivot_root . mnt/initrd
-        else
-            /sbin/pivot_root . mnt
-        fi
-        exec  /sbin/init  $*
+    if /bin/mount -n -t $VFSTYPE -o $OPTIONS $ROOT /mnt && [ -x /mnt/sbin/init ]; then
+	/bin/pkill devfsd
+	sleep 1
+        /bin/umount -n /proc
+	/bin/umount -n /dev
+        /sbin/pivot_root /mnt /mnt
+        exec /sbin/init  $*
     else
         $DIALOG --msgbox "Unable to locate /sbin/init on $ROOT." 0 0
-	/bin/umount $MOUNT
+	/bin/umount -n /mnt
         main $*
     fi
 }
@@ -218,17 +217,24 @@ DIALOG="/bin/dialog
 Lunar Linux Install/Rescue CDROM
 --stdout"
 
+/bin/mount -n -t proc proc /proc
+/bin/mount -n -t devfs devfs /dev
 /sbin/devfsd /dev &
-/bin/mount -t devfs devfs /dev
-/bin/mount -t proc proc /proc
 
 KERNEL=`/bin/uname -r`
 DEVICE="/dev/cdroms/cdrom"
-MOUNT="/mnt"
-ID="$MOUNT/.lunar-cd"
 
 # fastboot or not?
 if cat /proc/cmdline | grep -q 'skipinitrd=1'; then
+    echo ""
+    echo " /--------------  fast boot in process  -----------------\\"
+    echo " |                                                       |"
+    echo " |  The initrd menu is being skipped. If something goes  |"
+    echo " |  wrong in this process, reboot with the ISO and use   |"
+    echo " |  the 'linux' or 'safe' boot options instead.          |"
+    echo " |                                                       |"
+    echo " \\-------------------------------------------------------/"
+    echo ""
     skipinitrd $*
 else
     main_menu $*

@@ -4,15 +4,17 @@
 
 cd $ISO_SOURCE/initrd
 
-umount $ISO_SOURCE/BUILD/dev
-umount $ISO_SOURCE/BUILD/proc
-umount template/dev
-umount template/proc
+umount $ISO_SOURCE/BUILD/dev &> /dev/null
+umount $ISO_SOURCE/BUILD/proc &> /dev/null
+umount template/dev &> /dev/null
+umount template/proc &> /dev/null
 
 rm -rf BUILD
 
 # template first
 cp -a --no-dereference template BUILD
+find BUILD -type d -name CVS -exec rm -rf {} \;
+mkdir -p BUILD/mnt
 
 echo "+ copying binaries and required files"
 # next up are the required stuff from the BUILD
@@ -21,14 +23,25 @@ for ITEM in $(cat initrd.list); do
     cp -a --no-dereference "$ISO_TARGET/$ITEM" "BUILD/$(dirname $ITEM)"
 done
 echo "+ filling /dev"
+
 # bare minimum of device nodes
 mkdir -p BUILD/dev
 cp -a --no-dereference $ISO_TARGET/etc/makedev.d/* BUILD/etc/makedev.d/
 cp template/etc/makedev.d/small BUILD/etc/makedev.d/generic
 $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev generic
-# strip it down even more
+$ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev console
+$ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev tty
 ( cd BUILD/dev ; rm -f tty[a-zA-Z]* hd[i-z]* s[dg][i-z]* fd[2-9]* fd[0-1][a-zA-Z]* sd[a-z][a-z]* )
+mkdir BUILD/dev/vc
+for node in BUILD/dev/tty* ; do
+  ln -s $node $(echo $node | sed 's:tty:vc/:')
+done
+# strip it down even more
 rm -rf BUILD/etc/makedev.d/
+
+# we also generate aaa_dev.tar.bz2 now
+tar cj -C BUILD -f $ISO_SOURCE/aaa_dev/aaa_dev.tar.bz2 dev/
+
 echo "+ stripping everything"
 for ITEM in $(find BUILD -type f); do
     strip $ITEM > /dev/null 2>&1
@@ -38,6 +51,8 @@ for ITEM in $(find BUILD -type d -name "CVS"); do
 done
 rm -f BUILD/dev/install-devices.sh
 chroot BUILD /sbin/ldconfig
+rm -f BUILD/etc/mtab
+ln -s /proc/mounts BUILD/etc/mtab
 
 # compile the initrd image
 for KERNEL in linux safe ; do

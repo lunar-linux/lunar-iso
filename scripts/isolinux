@@ -11,11 +11,12 @@ cp $ISO_SOURCE/kernels/safe $ISO_TARGET/isolinux/
 cp $ISO_SOURCE/memtest/memtest $ISO_TARGET/isolinux/
 
 cd $ISO_SOURCE/isolinux
-for file in f{1,2,3}.txt boot.cat isolinux.bin isolinux.cfg ; do
+for file in f{1,2,3}.txt boot.cat isolinux.bin isolinux.cfg generate-iso.sh README; do
   VERBOSE=off
   cp $file $ISO_TARGET/isolinux
   sedit "s:%VERSION%:${ISO_VERSION}:g" $ISO_TARGET/isolinux/f?.txt
   sedit "s:%CODENAME%:${ISO_CODENAME}:g" $ISO_TARGET/isolinux/f?.txt
+  sedit "s:%KERNEL%:${ISO_KVER}:g" $ISO_TARGET/isolinux/f?.txt
 done
 
 

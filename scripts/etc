@@ -2,6 +2,11 @@
 
 # big bang: copy everything we need present
 cp -a $ISO_SOURCE/template/etc/* $ISO_TARGET/etc/
+chown -R root:root $ISO_TARGET/template/etc
+chmod 0400 $ISO_TARGET/etc/shadow
+chmod 0600 $ISO_TARGET/etc/lilo.conf
+rm -f $ISO_TARGET/etc/mtab
+ln -s /proc/mounts $ISO_TARGET/etc/mtab
 
 # module related stuff
 cp $ISO_TARGET/etc/skel/.bash* $ISO_TARGET/root/
@@ -30,6 +35,7 @@ chroot $ISO_TARGET ldconfig
   
 # manual fixes needed before compiling:
 [ ! -e $ISO_TARGET/lib/cpp ] && ln -s /usr/bin/cpp $ISO_TARGET/lib/cpp
+[ ! -e $ISO_TARGET/usr/bin/cc ] && ln -s /usr/bin/gcc $ISO_TARGET/usr/bin/cc
 [ ! -e $ISO_TARGET/usr/include/gnu/stubs.h ] && mkdir -p $ISO_TARGET/usr/include/gnu && cp /usr/include/gnu/stubs.h $ISO_TARGET/usr/include/gnu/stubs.h
 
 touch $ISO_TARGET/.etcf

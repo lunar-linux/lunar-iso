@@ -13,7 +13,7 @@ ISO_SOURCE = $(shell bash -c "pwd -P")
 # define the location where the ISO will be generated
 ISO_TARGET = $(ISO_SOURCE)/BUILD
 
-export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_KREL ISO_LUNAR_MODULE
+export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_PVER ISO_LUNAR_MODULE
 
 all: iso
 
@@ -22,10 +22,18 @@ $(ISO_TARGET)/.iso:
 	@echo "Generating .iso file"
 	@scripts/isofs
 
-isolinux: proper initrd kernels memtest $(ISO_TARGET)/isolinux
+isolinux: proper kernels memtest $(ISO_TARGET)/isolinux
 $(ISO_TARGET)/isolinux:
 	@echo "Generating isolinux files"
 	@scripts/isolinux
+
+proper: aaa_dev aaa_base $(ISO_TARGET)/.proper
+$(ISO_TARGET)/.proper:
+	@echo "Cleaning BUILD"
+	@scripts/proper
+
+aaa_dev: $(ISO_SOURCE)/aaa_dev/aaa_dev.tar.bz2
+$(ISO_SOURCE)/aaa_dev/aaa_dev.tar.bz2: initrd
 
 initrd: discover $(ISO_SOURCE)/initrd/initrd
 $(ISO_SOURCE)/initrd/initrd:
@@ -37,8 +45,8 @@ $(ISO_SOURCE)/discover/discover:
 	@echo "Generating static discover"
 	@scripts/discover
 
-kernels: $(ISO_TARGET)/.kernels
-$(ISO_TARGET)/.kernels:
+kernels: $(ISO_SOURCE)/kernels/.kernels
+$(ISO_SOURCE)/kernels/.kernels:
 	@echo "Building precompiled kernels"
 	@scripts/kernels
 
@@ -47,13 +55,8 @@ $(ISO_SOURCE)/memtest/memtest:
 	@echo "Generating memtest boot image"
 	@scripts/memtest
 
-proper: aaa_base $(ISO_TARGET)/.proper
-$(ISO_TARGET)/.proper:
-	@echo "Cleaning BUILD"
-	@scripts/proper
-
-aaa_base: rebuild $(ISO_TARGET)/var/cache/lunar/aaa_base.tar.bz2
-$(ISO_TARGET)/var/cache/lunar/aaa_base.tar.bz2:
+aaa_base: rebuild $(ISO_SOURCE)/aaa_base/aaa_base.tar.bz2
+$(ISO_SOURCE)/aaa_base/aaa_base.tar.bz2:
 	@echo "Creating aaa_base.tar.bz2"
 	@scripts/aaa_base
 

@@ -76,8 +76,9 @@ goodbye()
     PROMPT="Reboot now?"
     if confirm "$PROMPT" "--defaultno"; then
         shutdown -r now
+        exit 0
     else
-        exit  0
+        exit 0
     fi
 }
 
@@ -137,6 +138,12 @@ load_module()
 }
 
 
+nice_size()
+{
+    echo $1 | sed -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]$\)/\1.\2KB/' -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]\)\(\.[0-9]KB$\)/\1.\2MB/' -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]\)\(\.[0-9]MB$\)/\1.\2GB/'
+}
+
+
 list_discs()
 {
     LIST=$(ls /dev/discs)
@@ -149,10 +156,33 @@ list_discs()
 
 list_parts()
 {
-    for PART in $(ls -L /dev/discs/*/part*); do
+    for PART in $(ls -L /dev/discs/*/part* | sort -t t -k 2 -n); do
         if [ -e $PART ]; then
-            echo "${PART/\/dev\/discs\//}"
-            echo "partition"
+	    PTYPE=$(file -Ls $PART)
+	    case $PTYPE in
+	        *ext3*) PTYPE="(maybe ext3?)" ;;
+		*ext2*) PTYPE="(maybe ext2?)" ;;
+		*XFS*) PTYPE="(maybe XFS?)" ;;
+		*Minix*) PTYPE="(Maybe Minix?)" ;;
+		*) PTYPE="(unrecognized)" ;;
+            esac
+		
+	    FSIZE=$(nice_size `fdisk -l $PART | grep ^Disk | grep bytes | awk '{print $5}'`)
+	    # this prevents listing EXTENDED partitions
+	    if [ "$FSIZE" == "" ]; then
+	        continue
+	    fi
+            PART="${PART/\/dev\/discs\//}"
+	    echo $PART
+	    for (( N=0 ; N < NUM_PARTITIONS ; N++ )); do
+	        if echo ${PARTITIONS[$N]} | grep -q "^$PART:"; then
+		    FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
+		    MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
+		    echo "$FSTYPE partition, size $FSIZE"
+		    continue 2
+		fi		
+	    done
+            echo "unassigned $PTYPE, size $FSIZE"
         fi
     done
 }
@@ -162,7 +192,7 @@ get_part()
 {
     TITLE="Partition Selection Menu"
     HELP="Please select a partition"
-    $DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 `list_parts`
+    $DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_parts`
 }
 
 
@@ -256,19 +286,10 @@ fdisc()
     PROMPT="Are you certain that you want to run $PROG on $DISC" &&
     if confirm "$PROMPT"; then
         $PROG /dev/discs/$DISC/disc
-	if (( STEP = 1 )); then
+	if (( STEP == 2 )); then
 	    (( STEP++ ))
 	fi
-    fi
-}
-
-
-get_mk_prog()
-{
-    if [ "$1" == "swap" ]; then
-        echo "mkswap"
-    else
-        echo "mkfs"
+        P_OK=\\Z2
     fi
 }
 
@@ -289,219 +310,113 @@ check_partition()
 }
 
 
-get_fstype()
-{
-    case $1 in
-        ext2|ext3|jfs|xfs|reiserfs)
-            echo -e "-t\t$1"
-            ;;
-        *)
-            true
-            ;;
-    esac
-}
-
-
-use_the_force()
-{
-    case $1 in
-        xfs)
-            echo -e "-l\tsize="$XFS_LOG_SIZE"b\t-f"
-            ;;
-        *)
-            true
-            ;;
-    esac
-}
-
-
-mk_swap_file()
+select_swap_file()
 {
     LOCATION_PROMPT="Please enter the location for the swapfile."
-    SIZE_PROMPT="Lunar Linux recommends 2X of physical RAM.  Please enter the number of megabytes to use for this swapfile. TMPFS users will need more swapfile."
-    SUCCESS="Swapfile created."
-    FAILURE="Problem creating swapfile."
-    ZERO="/dev/zero"
+    SIZE_PROMPT="Enter the size (in MB) of the swapfile you want to generate. It is recommended make it twice the amount of physical RAM. TMPFS users will need more swap (typically 1000MB)."
 
-    DEVICE=$(inputbox "$LOCATION_PROMPT" "/swapfile") &&
-    SWAPFILE="$TARGET$DEVICE" &&
+    SWAPFILE=$(inputbox "$LOCATION_PROMPT" "/swapfile") &&
 
-    # strange calculation but it ends up being ~ 2xRAM rounded up to 256MB blocks
-    SIZE=$(grep MemTotal: /proc/meminfo | awk '{print $2}' | sed 's/[0-9][0-9][0-9]$//') &&
-    (( SIZE = ( ( SIZE / 128 ) + 1 ) * 256 )) &&
+    # strange calc. but it ends up being ~ 2xRAM rounded up to 256MB blocks
+    SWAPSIZE=$(grep MemTotal: /proc/meminfo | awk '{print $2}' | sed 's/[0-9][0-9][0-9]$//') &&
+    (( SWAPSIZE = ( ( SWAPSIZE / 128 ) + 1 ) * 256 )) &&
 
-    SIZE=$(inputbox "$SIZE_PROMPT" "$SIZE") &&
-    PROMPT="Make swapfile $SWAPFILE of $SIZE megabytes?" &&
+    SWAPSIZE=$(inputbox "$SIZE_PROMPT" "$SWAPSIZE") &&
+    if (( STEP == 4 )); then
+        (( STEP++ ))
+    fi
+    S_OK=\\Z2
+}
 
-    if confirm "$PROMPT"; then
-        mkdir -p $(dirname $SWAPFILE) &&
-            if dd of=$SWAPFILE if=$ZERO bs=1M count=$SIZE &&
-            mkswap $SWAPFILE &&
-            chmod 000 $SWAPFILE
-        then
-            DP="$DEVICE	none"
-            FOL="swap	sw	0 0"
-            LINE="$DP	$FOL"
-            FS_LIST=$(echo  -e  "$LINE\n$FS_LIST")
-            $DIALOG --msgbox "$SUCCESS" 8 50
-            if (( STEP == 4 )); then
-	        (( STEP++ ))
-	    fi
-        else
-            sleep 10
-            $DIALOG --msgbox "$FAILURE" 8 50
-            if (( STEP == 4 )); then
-	        (( STEP++ ))
-	    fi
-            return 1
-        fi
+
+determine_mount_opts()
+{
+    if [ "$1" == "swap" ]; then
+        echo "sw"
+    else
+        echo "defaults"
     fi
 }
 
-
-make_fsys()
+determine_fsck_pass()
 {
-    SUCCESS="Filesystem created"
-    FAILURE="Filesystem creation failed"
-    PROG=$(get_mk_prog  $FSYS)
-    COMMAND="$PROG $FSTYPE $CHECK $FORCE $DEVICE"
-    NOTICE="You MUST select NO if you are mounting a working filesystem!
-If you select NO, the filesystem will be mounted w/o being formatted.\n\n
-Do you want to execute the command below?\n"
-
-    if $DIALOG --defaultno --yesno "$NOTICE \n $COMMAND" 11 65; then
-        if $PROG $FSTYPE $CHECK $FORCE $DEVICE;  then
-            $DIALOG --msgbox "$SUCCESS" 9 50
-        else
-	    echo -e "\nFilesystem creation failed!\nPress ENTER to continue."
-	    read
-            return 1
-        fi
+    if [ "$1" == "swap" ]; then
+        echo "0"
+    else
+        if [ "$2" == "/" ]; then
+            echo "1"
+	else
+            echo "2"
+	fi
     fi
-}
-
-
-mount_fsys()
-{
-    MOUNT=$TARGET$POINT
-    SUCCESS="Mounted $DEVICE on $MOUNT"
-    FAILURE="Failed mounting $DEVICE on $MOUNT"
-
-    case  $FSYS  in
-        ext2|ext3|reiserfs|xfs|jfs)
-            if mkdir -p $MOUNT && mount -t $FSYS -o $OPTIONS $DEVICE $MOUNT; then
-                case $POINT in
-                    /)
-                        ROOT=$DEVICE
-                        ;;
-                esac
-                $DIALOG --msgbox "$SUCCESS" 8 50
-            else
-                sleep 10
-                $DIALOG --msgbox "$FAILURE" 8 50
-                return 1
-            fi
-            ;;
-        swap)
-            true
-            ;;
-    esac
-}
-
-
-make_fstab_line()
-{
-    DP="$DEVICE	$POINT" &&
-    FOL="$FSYS	$OPTIONS" &&
-    LINE="$DP	$FOL	$LAST" &&
-    FS_LIST=$(echo -e "$LINE\n$FS_LIST")
-}
-
-
-get_xfs_logsize()
-{
-    XFS_LOG_SIZE=${XFS_LOG_SIZE:=1200}
-    XFS_LOG_SIZE_PROMPT="Logsize in 4K blocks, 1000 to 32768, consider the partition size!"
-
-    XFS_LOG_SIZE=`inputbox  "$XFS_LOG_SIZE_PROMPT" $XFS_LOG_SIZE` &&
-    if (( $XFS_LOG_SIZE < 1000)); then
-        XFS_LOG_SIZE=1000
-    fi
-    if  (( $XFS_LOG_SIZE > 32768)); then
-        XFS_LOG_SIZE=32768
-    fi
-    export XFS_LOG_SIZE
-}
-
-
-determine_fstab_settings()
-{
-    LAST="0 0"
-    case $FSYS in
-        swap)
-            OPTIONS="sw"
-            ;;
-        jfs|reiserfs|ext3|xfs|ext2)
-	    OPTIONS="defaults"
-            if [ "$POINT" == "/" ]; then
-                LAST="0 1"
-            else
-                LAST="0 2"
-            fi
-            ;;
-    esac
 }
 
 
 get_mount_point()
 {
-    PROMPT="Please enter a mount point"
-    if [ -z "$ROOT" ]; then
-        POINT="/"
-    elif [ "$FSYS" == "swap" ]; then
-        POINT="none"
+    if [ "$1" == "swap" ]; then
+        echo "none"
     else
-        POINT=$(inputbox "$PROMPT" "/") &&
+        POINT=$(inputbox "Please enter a mount point" "") &&
         if [ -z "$POINT" -a -z "$ROOT" ]; then
-            POINT="/"
+            echo "/"
+	else
+	    echo "$POINT"
         fi
     fi
 }
 
 
-mount_partition()
+select_partition()
 {
-    PART=$(get_part) 
-    if [ -z "$PART" ]; then
-        return 
-    fi &&
-    FSYS=$(get_filesystem) 
-    if [ -z "$FSYS" ]; then
-        return; 
-    fi &&
+    while true; do
+        PART=$(get_part) 
+        if [ -z "$PART" ]; then
+            return 
+        fi &&
+        FSYS=$(get_filesystem) 
+        if [ -z "$FSYS" ]; then
+            return; 
+        fi &&
 
-    if [ "$FSYS" == "xfs" ]; then 
-        get_xfs_logsize
-    fi
+        if [ "$FSYS" == "xfs" ]; then 
+            get_xfs_logsize
+        fi
 
-    CHECK=$(check_partition $FSYS) &&
-    FORCE=$(use_the_force $FSYS) &&
-    FSTYPE=$(get_fstype $FSYS) &&
-    DEVICE=/dev/discs/$DISC/$PART &&
+        MNTPNT=$(get_mount_point $FSYS) &&
 
-    determine_fstab_settings &&
-    get_mount_point &&
-    make_fsys &&
-    mount_fsys &&
-    make_fstab_line
+	if mount -n /dev/discs/$PART -t $FSYS $TARGET -o ro; then
+	    PROMPT="$PART already is formatted with the $FSYS filesystem and may contain data. Do you wish to format it anyway?"
+	else
+	    PROMPT="$PART already is formatted with the $FSYS filesystem and may contain data. Do you wish to format it anyway?"
+	fi
+	if $DIALOG --defaultno --yesno "$PROMPT" 0 0; then
+	    FORMAT=yes
+            CHECK=$(check_partition $FSYS) &&
+            FORCE=$(use_the_force $FSYS)
+	else
+	    FORMAT=no
+	fi
+	umount -n $TARGET > /dev/null 2>&1
+	MNT_OPTS=$(determine_mount_opts $FSYS) &&
+        FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
+
+        PARTITIONS=(${PARTITIONS[@]} "$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT" )
+        (( NUM_PARTITIONS++ ))
+
+        if [ "$MNTPNT" == "/" ]; then
+            ROOT=$PART
+        elif [ "$MNTPNT" == "/boot" ]; then
+            BOOT=$PART
+        fi
+    done
 }
 
 
-mount_partitions()
+select_partitions()
 {
     if [ -z "$ROOT" ]; then
         if confirm "Are you done making partitions?"; then
-            $DIALOG --msgbox "The root partition must be mounted first" 8 40
             case $ARCH in
     	        "alpha")
       	            $DIALOG --cr-warp --msgbox \
@@ -510,46 +425,110 @@ be formatted with the ext2 filesystem. Normally this
 means that your root or boot filesystem should be ext2." 20 60
 	            ;;
             esac
-            mount_partition
+            select_partition
         fi
     else
-        mount_partition
+        select_partition
     fi
 
     if [ -n "$ROOT" ]; then
-        if (( STEP == 3 )); then
-            (( STEP++ ))
-	    S_OK=
-        T_OK=
+        if (( STEP == 3 )) || (( STEP == 2 )); then
+            STEP=4
         fi
+        S_OK=
+        T_OK=
+	M_OK=\\Z2
     fi
 }
 
-
-make_fstab()
-{
-    echo -e "$FS_LIST" >> $TARGET/etc/fstab
-}
 
 
 make_lilo_conf()
 {
+    if [ ! -f $TARGET/etc/lilo.conf ]; then
+        cp /etc/lilo.conf $TARGET/etc/lilo.conf
+    fi
     if [ -z "$BOOT" ]; then
         BOOT=${ROOT/part[0-9]*/disc}
     fi
-    echo "boot=$BOOT" >> $TARGET/etc/lilo.conf
-    echo "root=$ROOT" >> $TARGET/etc/lilo.conf
+    echo "" >> $TARGET/etc/lilo.conf
+    echo "boot=/dev/discs/$BOOT" >> $TARGET/etc/lilo.conf
+    echo "root=/dev/discs/$ROOT" >> $TARGET/etc/lilo.conf
+    echo "" >> $TARGET/etc/lilo.conf
 }
 
 
 
 transfer()
 {
-    PROMPT="Are you done mounting file systems?"
-    if confirm "$PROMPT";  then
-    
-        cd $TARGET
+    $DIALOG --msgbox "You should now be ready to install lunar to your system. Lunar will now create filesystems if needed, make a swapfile if it was selected, and install all lunar packages to the newly setup system. Make sure you are done with partitioning and filesystem selection." 12 60
+    if confirm "Are you ready to install?" ;  then
 	
+        ORDER=$(for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do echo ${PARTITIONS[$N]} | cut -d: -f2 ; done | sort)
+
+        for MOUNTPOINT in $ORDER; do
+    	    for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do
+	        M=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
+	        if [ "$M" == "$MOUNTPOINT" ]; then
+	            PART=$(echo ${PARTITIONS[$N]} | cut -d: -f1)
+	            FSYS=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
+		    MNT_OPTS=$(echo ${PARTITIONS[$N]} | cut -d: -f4)
+		    FSCK_PASS=$(echo ${PARTITIONS[$N]} | cut -d: -f5)
+	            CHECK=$(echo ${PARTITIONS[$N]} | cut -d: -f6)
+	            FORCE=$(echo ${PARTITIONS[$N]} | cut -d: -f7)
+		    FORMAT=$(echo ${PARTITIONS[$N]} | cut -d: -f8)
+		    # handle swap
+		    if [ "$FSYS" == "swap" ]; then
+		        if ! mkswap /dev/discs/$PART ; then
+			    sleep 3
+			    $DIALOG --msgbox "Problem creating swap on /dev/discs/$PART. Installation will continue." 8 50
+			fi
+                    # create the filesystems if needed for every partition
+	            elif [ "$FORMAT" == "yes" ]; then
+	                if ! mkfs.$FSYS /dev/discs/$PART $CHECK ; then
+		            sleep 3
+		            $DIALOG --msgbox "Problem creating filesystem on /dev/discs/$PART. Installation will continue." 8 50
+		        fi
+    	            fi
+		    # then mount if needed and make fstab lines
+		    if [ "$MNT_OPTS" != "defaults" ]; then
+		        MNT_OPTS="-o $MNT_OPTS"
+		    else
+		        MNT_OPTS=
+		    fi
+		    # again, weed out swap first
+		    if [ "$FSYS" == "swap" ]; then
+		        if swapon /dev/discs/$PART; then
+			    FSTAB="$FSTAB\n/dev/discs/$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+			else
+		            sleep 3
+		            $DIALOG --msgbox "Problem mounting swap on /dev/discs/$PART. Installation will continue." 8 50
+			fi
+		    # then try to mount normal FS's
+		    elif mkdir -p $TARGET$MOUNTPOINT && mount -n -t $FSYS /dev/discs/$PART $TARGET$MOUNTPOINT $MNT_OPTS &> /dev/null; then
+		        FSTAB="$FSTAB\n/dev/discs/$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+		    else
+		        sleep 3
+		        $DIALOG --msgbox "Problem mounting filesystem on /dev/discs/$PART. Installation will continue." 8 50
+		    fi
+    	        fi
+	    done
+	done
+
+	# last we create the swapfile on the target
+        mkdir -p $TARGET$(dirname $SWAPFILE) &&
+            if dd if=/dev/zero of=$TARGET$SWAPFILE bs=1M count=$SWAPSIZE &&
+            mkswap $TARGET$SWAPFILE &&
+            chmod 000 $TARGET$SWAPFILE
+        then
+	    FSTAB="$FSTAB\n$SWAPFILE\tnone\tswap\tsw\t\t0 0"
+        else
+            sleep 3
+            $DIALOG --msgbox "Problem creating swapfile. Installation will continue." 8 50
+        fi
+        
+	cd $TARGET
+
 	echo "Creating base LSB directories..."
         mkdir -p bin boot dev etc home lib mnt media
         mkdir -p proc root sbin srv tmp usr var opt
@@ -573,17 +552,23 @@ transfer()
 
 	# calculate the total so we can display progress
         NUM=$(wc -l /.packages | awk '{print $1}')
-	(( NUM = NUM + 2 ))
+	(( NUM = NUM + 3 ))
         (
-            if [ -f $TARGET/var/cache/lunar/aaa_base.tar.bz2 ]; then
+            if [ -f /var/cache/lunar/aaa_base.tar.bz2 ]; then
 		echo XXX
 	        echo 1
 	        echo "\nInstalling aaa_base: base directories and files\n"
 		echo XXX
 	        tar xjf /var/cache/lunar/aaa_base.tar.bz2 2> /dev/null
             fi
-
-	    for LINE in $(cat .packages) ; do
+	    if [ -f /var/cache/lunar/aaa_dev.tar.bz2 ]; then
+	        echo XXX
+		echo 2
+		echo "\nInstalling aaa_dev: device nodes\n"
+		echo XXX
+		tar xjf /var/cache/lunar/aaa_dev.tar.bz2 2> /dev/null
+	    fi
+	    for LINE in $(cat /.packages) ; do
 	        MOD=$(echo $LINE | cut -d: -f1)
 	        VER=$(echo $LINE | cut -d: -f4)
 	        SIZ=$(echo $LINE | cut -d: -f5)
@@ -593,25 +578,22 @@ transfer()
 		echo XXX
 	        tar xjf /var/cache/lunar/$MOD-$VER-*.tar.bz2 2> /dev/null
 	        (( CNT++ ))
-
             done
-            if [ -f $TARGET/var/lib/lunar/moonbase.tar.bz2 ] ; then
+            if [ -f /var/lib/lunar/moonbase.tar.bz2 ] ; then
 		echo XXX
 	        echo 99
                 echo "\nInstalling moonbase"
 		echo XXX
                   (
                     cd $TARGET/var/lib/lunar
-                    tar xjf moonbase.tar.bz2 2> /dev/null
+                    tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
                     rm -f moonbase.tar.bz2
                   )
             fi
 	) | $DIALOG --title "Installing $NUM packages" --gauge "" 10 70 0 
 	cat /.packages >> $TARGET/var/state/lunar/packages
 	cat /.packages >> $TARGET/var/state/lunar/packages.backup
-pwd
-echo "end"
-read
+
         # pass through some of the configuration at this point:
 	[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
 	[ -z "$CONSOLEFONT" ] || echo "$CONSOLEFONT" > $TARGET/etc/consolefont
@@ -626,15 +608,17 @@ read
             [ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\"" >> $TARGET/etc/profile.d
         fi
 
-        make_fstab
+        echo -e "$FSTAB" >> etc/fstab
         make_lilo_conf
+
         DONE_COPIED="YES"
         echo "Done transferring."
         if (( STEP == 5 )); then
 	    (( STEP++ ))
-	    O_OK=
-	    K_OK=
 	fi
+        T_OK=\\Z2
+	O_OK=
+	K_OK=
     fi
 }
 
@@ -762,24 +746,13 @@ font_menu()
 }
 
 
-cut_charmaps()
-{
-    while [ -n "$1" ]; do
-        echo "$1" | cut -d/ -f1
-        echo "$2"
-        shift 2
-    done
-}
-
-
 show_languages()
 {
-    if [ -d $MOONBASE ]; then
-        SECTION=`find_section glibc`
-        cut_charmaps `cat $MOONBASE/$SECTION/glibc/locales`
-    else
-        cut_charmaps `cat /etc/lunar/local/locales`
-    fi
+    while read L D; do
+        echo "$L" | cut -d/ -f1
+        echo "$D"
+        shift 2
+    done < /etc/lunar/local/locales
 }
 
 
@@ -917,23 +890,61 @@ reconfig_grub()
 
 install_kernels()
 {
-    echo "not implemented yet, press enter"
-    read
-    if (( STEP == 6 )); then
-        (( STEP++ ))
+    list_precompiled_kernels()
+    {
+        while read LINE; do
+	    echo $LINE | cut -d: -f1
+	    echo $LINE | cut -d: -f2-
+	    echo $LINE | cut -d: -f2-
+	done < /.kernels
+    }
+
+    while true ; do
+        KCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "C" --item-help --menu "In order to succesfully run linux you need to install the linux kernel, the heart of the operating system. You can choose between compiling one yourself or select a precompiled modular kernel." 0 0 0 \
+                  "C" "Compile a kernel" "Custom configure and compile one of the linux kernels"\
+		  "P" "Install a precompiled kernel" "Fast and safe: these kernels should work on almost all machines"`
+	
+	if [ $? != 0 ]; then
+	    return
+	fi
+
+	case $KCOMMAND in
+            C)
+	        CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 \
+		"L" "linux-2.4" "Default kernel with fixes and extra features" \
+		"S" "linux-2.4-stable"  "Stable kernel with only crucial fixes" \
+		"V" "linuz-2.4-vanilla" "Plain unpatched kernel" \
+		"G" "linux-2.4-grsec" "Heavily patched with extra security options" \
+		"A" "linux-2.4-agr" "Low-latency and preemptive kernel" \
+		"O" "linux-2.4-om" "OpenMosix clustering kernel"`
+
+		case $CCOMMAND in
+		    L) chroot_build linux-2.4            ;;
+		    S) chroot_build linux-2.4-stable     ;;
+		    V) chroot_build linuz-2.4-vanilla    ;;
+		    G) chroot_build linux-2.4-grsec      ;;
+		    A) chroot_build linux-2.4-aggressive ;;
+		    O) chroot_build linux-2.4-om         ;;
+		esac
+	    ;;
+	    P)
+	        CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --item-help --menu "" 0 0 0 \
+		$(list_precompiled_kernels)`
+		if [ -f "/kernels/$CCOMMAND.tar.bz2" ]; then
+		    cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
+		    echo "" >> $TARGET/etc/lilo.conf
+		    echo "image = /boot/$CCOMMAND"  "" >> $TARGET/etc/lilo.conf
+		    echo "  label = ${CCOMMAND:0:15}" >> $TARGET/etc/lilo.conf
+		fi
+	    ;;
+	esac
+
+	if (( STEP == 6 )); then
+            (( STEP++ ))
+	fi
+	K_OK=\\Z2
 	L_OK=
-	R_OK=
-	H_OK=
-	U_OK=
-	V_OK=
-	G_OK=
-	A_OK=
-	C_OK=
-	D_OK=
-	E_OK=
-	J_OK=
-    fi
-    KERNELS=( `echo ${KERNELS[@]}` "$KERNEL_LABEL:$KERNEL_IMAGE" )
+    done
 }
 
 
@@ -965,11 +976,24 @@ install_bootloader() {
         case $BCOMMAND in
             L) use_lilo ;;
             G) use_grub ;;
-	    N) if (( STEP == 7 )); then
-	           (( STEP++ ))
-	       fi
+	    N) # do nothing
+	       :
 	       ;;
+	    *) return ;;
         esac
+	if (( STEP == 7 )); then
+	    (( STEP++ ))
+	fi
+	R_OK=
+	H_OK=
+	U_OK=
+	V_OK=
+	G_OK=
+	A_OK=
+	C_OK=
+	D_OK=
+	E_OK=
+	J_OK=
     done
 }
 
@@ -1044,13 +1068,13 @@ cd-rom tray and reboot. See you at the login prompt!"
         I_HELP="Read about the advantages of using Lunar Linux"
         P_LABEL="Partition discs"
         P_HELP="Use fdisk or cfdisk to prepare hard drive partitions"
-        M_LABEL="Mount filesystems"
-        M_HELP="Mount and initialize file systems"
-        S_LABEL="Setup a swapfile"
+        M_LABEL="Select target partitions"
+        M_HELP="Select target partitions for installation"
+        S_LABEL="Select a swapfile"
         S_HELP="You don't need to setup a separate swap partition but can use a swapfile"
         S_OK="\\Z1"
-        T_LABEL="Transfer lunar"
-        T_HELP="Copy the distro from CDROM to fixed disk"
+        T_LABEL="Install lunar"
+        T_HELP="Create filesystems, swapfile and install all packages onto the target system NOW"
         T_OK="\\Z1"
         O_LABEL="Configure compiler optimizations"
         O_HELP="Select architecture and optimizations"
@@ -1172,8 +1196,8 @@ cd-rom tray and reboot. See you at the login prompt!"
 
       I)  introduction           ;;
       P)  fdisc                  ;;
-      M)  mount_partitions       ;;
-      S)  mk_swap_file           ;;
+      M)  select_partitions      ;;
+      S)  select_swap_file       ;;
       T)  transfer               ;;
 
       O)  chroot $TARGET lunar optimize ;;
@@ -1212,10 +1236,10 @@ main()
 
     touch "/mnt/read_write_check" 2>/dev/null &&
     rm /mnt/read_write_check ||
-    mount -n -t tmpfs tmpfs /mnt
     mount -n -t devfs devfs /dev
+    mount -n -t proc  proc  /proc
     while true; do
-      install_menu
+        install_menu
     done
 }  
 
@@ -1228,7 +1252,7 @@ main()
 # start shells on vt's
 for i in 2 3 4; do
   (
-    export PS1="[vt$i] \033[0;36m\]\u@\h \w $ \[\033[0m\]"
+    export PS1="[vt$i] \033[0;32m\]\u@\h \w $ \[\033[0m\]"
     cd /
     /sbin/agetty -n -l /bin/bash 38400 tty$i &
   )
@@ -1245,4 +1269,20 @@ ARCH=`arch`
 
 trap ":" INT QUIT
 
-main
+# allow custom startup scripts to run instead of the installer
+if [ -x /run.sh ]; then
+    echo ""
+    echo "  /--------------------------------------------------\\"
+    echo "  |                                                  |"
+    echo "  |  Executing /run/sh instead of the lunar-linux    |"
+    echo "  |  installer! If something goes wrong then you're  |"
+    echo "  |  on your own, sorry...                           |"
+    echo "  |                                                  |"
+    echo "  \\--------------------------------------------------/"
+    /run.sh
+else
+    main
+fi
+
+# clean up vt's
+kill `jobs -p`

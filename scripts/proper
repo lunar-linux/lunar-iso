@@ -31,17 +31,18 @@ for mod in $(cat ${ISO_SOURCE}/conf/sources.list) ; do
 done
 
 echo "+ cleaning out file structure"
-cat $ISO_TARGET/var/log/lunar/install/* | sort | tac | while read LINE; do
-  rm -f "$ISO_TARGET$LINE" 2> /dev/null
+for mod in $(cat ${ISO_SOURCE}/conf/extended.list) ; do
+  chroot $ISO_TARGET lrm -n $mod
 done
  
 echo "+ cleaning temporary and unneeded files"
 rm -rf $ISO_TARGET/var/log/lunar/*/* > /dev/null
 rm -f $ISO_TARGET/var/log/ccache > /dev/null
-rm -rf $ISO_TARGET/var/cache/ccache/?
+rm -rf $ISO_TARGET/usr/share/locale/
 rm -rf $ISO_TARGET/usr/share/{info,man,doc}/* > /dev/null
+rm -rf $ISO_TARGET/usr/share/vim/vim63/doc
+rm -rf $ISO_TARGET/usr/share/gtk-doc
 rm -rf $ISO_TARGET/usr/include > /dev/null
-rm -rf $ISO_TARGET/etc/ssh/ssh_host_*key $ISO_TARGET/etc/ssh/ssh_host_*key.pub
 rm -rf $ISO_TARGET/tmp/* 
 rm -rf $ISO_TARGET/var/tmp/*
 rm -rf $ISO_TARGET/var/lock/*
@@ -49,10 +50,19 @@ rm -rf $ISO_TARGET/var/run/*
 rm -rf $ISO_TARGET/var/state/lunar/module_history/*
 > $ISO_TARGET/var/log/lunar/activity
 rm -f $ISO_TARGET/root/.bash_history
+rm -f $ISO_TARGET/{lib,usr/lib}/lib*.a
+rm -f $ISO_TARGET/boot/${ISO_KVER}*
+rm -rf $ISO_TARGET/lib/modules/${ISO_KVER}*
+
+rm -f $ISO_TARGET/etc/mtab
+ln -s /proc/mounts $ISO_TARGET/etc/mtab
 
 # this is a space killer:
 echo "+ stripping binaries"
-find $ISO_TARGET -name "*.a" -o -name "*.so*" -exec strip {} \; 2> /dev/null
+find $ISO_TARGET -name "lib*.so*" -exec strip {} \; 2> /dev/null
+
+echo "+ archiving locale"
+cp $ISO_TARGET/var/lib/lunar/moonbase/*/glibc/locales $ISO_TARGET/etc/lunar/local/
 
 # moonbase
 echo "+ archiving moonbase"
@@ -62,24 +72,9 @@ if [ -d $ISO_TARGET/var/lib/lunar/moonbase ] ; then (
   rm -rf moonbase
 ); fi
 
-# kernel src!
-##echo "+ archiving kernel source"
-##if [ -d $ISO_TARGET/usr/src/linux-${ISO_KVER} ]; then (
-##  chroot $ISO_TARGET depmod -F /usr/src/linux/System.map
-##  cd $ISO_TARGET/usr/src &&
-##  tar cjf linux-${ISO_KVER}.tar.bz2 linux-${ISO_KVER}/
-##  rm -rf linux-${ISO_KVER}
-##); fi
-
-# copy the installed code over:
-cp lunar-install/init.d/lunar-install $ISO_TARGET/etc/init.d/ 
-ln -s /etc/init.d/lunar-install $ISO_TARGET/etc/rc3.d/S20lunar-install
-cp lunar-install/sbin/lunar-install $ISO_TARGET/sbin/
-sedit "s:%VERSION%:${ISO_VERSION}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
-sedit "s:%CODENAME%:${ISO_CODENAME}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
-	
-# need more:
-ln -s ../init.d/discover $ISO_TARGET/etc/rcS.d/S30discover
+# core toolset
+echo "+ archiving core tools"
+cp $ISO_SOURCE/cache/${ISO_LUNAR_MODULE}-*.tar.bz2 $ISO_TARGET/var/cache/lunar/
 
 # more more more!
 rm -rf $ISO_TARGET/usr/src $ISO_TARGET/var/build

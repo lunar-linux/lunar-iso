@@ -63,12 +63,17 @@ build_kernel()
     mkdir -p $ISO_SOURCE/kernels/BUILD/boot
     mkdir -p $ISO_SOURCE/kernels/BUILD/usr/include/linux-$ISO_KVER$1
     make INSTALL_MOD_PATH=$ISO_SOURCE/kernels/BUILD modules_install
+    if [ -n "$2" ]; then
+        # we need them on the iso later too
+	tar cjf $ISO_SOURCE/kernels/$2-modules.tar.bz2 -C $ISO_SOURCE/kernels/BUILD lib/modules 
+        tar xj -C $ISO_TARGET -f $ISO_SOURCE/kernels/$2-modules.tar.bz2
+    fi
     cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/BUILD/boot/$ISO_KVER$1
-    if [ -n "$2" ] ; then
+    if [ -n "$2" ]; then
       cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/$2
     fi
     cp System.map $ISO_SOURCE/kernels/BUILD/boot/System.map-$ISO_KVER$1
-    if [ -n "$2" ] ; then
+    if [ -n "$2" ]; then
       cp System.map $ISO_SOURCE/kernels/$2.map
     fi
     cp .config $ISO_SOURCE/kernels/BUILD/boot/config-$ISO_KVER$1
@@ -96,34 +101,32 @@ VERBSOSE=on
 
 > $ISO_SOURCE/kernels/.kernels
 
+# required
 build -safe-i386 "i386 nosmp lowmem safe" "fix" \
 	"Very safe i386 (default is i686) minimal kernel (no ACPI, DMA, SMP)" "safe"
+# recommended
 build -normal "nosmp lowmem" "fix main" \
 	"Normal kernel (no SMP) (RECOMMENDED)" "linux"
 build -smp-4gb "smp mem" "fix main" \
 	"Normal SMP kernel with large memory (4GB)"
-build -agr "nosmp lowmem lowlat" "fix main aggressive" \
-	"Low latency patch"
+# build -agr "nosmp lowmem lowlat" "fix main aggressive" \
+# 	"Low latency patch"
 build -agr-smp-4gb "smp mem lowlat" "fix main aggressive" \
 	"Low latency patch, SMP, 4GB"
-build -stb "nosmp lowmem" "fix" \
-	"Minimally patched"
-build -stb-smp-4gb "smp mem" "fix" \
-	"Minimally patched, SMP, 4GB"
-build -vnl "nosmp lowmem" "" \
-	"Unpatched"
+# build -stb "nosmp lowmem" "fix" \
+# 	"Minimally patched"
+# build -stb-smp-4gb "smp mem" "fix" \
+# 	"Minimally patched, SMP, 4GB"
+# build -vnl "nosmp lowmem" "" \
+# 	"Unpatched"
 build -vnl-smp-4gb "smp mem" "" \
 	"Unpatched, SMP, 4GB"
-build -grs "nosmp lowmem grsec" "fix main grsecurity" \
-	"Grsecurity patch"
+# build -grs "nosmp lowmem grsec" "fix main grsecurity" \
+# 	"Grsecurity patch"
 build -grs-smp-4gb "smp mem grsec" "fix main grsecurity" \
 	"Grsecurity patch, SMP, 4GB"
-build -om "nosmp lowmem om" "fix om" \
-	"OpenMosix clustering"
+# build -om "nosmp lowmem om" "fix om" \
+# 	"OpenMosix clustering"
 build -om-smp-4gb "smp mem om" "fix om" \
 	"OpenMosix clustering, SMP, 4GB"
-
-mkdir -p $ISO_TARGET/kernels
-cp -av $ISO_SOURCE/kernels/TAR/* $ISO_TARGET/kernels/
-mv $ISO_SOURCE/kernels/.kernels $ISO_TARGET/
 
