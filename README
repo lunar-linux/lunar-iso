@@ -1,1 +1,72 @@
-README file for the lunar-iso generation code. ToBe filled!
+#
+# README file for the lunar-iso generation code.
+#
+
+-- Goal
+
+Most of this code was written to automate the generation of homogenous
+ISO images based on a fixed set of tools. The code should be as self-
+sufficient as possible and generate as much of the binaries as possible
+so porting to other platforms will be easy. Please keep this in mind if
+you change the scripts and want to include binaries. This should be kept
+to a minimum.
+
+The ISO has been optimized to minimize the number of alien files. These
+should always be as much as possible be provided by modules. The exception
+are stored in template, and include several files which need to be filled
+with something valid before you can start. Please take care of these files
+and try your utter best to make sure you don't add files in the template
+that really (really (really)) do not need to be in there.
+
+
+-- Start
+
+Right now the Makefile should provide you the proper list of steps to
+take but there are a few necessary prerequisites that the CVS copy does not
+contain:
+
+ o A moonbase snapshot
+ o A proper cache tar.bz2 of every required package (including core tools)
+ o A full set of sorurces for each module
+ o A initrd image template with a selection of binaries
+ 
+You will need to provide this in order to succesfully perform all steps.
+The cache copies wiil be used to bootstrap your ISO, after which basically
+the scripts perform a rebuild of every package and create the optimum
+least-common denominator dependency-based install. 
+
+The moonbase needs to be the same as on your system. Copy the moonbase.tar.bz2
+to the templates/ directory and leave packed.
+
+The cache tar.bz2's may be left in /var/cache/lunar and will automatically as
+needed be copied to cache/
+
+The same goes for the sources, they end up in spool/
+
+The initrd image template goes into initrd/template/
+
+
+-- Building it
+
+Here's a brief explanation of the make targets:
+
+init		setup the buildroot
+dirs		make LSB dirs and a few more needed
+unpack		extract the cache tar.bz2's
+etcf		copy the template files that are not provided by modules
+rebuild		rebuild all modules at least once
+proper		clear temporary files in the image and clean up some misc stuff
+memtest		create a memtest boot image
+kernels		[TODO]
+discover	create a static discover binary and required files
+initrd		compose the initrd from the template and miscfiles
+isolinux	generate the isolinux files and copy them to the target
+iso		create the final iso image
+
+two misc. targets exist:
+burn		burn the latest iso image
+blank		blank an entire cdrw
+
+the Makefile contains some variables on top that needs to be set. Pick 
+sensible names and version numbers and do not name something which could
+look like a release if it's still beta code ;^)
