@@ -1,5 +1,4 @@
 glibc
-devfsd
 expat
 curl
 openssl
@@ -29,7 +28,6 @@ bzip2
 bash
 procps
 which
-modutils
 modutils-wrappers
 sysvinit
 util-linux
@@ -41,7 +39,6 @@ tar
 grub
 busybox
 lilo
-lvm
 man
 parted
 reiserfsprogs
