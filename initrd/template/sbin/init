@@ -46,14 +46,20 @@ auto_load_modules()
 {
     MODULES=$(/bin/discover --data-path=linux/module/name --format="%s" --data-version=`uname -r` fixeddisk optical removabledisk tape)
 
-    MODULES=`$DIALOG --inputbox "The following modules will be attempted to load. Press enter to load them, or edit the list manually. To cancel select 'Cancel'." 10 60 "$MODULES"`
+    if [ -z "$1" ]; then
+        MODULES=`$DIALOG --inputbox "The following modules will be attempted to load. Press enter to load them, or edit the list manually. To cancel select 'Cancel'." 10 60 "$MODULES"`
+    fi
     for MODULE in $MODULES ; do
       echo "Attempting to load \"$MODULE\":"
       modprobe $MODULE
-      sleep 2
+      if [ -z "$1" ]; then
+        sleep 2
+      fi
     done
-    echo "Finished loading modules!"
-    sleep 5
+    if [ -z "$1" ]; then
+      echo "Finished loading modules!"
+      sleep 5
+    fi
 }
 
 
@@ -165,8 +171,6 @@ main_menu()
 
 main()
 {
-    main_menu
-
     if [ -z "$ROOT" ] && [ -z "$LUNAR_CD" ]; then
         $DIALOG --msgbox "Unable to boot without a root." 0 0
         main $*
@@ -198,6 +202,14 @@ main()
 }
 
 
+skipinitrd()
+{
+    auto_load_modules fast
+    scan_cdroms
+    main $*
+}
+
+
 export IFS="	
 "
 export DIALOGRC=/etc/dialogrc
@@ -215,4 +227,10 @@ DEVICE="/dev/cdroms/cdrom"
 MOUNT="/mnt"
 ID="$MOUNT/.lunar-cd"
 
-main $*
+# fastboot or not?
+if cat /proc/cmdline | grep -q 'skipinitrd=1'; then
+    skipinitrd $*
+else
+    main_menu $*
+    main $*
+fi
