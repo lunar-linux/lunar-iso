@@ -4,10 +4,32 @@
 
 cd $ISO_SOURCE/initrd
 
+umount $ISO_SOURCE/BUILD/dev
+umount $ISO_SOURCE/BUILD/proc
 umount template/dev
 umount template/proc
+
 rm -rf BUILD
+
+# template first
 cp -a template BUILD
+
+# next up are the required stuff from the BUILD
+for ITEM in $(cat initrd.list); do
+    mkdir -p "BUILD/$(dirname $ITEM)"
+    cp -a "$ISO_TARGET/$ITEM" "BUILD/$(dirname $ITEM)"
+done
+cp -a "$ISO_TARGET/dev" "BUILD/"
+for ITEM in $(find BUILD -type f); do
+    strip $ITEM > /dev/null 2>&1
+done
+for ITEM in $(find BUILD -type d -name "CVS"); do
+    rm -rf $ITEM
+done
+rm -f BUILD/dev/install-devices.sh
+chroot BUILD /sbin/ldconfig
+read
+
 # compile the initrd image
 mkdir -p BUILD/lib/modules/${ISO_KVER}-ll-${ISO_KREL}/kernel/drivers/
 cp -a $ISO_TARGET/lib/modules/${ISO_KVER}-ll-${ISO_KREL}/kernel/drivers/{ide,scsi} BUILD/lib/modules/${ISO_KVER}-ll-${ISO_KREL}/kernel/drivers/
