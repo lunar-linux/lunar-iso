@@ -17,7 +17,7 @@ ISO_DATE = $(shell date -u +%Y%m%d)
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
 ISO_KVER = 2.4.28
-ISO_KREL = r8.0.0
+ISO_PVER = r8.0rc3
 
 ISO_LUNAR_MODULE = lunar
 
