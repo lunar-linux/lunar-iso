@@ -7,26 +7,12 @@ optimize
 BUILD_DIRECTORY=${ISO_SOURCE}/discover
 cd ${ISO_SOURCE}/discover
 
-# build curl without ssl first statically
-(
-  run_details curl
-  unpack $(sources curl)
-
-  cd $SOURCE_DIRECTORY
-  ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --without-ssl
-  make
-
-  cd ${ISO_SOURCE}/discover
-  cp $SOURCE_DIRECTORY/lib/.libs/libcurl.a .
-  rm -rf $SOURCE_DIRECTORY
-)
-
 (
   run_details discover
   unpack $(sources discover)
 
   cd $SOURCE_DIRECTORY
-  ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+  ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --disable-curl
   make LDFLAGS=-all-static -C portability
   make LDFLAGS=-all-static -C sysdeps
   make LDFLAGS=-all-static -C lib
@@ -55,4 +41,3 @@ cd ${ISO_SOURCE}/discover
   rm -rf $SOURCE_DIRECTORY
 )
 
-rm libcurl.a

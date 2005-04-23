@@ -138,8 +138,8 @@ if [ "${ISO_KSUFFIX}" = "2.4" ]; then
 		"Grsecurity patch, SMP, 4GB"
 	# build -om "nosmp lowmem om" "fix om" \
 	# 	"OpenMosix clustering"
-	build -om-smp-4gb "smp mem om" "fix om" \
-		"OpenMosix clustering, SMP, 4GB"
+	# build -om-smp-4gb "smp mem om" "fix om" \
+	# 	"OpenMosix clustering, SMP, 4GB"
 
 else
 

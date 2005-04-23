@@ -70,21 +70,23 @@ done
 for ITEM in $(find BUILD -type d -name "CVS"); do
     rm -rf $ITEM
 done
+echo "+ running ldconfig"
 chroot BUILD /sbin/ldconfig
 rm -f BUILD/etc/mtab
 ln -s /proc/mounts BUILD/etc/mtab
 
 # compile the initrd image
+echo "+ installing initrd kernels"
 for KERNEL in linux safe ; do
-  KVER=$(grep "^$KERNEL" $ISO_SOURCE/kernels/.initrd_kernels | cut -d" " -f2)
+  KVER=$(grep "^$KERNEL" $ISO_SOURCE/kernels/.initrd_kernel | cut -d" " -f2)
   mkdir TMP
   (
     cd TMP
     tar xjf $ISO_SOURCE/kernels/TAR/$KVER.tar.bz2
     mkdir -p $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
-    depmod -b . -a -F $ISO_SOURCE/kernels/$KERNEL.map $KVER
     cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{ide,scsi} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
     cp lib/modules/$KVER/* $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/
+    depmod -b $ISO_SOURCE/initrd/BUILD -a -F $ISO_SOURCE/kernels/$KERNEL.map $KVER
   )
   rm -rf TMP
 done
