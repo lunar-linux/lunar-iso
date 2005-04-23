@@ -14,7 +14,7 @@ rm -rf BUILD
 # template first
 cp -a --no-dereference template BUILD
 find BUILD -type d -name CVS -exec rm -rf {} \;
-mkdir -p BUILD/{mnt,proc,var/lib/discover}
+mkdir -p BUILD/{mnt,proc,var/lib/discover/crash}
 
 echo "+ copying binaries and required files"
 # next up are the required stuff from the BUILD
@@ -67,13 +67,9 @@ echo "+ stripping everything"
 for ITEM in $(find BUILD -type f); do
     strip $ITEM > /dev/null 2>&1
 done
-for ITEM in $(find BUILD -type d -name "CVS"); do
+for ITEM in $(find BUILD -type d -name "CVS" | tac); do
     rm -rf $ITEM
 done
-echo "+ running ldconfig"
-chroot BUILD /sbin/ldconfig
-rm -f BUILD/etc/mtab
-ln -s /proc/mounts BUILD/etc/mtab
 
 # compile the initrd image
 echo "+ installing initrd kernels"
@@ -105,6 +101,11 @@ done
 
 chown -R root:root BUILD/*
   
+echo "+ running ldconfig"
+chroot BUILD /sbin/ldconfig
+rm -f BUILD/etc/mtab
+ln -s /proc/mounts BUILD/etc/mtab
+
 # calculate the size of the initrd image
 SIZE=$(du -kcs BUILD | tail -1 | cut -f1)
 echo "+ estimated $SIZE"

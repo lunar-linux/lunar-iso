@@ -25,7 +25,7 @@ $(ISO_TARGET)/.iso:
 	@echo "Generating .iso file"
 	@scripts/isofs
 
-isolinux: proper kernels memtest $(ISO_TARGET)/isolinux
+isolinux: proper memtest $(ISO_TARGET)/isolinux
 $(ISO_TARGET)/isolinux:
 	@echo "Generating isolinux files"
 	@scripts/isolinux
@@ -38,7 +38,7 @@ $(ISO_TARGET)/.proper:
 aaa_dev: $(ISO_SOURCE)/aaa_dev/aaa_dev.tar.bz2
 $(ISO_SOURCE)/aaa_dev/aaa_dev.tar.bz2: initrd
 
-initrd: discover $(ISO_SOURCE)/initrd/initrd
+initrd: discover memtest kernels $(ISO_SOURCE)/initrd/initrd
 $(ISO_SOURCE)/initrd/initrd:
 	@echo "Generating initrd image"
 	@scripts/initrd

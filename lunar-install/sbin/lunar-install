@@ -498,21 +498,23 @@ transfer()
 		        sleep 3
 		        $DIALOG --msgbox "Problem mounting filesystem on /dev/discs/$PART. Installation will continue." 8 50
 		    fi
-    	        fi
+    		fi
 	    done
 	done
 
 	# last we create the swapfile on the target
-        mkdir -p $TARGET$(dirname $SWAPFILE) &&
+	if [ -n "$SWAPFILE" ]; then
+            mkdir -p $TARGET$(dirname $SWAPFILE) &&
             if dd if=/dev/zero of=$TARGET$SWAPFILE bs=1M count=$SWAPSIZE &&
-            mkswap $TARGET$SWAPFILE &&
-            chmod 000 $TARGET$SWAPFILE
-        then
-	    FSTAB="$FSTAB\n$SWAPFILE\tnone\tswap\tsw\t\t0 0"
-        else
-            sleep 3
-            $DIALOG --msgbox "Problem creating swapfile. Installation will continue." 8 50
-        fi
+                mkswap $TARGET$SWAPFILE &&
+                chmod 000 $TARGET$SWAPFILE
+            then
+	        FSTAB="$FSTAB\n$SWAPFILE\tnone\tswap\tsw\t\t0 0"
+            else
+                sleep 3
+                $DIALOG --msgbox "Problem creating swapfile. Installation will continue." 8 50
+            fi
+	fi
         
 	cd $TARGET
 
@@ -543,17 +545,19 @@ transfer()
         (
             if [ -f /var/cache/lunar/aaa_base.tar.bz2 ]; then
 		echo XXX
-	        echo $(( 1 * 100 / $NUM ))
+	        echo $(( CNT * 100 / NUM ))
 	        echo "\nInstalling aaa_base: base directories and files\n"
 		echo XXX
 	        tar xjf /var/cache/lunar/aaa_base.tar.bz2 2> /dev/null
+	        (( CNT++ ))
             fi
 	    if [ -f /var/cache/lunar/aaa_dev.tar.bz2 ]; then
 	        echo XXX
-	        echo $(( 2 * 100 / $NUM ))
+	        echo $(( CNT * 100 / NUM ))
 		echo "\nInstalling aaa_dev: device nodes\n"
 		echo XXX
 		tar xjf /var/cache/lunar/aaa_dev.tar.bz2 2> /dev/null
+	        (( CNT++ ))
 	    fi
 	    for LINE in $(cat /.packages) ; do
 	        MOD=$(echo $LINE | cut -d: -f1)
@@ -583,7 +587,9 @@ transfer()
         echo "moonbase:%VERSION%:installed:%VERSION%:37M" >> $TARGET/var/state/lunar/packages
 	cat /.packages >> $TARGET/var/state/lunar/packages
 	cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
+	chroot_run lsh create_module_index
 	chroot_run lsh create_depends_cache
+	chroot_run lsh update_plugins
 	chroot_run lunar fixdepends
 
         # pass through some of the configuration at this point:
