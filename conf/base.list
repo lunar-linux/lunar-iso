@@ -1,6 +1,5 @@
 glibc
 expat
-curl
 openssl
 discover
 discover-data
