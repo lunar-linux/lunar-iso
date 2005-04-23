@@ -541,7 +541,7 @@ transfer()
 
 	# calculate the total so we can display progress
         NUM=$(wc -l /.packages | awk '{print $1}')
-	(( NUM = NUM + 3 ))
+	(( NUM = NUM + 4 ))
         (
             if [ -f /var/cache/lunar/aaa_base.tar.bz2 ]; then
 		echo XXX
@@ -580,7 +580,16 @@ transfer()
                     tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
 		    tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%VERSION%
                   )
+	        (( CNT++ ))
             fi
+	    # transfer sources
+	        echo XXX
+		echo $(( CNT * 100 / NUM ))
+		echo "\nCopying sources"
+		echo "XXX"
+		cp /var/spool/lunar/* $TARGET/var/spool/lunar/
+	        (( CNT++ ))
+	    # done
 	) | $DIALOG --title "Installing $NUM packages" --gauge "" 10 70 0 
 
         # setup list of installed packages etc.
