@@ -22,7 +22,7 @@ chroot $ISO_TARGET ldconfig
 
 echo "+ wiping sources"
 rm -f $ISO_TARGET/var/spool/lunar/*
-for mod in $(cat ${ISO_SOURCE}/conf/sources.list) ; do
+for mod in $(cat ${ISO_SOURCE}/conf/sources.list ${ISO_SOURCE}/conf/sources.list-$ISO_KSUFFIX) ; do
   for file in $(lvu sources $mod) ; do
     echo -n "."
     if [ -f ${ISO_SOURCE}/spool/$file ] ; then
