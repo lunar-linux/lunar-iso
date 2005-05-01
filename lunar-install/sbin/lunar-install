@@ -4,7 +4,7 @@
 # portions Copyright 2002 by Kagan Kongar                   #
 # portions Copyright 2002 by rodzilla                       #
 # portions Copyright 2003, 2004 by tchan, kc8apf            #
-# portions Copyright 2004 Auke Kok                          #
+# portions Copyright 2004, 2005 by Auke Kok                 #
 #                                                           #
 # This file in released under the GPL                       #
 #############################################################
@@ -283,8 +283,9 @@ fdisc()
                     "parted"  "$PARTED"`                         
 	    ;;
     esac &&	
-    PROMPT="Are you certain that you want to run $PROG on $DISC" &&
+    PROMPT="Are you certain that you want to run $PROG on $DISC? (This will erase any partition selection you might have already performed)" &&
     if confirm "$PROMPT"; then
+		unset PARTITIONS
         $PROG /dev/discs/$DISC/disc
 	if (( STEP == 2 )); then
 	    (( STEP++ ))
@@ -452,6 +453,19 @@ make_lilo_conf()
 }
 
 
+transfer_package()
+{
+	cd $TARGET &&
+	LINE=$(grep $1 /.packages)
+	MOD=$(echo $LINE | cut -d: -f1)
+	VER=$(echo $LINE | cut -d: -f4)
+	SIZ=$(echo $LINE | cut -d: -f5)
+	tar xjf /var/cache/lunar/$MOD-$VER-*.tar.bz2 2> /dev/null
+	echo $LINE >> $TARGET/var/state/lunar/packages
+	cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
+}
+
+
 transfer()
 {
     $DIALOG --msgbox "You should now be ready to install lunar to your system. Lunar will now create filesystems if needed, make a swapfile if it was selected, and install all lunar packages to the newly setup system. Make sure you are done with partitioning and filesystem selection." 12 60
@@ -541,7 +555,7 @@ transfer()
 
 	# calculate the total so we can display progress
         NUM=$(wc -l /.packages | awk '{print $1}')
-	(( NUM = NUM + 4 ))
+	(( NUM = NUM + 4 - 2))
         (
             if [ -f /var/cache/lunar/aaa_base.tar.bz2 ]; then
 		echo XXX
@@ -559,7 +573,7 @@ transfer()
 		tar xjf /var/cache/lunar/aaa_dev.tar.bz2 2> /dev/null
 	        (( CNT++ ))
 	    fi
-	    for LINE in $(cat /.packages) ; do
+	    for LINE in $(cat /.packages | grep -v -e '^lilo:' -e '^grub:') ; do
 	        MOD=$(echo $LINE | cut -d: -f1)
 	        VER=$(echo $LINE | cut -d: -f4)
 	        SIZ=$(echo $LINE | cut -d: -f5)
@@ -567,7 +581,7 @@ transfer()
 	        echo $(( CNT * 100 / NUM ))
 	        echo "\nInstalling $MOD-$VER ($SIZ)\n\n($(basename /var/cache/lunar/$MOD-$VER-*.tar.bz2))\n"
 		echo XXX
-	        tar xjf /var/cache/lunar/$MOD-$VER-*.tar.bz2 2> /dev/null
+		transfer_package $MOD
 	        (( CNT++ ))
             done
             if [ -f /var/lib/lunar/moonbase.tar.bz2 ] ; then
@@ -594,8 +608,6 @@ transfer()
 
         # setup list of installed packages etc.
         echo "moonbase:%VERSION%:installed:%VERSION%:37M" >> $TARGET/var/state/lunar/packages
-	cat /.packages >> $TARGET/var/state/lunar/packages
-	cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
 	chroot_run lsh create_module_index
 	chroot_run lsh create_depends_cache
 	chroot_run lsh update_plugins
@@ -940,39 +952,24 @@ install_kernels()
 }
 
 
-use_lilo()
-{
-    echo "not implemented yet."
-    read
-}
-
-
-use_grub()
-{
-    echo "not implemented yet."
-    read
-}
-
-
 install_bootloader() {
     while true ; do
         BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "L" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
-       "L" "lilo" "Use lilo as boot loader" \
-       "G" "grub" "Use grub as boot loader" \
-       "N" "none" "Do not install a boot loader (now)"`
+       "L" "lilo" "Install lilo as boot loader" \
+       "G" "grub" "Install grub as boot loader" \
+       "N" "none" "Do not install a boot loader"`
 
         if [ $? != 0 ] ; then
             return
         fi
 
         case $BCOMMAND in
-            L) use_lilo ;;
-            G) use_grub ;;
-	    N) # do nothing
-	       :
-	       ;;
-	    *) return ;;
+            L) BOOTLOADER=lilo ;;
+            G) BOOTLOADER=grub ;;
         esac
+
+	transfer_package $BOOTLOADER
+
 	if (( STEP == 7 )); then
 	    (( STEP++ ))
 	fi
