@@ -25,9 +25,9 @@ Right now the Makefile should provide you the proper list of steps to
 take but there are a few necessary prerequisites that the CVS copy does not
 contain:
 
- o A moonbase snapshot
  o A proper cache tar.bz2 of every required package (including core tools)
  o A full set of sources for each module
+ o Configure the base parameters of the ISO in conf/config
  
 You will need to provide this in order to succesfully perform all steps.
 The cache copies wiil be used to bootstrap your ISO, after which basically
@@ -53,10 +53,10 @@ moonbase	fetch a copy of moonbase.tar.bz2 and install it
 unpack		extract the cache tar.bz2's
 etcf		copy the template files that are not provided by modules
 rebuild		rebuild all modules at least once
-aaa_base        create a tarball with required but untracked files
+aaa_base	create a tarball with required but untracked files
 proper		clear temporary files in the image and clean up some misc stuff
 memtest		create a memtest boot image
-kernels		[TODO]
+kernels		compile a set of kernels for both the initrd and to be installed
 discover	create a static discover binary and required files
 initrd		compose the initrd from the template and miscfiles
 isolinux	generate the isolinux files and copy them to the target
@@ -66,6 +66,7 @@ two misc. targets exist:
 burn		burn the latest iso image
 blank		blank an entire cdrw
 
-the Makefile contains some variables on top that needs to be set. Pick 
-sensible names and version numbers and do not name something which could
-look like a release if it's still beta code ;^)
+The Makefile itself contains no configurable items. Copy the template config
+in the conf/ directory to conf/config and adjust the values as needed for
+your needs.
+
