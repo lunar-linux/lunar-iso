@@ -388,6 +388,7 @@ select_partition()
 
 	if mount -n /dev/discs/$PART -t $FSYS $TARGET -o ro; then
 	    PROMPT="$PART already is formatted with the $FSYS filesystem and may contain data. Do you wish to format it anyway?"
+	    umount -n /dev/discs/$PART > /dev/null 2>&1
 	else
 	    PROMPT="$PART already is formatted with the $FSYS filesystem and may contain data. Do you wish to format it anyway?"
 	fi
@@ -398,7 +399,6 @@ select_partition()
 	else
 	    FORMAT=no
 	fi
-	umount -n $TARGET > /dev/null 2>&1
 	MNT_OPTS=$(determine_mount_opts $FSYS) &&
         FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
 
@@ -506,11 +506,21 @@ transfer()
 		            $DIALOG --msgbox "Problem mounting swap on /dev/discs/$PART. Installation will continue." 8 50
 			fi
 		    # then try to mount normal FS's
-		    elif mkdir -p $TARGET$MOUNTPOINT && mount -n -t $FSYS /dev/discs/$PART $TARGET$MOUNTPOINT ${MNT_OPTS:+ -o $MNT_OPTS} &> /dev/null; then
-		        FSTAB="$FSTAB\n/dev/discs/$PART\t$MOUNTPOINT\t$FSYS\t${MNT_OPTS:-defaults}\t0 $FSCK_PASS"
 		    else
-		        sleep 3
-		        $DIALOG --msgbox "Problem mounting filesystem on /dev/discs/$PART. Installation will continue." 8 50
+		    	if [ ! -d $TARGET$MOUNTPOINT ] ; then
+				mkdir -p $TARGET$MOUNTPOINT
+			fi
+			if [ "$MNT_OPTS" != "defaults" ]; then
+				MNTOPTARGS="-e $MNT_OPTS"
+			else
+				MNTOPTARGS=""
+			fi
+			if mount -n /dev/discs/$PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
+		        	FSTAB="$FSTAB\n/dev/discs/$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
+		    	else
+		        	sleep 3
+		        	$DIALOG --msgbox "Problem mounting filesystem on /dev/discs/$PART. Installation will continue." 8 50
+			fi
 		    fi
     		fi
 	    done
@@ -1223,10 +1233,6 @@ main()
     DISABLE=on
     PREFIX="root@Lunar:/#"
 
-    touch "/mnt/read_write_check" 2>/dev/null &&
-    rm /mnt/read_write_check ||
-    mount -n -t devfs devfs /dev
-    mount -n -t proc  proc  /proc
     while true; do
         install_menu
     done
