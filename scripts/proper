@@ -58,6 +58,9 @@ rm -rf $ISO_TARGET/lib/modules/${ISO_KVER}*
 rm -f $ISO_TARGET/etc/mtab
 ln -s /proc/mounts $ISO_TARGET/etc/mtab
 
+mkdir -p $ISO_TARGET/var/lib/discover/crash
+rm -f $ISO_TARGET/etc/*/*modutils
+
 # this is a space killer:
 echo "+ stripping binaries"
 find $ISO_TARGET -name "lib*.so*" -exec strip {} \; 2> /dev/null
