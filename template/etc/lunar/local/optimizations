@@ -8,5 +8,5 @@ FPM=None
 CC_OPTS=( ccpipe cxxpipe )
 LDF=( Strip )
 ADDON=( CCache )
-MAKES=2
+MAKES=
 STACK=
