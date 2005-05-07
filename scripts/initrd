@@ -34,7 +34,7 @@ transfer()
 (
 	cd $ISO_TARGET
 	cat $ISO_SOURCE/initrd/initrd.list | transfer
-	cat $ISO_SOURCE/initrd/initrd.list-$ISO_KSUFFIX | tranfer
+	cat $ISO_SOURCE/initrd/initrd.list-$ISO_KSUFFIX | transfer
 	$ISO_SOURCE/scripts/ldd-gather $ISO_SOURCE/initrd/initrd.list | transfer
 	$ISO_SOURCE/scripts/ldd-gather $ISO_SOURCE/initrd/initrd.list-$ISO_KSUFFIX | transfer
 )
