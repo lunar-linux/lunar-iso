@@ -6,6 +6,8 @@ bin/grep
 bin/ls
 bin/mkdir
 bin/mount
+bin/pgrep
+bin/pkill
 bin/rm
 bin/rmdir
 bin/sed
@@ -28,6 +30,9 @@ usr/bin/ldd
 usr/bin/less
 usr/bin/nano
 usr/bin/touch
+usr/lib/libexpat.so
+usr/lib/libexpat.so.0
+usr/lib/libexpat.so.0.5.0
 usr/share/tabset
 usr/share/tabset/std
 usr/share/tabset/stdcrt
