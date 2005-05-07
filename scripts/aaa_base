@@ -24,8 +24,8 @@ done
 # add core tools to the list:
 echo "$ISO_LUNAR_MODULE:$ISO_DATE:installed:$ISO_DATE:" >> $ISO_SOURCE/aaa_base/packages
 
-# delete CVS dirs from templates
-find $ISO_TARGET -type d -name "CVS" -exec rm -rf {} \; &> /dev/null
+# delete .svn dirs from templates
+find $ISO_TARGET -type d -name ".svn" -exec rm -rf {} \; &> /dev/null
 
 echo "+ creating aaa_base.tar.bz2"
 # gather present files

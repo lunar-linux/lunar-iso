@@ -13,7 +13,7 @@ rm -rf BUILD
 
 # template first
 cp -a --no-dereference template BUILD
-find BUILD -type d -name CVS -exec rm -rf {} \;
+find BUILD -type d -name .svn -exec rm -rf {} \;
 mkdir -p BUILD/{mnt,proc,var/lib/discover/crash}
 
 echo "+ copying binaries and required files"
@@ -67,7 +67,7 @@ echo "+ stripping everything"
 for ITEM in $(find BUILD -type f); do
     strip $ITEM > /dev/null 2>&1
 done
-for ITEM in $(find BUILD -type d -name "CVS" | tac); do
+for ITEM in $(find BUILD -type d -name ".svn" | tac); do
     rm -rf $ITEM
 done
 
