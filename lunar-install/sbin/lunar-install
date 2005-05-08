@@ -386,13 +386,8 @@ select_partition()
 
         MNTPNT=$(get_mount_point $FSYS) &&
 
-	if mount -n /dev/discs/$PART -t $FSYS $TARGET -o ro; then
-	    PROMPT="$PART already is formatted with the $FSYS filesystem and may contain data. Do you wish to format it anyway?"
-	    umount -n /dev/discs/$PART > /dev/null 2>&1
-	else
-	    PROMPT="$PART already is formatted with the $FSYS filesystem and may contain data. Do you wish to format it anyway?"
-	fi
-	if $DIALOG --defaultno --yesno "$PROMPT" 0 0; then
+	PROMPT="$PART might already be formatted with the $FSYS filesystem and may contain data. Formatting it again will destroy all present data on this partition. Do you wish to format it?"
+	if $DIALOG --defaultno --yesno "$PROMPT" 0 0 ; then
 	    FORMAT=yes
             CHECK=$(check_partition $FSYS) &&
             FORCE=$(use_the_force $FSYS)
@@ -456,7 +451,7 @@ make_lilo_conf()
 transfer_package()
 {
 	cd $TARGET &&
-	LINE=$(grep $1 /.packages)
+	LINE=$(grep "^$1:" /.packages)
 	MOD=$(echo $LINE | cut -d: -f1)
 	VER=$(echo $LINE | cut -d: -f4)
 	SIZ=$(echo $LINE | cut -d: -f5)
@@ -602,7 +597,7 @@ transfer()
                   (
                     cd $TARGET/var/lib/lunar
                     tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
-		    tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%VERSION%
+		    tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%ISO_DATE%
                   )
 	        (( CNT++ ))
             fi
@@ -617,7 +612,7 @@ transfer()
 	) | $DIALOG --title "Installing $NUM packages" --gauge "" 10 70 0 
 
         # setup list of installed packages etc.
-        echo "moonbase:%VERSION%:installed:%VERSION%:37M" >> $TARGET/var/state/lunar/packages
+        echo "moonbase:%ISO_DATE%:installed:%ISO_DATE%:37M" >> $TARGET/var/state/lunar/packages
 	chroot_run lsh create_module_index
 	chroot_run lsh create_depends_cache
 	chroot_run lsh update_plugins
