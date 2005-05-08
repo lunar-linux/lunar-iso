@@ -11,8 +11,8 @@ ISO_VERSION = NOVERSION
 # the ISO codename (i.e. Gen. P. Fault)
 ISO_CODENAME = UNNAMED
 
-# the release/offical date tag
-ISO_DATE = $(shell date -u +%Y%m%d)
+# the release/offical date tag - must be in the form of YYYYMMDD
+ISO_DATE = 20050201
 
 # this copncatenates the full name
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
