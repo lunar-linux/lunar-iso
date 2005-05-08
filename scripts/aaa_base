@@ -18,7 +18,7 @@ rmdir /usr/lib/locale/*
 echo "+ creating list of prepackaged modules"
 mkdir -p $ISO_SOURCE/aaa_base
 > $ISO_SOURCE/aaa_base/packages
-for mod in $(cat conf/base.list conf/extended.list) ; do
+for mod in $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list) ; do
   grep "^$mod:" $ISO_TARGET/var/state/lunar/packages >> $ISO_SOURCE/aaa_base/packages
 done
 # add core tools to the list:
