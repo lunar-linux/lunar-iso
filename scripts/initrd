@@ -14,7 +14,7 @@ rm -rf BUILD
 # template first
 cp -a --no-dereference template BUILD
 find BUILD -type d -name .svn -exec rm -rf {} \;
-mkdir -p BUILD/{mnt,proc,var/lib/discover/crash}
+mkdir -p BUILD/{mnt,proc,var/lib/discover}
 
 echo "+ copying binaries and required files"
 # next up are the required stuff from the BUILD

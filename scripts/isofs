@@ -19,6 +19,7 @@ ln -s /etc/init.d/lunar-install $ISO_TARGET/etc/rc2.d/S20lunar-install
 cp lunar-install/sbin/lunar-install $ISO_TARGET/sbin/
 sedit "s:%VERSION%:${ISO_VERSION}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
 sedit "s:%CODENAME%:${ISO_CODENAME}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
+sedit "s:%ISO_DATE%:${ISO_DATE}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
 cp $ISO_SOURCE/lunar-install/etc/inittab $ISO_TARGET/etc/
 
 # need more:
