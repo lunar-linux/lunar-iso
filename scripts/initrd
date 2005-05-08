@@ -86,7 +86,7 @@ done
 # compile the initrd image
 echo "+ installing initrd kernels"
 for KERNEL in linux safe ; do
-  KVER=$(grep "^$KERNEL" $ISO_SOURCE/kernels/.initrd_kernel | cut -d" " -f2)
+  KVER=$(grep "^$KERNEL" $ISO_SOURCE/kernels/.initrd_kernels | cut -d" " -f2)
   mkdir TMP
   (
     cd TMP

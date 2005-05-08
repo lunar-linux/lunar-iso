@@ -100,7 +100,7 @@ build()
     build_kernel $1 $5
     echo "$ISO_KVER$1:$4" >> $ISO_SOURCE/kernels/.kernels
 	if [ -n "$5" ]; then
-		echo "$5 $ISO_KVER$1" >> $ISO_SOURCE/kernels/.initrd_kernel
+		echo "$5 $ISO_KVER$1" >> $ISO_SOURCE/kernels/.initrd_kernels
 	fi
 }
 
