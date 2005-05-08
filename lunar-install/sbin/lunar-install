@@ -565,7 +565,7 @@ transfer()
             if [ -f /var/cache/lunar/aaa_base.tar.bz2 ]; then
 		echo XXX
 	        echo $(( CNT * 100 / NUM ))
-	        echo "\n$NUM: Installing aaa_base: base directories and files\n"
+	        echo "\n$CNT: Installing aaa_base: base directories and files\n"
 		echo XXX
 	        tar xjf /var/cache/lunar/aaa_base.tar.bz2 2> /dev/null
 	        (( CNT++ ))
@@ -573,7 +573,7 @@ transfer()
 	    if [ -f /var/cache/lunar/aaa_dev.tar.bz2 ]; then
 	        echo XXX
 	        echo $(( CNT * 100 / NUM ))
-		echo "\n$NUM: Installing aaa_dev: device nodes\n"
+		echo "\n$CNT: Installing aaa_dev: device nodes\n"
 		echo XXX
 		tar xjf /var/cache/lunar/aaa_dev.tar.bz2 2> /dev/null
 	        (( CNT++ ))
@@ -584,7 +584,7 @@ transfer()
 	        SIZ=$(echo $LINE | cut -d: -f5)
 		echo XXX
 	        echo $(( CNT * 100 / NUM ))
-	        echo "\n$NUM: Installing $MOD-$VER ($SIZ)\n\n($(basename /var/cache/lunar/$MOD-$VER-*.tar.bz2))\n"
+	        echo "\n$CNT: Installing $MOD-$VER ($SIZ)\n\n($(basename /var/cache/lunar/$MOD-$VER-*.tar.bz2))\n"
 		echo XXX
 		transfer_package $MOD
 	        (( CNT++ ))
@@ -592,7 +592,7 @@ transfer()
             if [ -f /var/lib/lunar/moonbase.tar.bz2 ] ; then
 		echo XXX
 	        echo $(( CNT * 100 / NUM ))
-                echo "\n$NUM: Installing moonbase"
+                echo "\n$CNT: Installing moonbase"
 		echo XXX
                   (
                     cd $TARGET/var/lib/lunar
@@ -604,7 +604,7 @@ transfer()
 	    # transfer sources
 	        echo XXX
 		echo $(( CNT * 100 / NUM ))
-		echo "\n$NUM: Copying sources"
+		echo "\n$CNT: Copying sources"
 		echo "XXX"
 		cp /var/spool/lunar/* $TARGET/var/spool/lunar/
 	        (( CNT++ ))
