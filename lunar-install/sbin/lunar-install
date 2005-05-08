@@ -638,6 +638,9 @@ transfer()
         echo -e "$FSTAB" >> etc/fstab
         make_lilo_conf
 
+	# tag it!
+	cp /etc/lunar.release $TARGET/etc/
+
         DONE_COPIED="YES"
         echo "Done transferring."
         if (( STEP == 5 )); then
