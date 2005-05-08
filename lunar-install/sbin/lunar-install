@@ -441,8 +441,9 @@ make_lilo_conf()
     if [ ! -f $TARGET/etc/lilo.conf ]; then
         cp /etc/lilo.conf $TARGET/etc/lilo.conf
     fi
+    DISC=$(echo $ROOT | sed 's/part.*/disc/')
     echo "" >> $TARGET/etc/lilo.conf
-    echo "boot=/dev/discs/disc" >> $TARGET/etc/lilo.conf
+    echo "boot=/dev/discs/$DISC" >> $TARGET/etc/lilo.conf
     echo "root=/dev/discs/$ROOT" >> $TARGET/etc/lilo.conf
     echo "" >> $TARGET/etc/lilo.conf
 }
