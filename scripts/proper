@@ -78,7 +78,7 @@ if [ -d $ISO_TARGET/var/lib/lunar/moonbase ] ; then (
 
 # core toolset
 echo "+ archiving core tools"
-cp $ISO_SOURCE/cache/${ISO_LUNAR_MODULE}-${$ISO_DATE}-*.tar.bz2 $ISO_TARGET/var/cache/lunar/
+cp $ISO_SOURCE/cache/${ISO_LUNAR_MODULE}-${ISO_DATE}-*.tar.bz2 $ISO_TARGET/var/cache/lunar/
 
 # more more more!
 rm -rf $ISO_TARGET/usr/src $ISO_TARGET/var/build
