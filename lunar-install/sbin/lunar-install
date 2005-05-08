@@ -613,10 +613,10 @@ transfer()
 
         # setup list of installed packages etc.
         echo "moonbase:%ISO_DATE%:installed:%ISO_DATE%:37M" >> $TARGET/var/state/lunar/packages
-	chroot_run lsh create_module_index
-	chroot_run lsh create_depends_cache
-	chroot_run lsh update_plugins
-	chroot_run lunar fixdepends
+	cp /var/state/lunar/depends        $TARGET/var/state/lunar/
+	cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
+	cp /var/state/lunar/depends.cache  $TARGET/var/state/lunar/
+	cp /var/state/lunar/module.index   $TARGET/var/state/lunar/
 
         # pass through some of the configuration at this point:
 	[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
@@ -626,10 +626,12 @@ transfer()
         [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
 	
         if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
-	    > $TARGET/etc/profile.d/proxy.rc
-	    [ -z "$HPROXY" ] || echo "export http_proxy=\"$HPROXY\"" >> $TARGET/etc/profile.d/proxy.rc
-            [ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\"" >> $TARGET/etc/profile.d
-            [ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\"" >> $TARGET/etc/profile.d
+	(
+	    echo "# these proxy settings apply to wget only"
+	    [ -z "$HPROXY" ] || echo "export http_proxy=\"$HPROXY\""
+            [ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\""
+            [ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\""
+	) > $TARGET/etc/profile.d/proxy.rc
         fi
 
         echo -e "$FSTAB" >> etc/fstab
