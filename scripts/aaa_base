@@ -48,7 +48,7 @@ find $ISO_TARGET/{bin,boot,etc,home,lib,mnt,opt,root,sbin,srv,usr,var} | sort | 
 	-e "^/var/lib/" \
 	-e "^/var/run/"  > $ISO_TARGET/.present
 # add the kernel includes as well
-find $ISO_TARGET/usr/include/{linux,asm} | sed "s:^$ISO_TARGET::g" >> > $ISO_TARGET/.present
+find $ISO_TARGET/usr/include/{linux,asm} | sed "s:^$ISO_TARGET::g" >> $ISO_TARGET/.present
 # add the install logs
 cat $ISO_TARGET/var/log/lunar/install/* | sort | uniq > $ISO_TARGET/.tracked
 diff -Bad $ISO_TARGET/.present $ISO_TARGET/.tracked | grep -e "^< " | cut -c 3- > $ISO_TARGET/.aaa_base.list
