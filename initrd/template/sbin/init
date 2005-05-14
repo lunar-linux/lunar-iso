@@ -12,7 +12,7 @@
 shell()
 {
     echo "Press CTRL-D or type exit to return"
-    /bin/sh
+    sh
 }
 
 
@@ -26,11 +26,11 @@ show_modules()
         case $ITEM in
 	    modules.*) continue ;;
 	esac
-	/bin/echo "$ITEM"
+	echo "$ITEM"
         if [ -d "$ITEM" ]; then
-	    /bin/echo "Directory"
+	    echo "Directory"
 	else
-            /bin/echo "Module"
+            echo "Module"
         fi
     done
 }
@@ -44,7 +44,7 @@ input_module_parameters()
 
 auto_load_modules()
 {
-    MODULES=$(/bin/discover --data-path=linux/module/name --format="%s" --data-version=`uname -r` fixeddisk optical removabledisk tape)
+    MODULES=$(discover --data-path=linux/module/name --format="%s" --data-version=`uname -r` fixeddisk optical removabledisk tape)
 
     if [ -z "$1" ]; then
         MODULES=`$DIALOG --inputbox "The following modules will be attempted to load. Press enter to load them, or edit the list manually. To cancel select 'Cancel'." 10 60 "$MODULES"`
@@ -79,10 +79,10 @@ load_modules()
 	    return
 	fi
         if [ -f "$CHOICE" ]; then
-            MODULE=`/bin/basename $MODULE | /bin/sed -e "s/\.o$//" -e "s/\.ko$//"`
+            MODULE=`basename $MODULE | sed -e "s/\.o$//" -e "s/\.ko$//"`
             PARAMETERS=`input_module_parameters` &&
-            /sbin/modprobe $CHOICE $PARAMETERS
-            /bin/sleep 5
+            modprobe $CHOICE $PARAMETERS
+            sleep 5
 	elif [ -d "$CHOICE" ]; then
 	    cd "$CHOICE"
 	fi
@@ -96,14 +96,14 @@ scan_cdroms()
     if [ -z "$LUNAR_CD" ]; then
         COUNT=0
         while [ -e "$DEVICE$COUNT" ]; do
-            /bin/mount -n -r -t iso9660 $DEVICE$COUNT /mnt 2>/dev/null
+            mount -n -r -t iso9660 $DEVICE$COUNT /mnt 2>/dev/null
             if [ -e "/mnt/.lunar-cd" ]; then
-                /bin/umount -n /mnt 2>/dev/null
+                umount -n /mnt 2>/dev/null
                 LUNAR_CD=$DEVICE$COUNT
                 break
             else
                 (( COUNT++ ))
-                /bin/umount -n /mnt 2>/dev/null
+                umount -n /mnt 2>/dev/null
             fi
         done
     fi
@@ -112,7 +112,7 @@ scan_cdroms()
 
 show_filesystems()
 {
-    for FILESYSTEM in `/bin/cat /proc/filesystems | /bin/grep -v nodev`; do
+    for FILESYSTEM in `cat /proc/filesystems | grep -v nodev`; do
         echo $FILESYSTEM
         echo filesystem
     done
@@ -186,16 +186,16 @@ main()
         OPTIONS="defaults,ro"
     fi
 
-    if /bin/mount -n -t $VFSTYPE -o $OPTIONS $ROOT /mnt && [ -x /mnt/sbin/init ]; then
-	/bin/pkill devfsd
+    if mount -n -t $VFSTYPE -o $OPTIONS $ROOT /mnt && [ -x /mnt/sbin/init ]; then
+	pkill devfsd
 	sleep 1
-        /bin/umount -n /proc
-	/bin/umount -n /dev
-        /sbin/pivot_root /mnt /mnt
+        umount -n /proc
+	umount -n /dev
+        pivot_root /mnt /mnt
         exec /sbin/init  $*
     else
         $DIALOG --msgbox "Unable to locate /sbin/init on $ROOT." 0 0
-	/bin/umount -n /mnt
+	umount -n /mnt
         main $*
     fi
 }
@@ -209,19 +209,20 @@ skipinitrd()
 }
 
 
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin
 export IFS="	
 "
 export DIALOGRC=/etc/dialogrc
-DIALOG="/bin/dialog
+DIALOG="dialog
 --backtitle
 Lunar Linux Install/Rescue CDROM
 --stdout"
 
-/bin/mount -n -t proc proc /proc
-/bin/mount -n -t devfs devfs /dev
-/sbin/devfsd /dev &
+mount -n -t proc proc /proc
+mount -n -t devfs devfs /dev
+devfsd /dev &
 
-KERNEL=`/bin/uname -r`
+KERNEL=`uname -r`
 DEVICE="/dev/cdroms/cdrom"
 
 # fastboot or not?
