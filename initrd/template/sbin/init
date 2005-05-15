@@ -79,7 +79,7 @@ load_modules()
 	    return
 	fi
         if [ -f "$CHOICE" ]; then
-            MODULE=`basename $MODULE | sed -e "s/\.o$//" -e "s/\.ko$//"`
+            MODULE=`basename $CHOICE | sed -e "s/\.o$//" -e "s/\.ko$//"`
             PARAMETERS=`input_module_parameters` &&
             modprobe $MODULE $PARAMETERS
             sleep 2
