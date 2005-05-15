@@ -451,7 +451,109 @@ make_lilo_conf()
 
 make_grub_conf()
 {
-    # nestu heeeeelp !!!
+    if [ ! -f $TARGET/boot/grub/menu.lst ]; then
+      (
+        mkdir -p $TARGET/boot/grub
+	echo "timeout 30"
+	echo "default 0"
+	echo "fallback 1"
+	echo "color light-gray/blue black/light-gray"
+	echo ""
+      ) > $TARGET/boot/grub/menu.lst
+    fi
+}
+
+
+install_grub()
+{
+    # tribute to nestu. One day I'll make this less bulky ;^)
+    get_grub_device()
+    {
+        strip_device()
+    	{
+	    echo $1 | sed -e 's:^/dev/::g' -e 's:^../::g' -e 's:/disc$::g' -e 's:/part.*$::g'
+	}
+
+        create_grub_device_map()
+        {
+            DEV=$1
+    
+            # first we check is the device is a symlink
+            test -h $DEV && DEV=`readlink $DEV`
+	
+            # we search for the devices in the /proc/partition file
+            while read MAJOR MINOR BLOCKS DEVICE OTHERSTUFF 
+            do
+               STRIPPED_DEV=`strip_device $DEVICE`
+               case ${STRIPPED_DEV} in
+	          \#*) 
+                     continue ;;
+                  hd? | ide/host*/bus*/target*/lun*)
+                     echo "${STRIPPED_DEV}" >> /tmp/proc.partitions.ide ;;
+                  sd? | scsi/host*/bus*/target*/lun*)
+                     echo "${STRIPPED_DEV}" >> /tmp/proc.partitions.scsi ;;
+               esac
+            done < /proc/partitions | grep -v "name"
+
+            # proc.partitions.devices will hold the devices on the box
+            # ordered first ide and then scsi, as grub does
+            test -e /tmp/proc.partitions.ide  &&
+	      sort /tmp/proc.partitions.ide  | uniq >> /tmp/proc.partitions.devices
+            test -e /tmp/proc.partitions.scsi &&
+	      sort /tmp/proc.partitions.scsi | uniq >> /tmp/proc.partitions.devices
+
+            DEV=`strip_device $DEV`
+
+            numdev=0
+            found=0
+
+            # the device number will the n'th in the proc.partitions.devices file
+            # the candidate can still be a symlink, so that has to be checked too
+            while read candidate
+            do
+              test "$candidate" = "$DEV" ||
+	          test "`strip_device $(readlink /dev/$candidate)`" = "$DEV" &&
+		  found=1 && break;
+              (( numdev++ ))
+            done < /tmp/proc.partitions.devices
+
+            # remove temp files.
+            rm -f /tmp/proc.partitions.{ide,scsi,devices} 
+    
+            # if we found the device, echo it
+            test $found -eq 1 && echo $numdev
+        }
+
+        local HD PARTITION DISK=$1
+
+        case $DISK in
+    	    /dev/hd* | /dev/sd*)
+	        DEVICE=${DISK:0:8}
+	        PARTITION=${DISK##/dev/?d?}
+	        HD=`create_grub_device_map $DEVICE`
+	        ;;
+	    /dev/ide/host*/bus*/target*/lun*/part* | /dev/discs/disc*/part*)
+	        DEVICE=${DISK%%/part*}
+	        HD=`create_grub_device_map $DEVICE`
+	        PARTITION=${DISK##*/part}
+	        ;;
+        esac
+
+        # in grub, counts start at 0, not at 1
+        let "PARTITION=$PARTITION - 1";
+	GRUB_DISC=hd${HD}
+	GRUB_PART=${PARTITION}
+    }
+
+    get_grub_device /dev/discs/$ROOT
+    
+    (
+      echo "root ($GRUB_DISC,$GRUB_PART)"
+      echo "setup ($GRUB_DISC)"
+      echo "quit"
+    ) | grub
+    echo "grub was installed on the MBR of $GRUB_DISC"
+    sleep 2
 }
 
 
@@ -670,7 +772,6 @@ shell()
 }
 
 
-##########BEGIN PROXY CONFIGURATION FUNCTIONS##########
 configure_proxy()
 {
     HTTP_PROMPT="Please enter the HTTP proxy server\nExample: http://192.168.1.1:8080/"
@@ -722,37 +823,6 @@ toggle()
     else
         eval $1=on
     fi
-}
-
-
-inst_mbr()
-{
-  $DIALOG  --cr-wrap                      \
-           --title  "Quick info on MBR"   \
-           --msgbox                       \
-"The purpose of a Master Boot Record is to run the code 
-on the first sector of the first bootable partition.
-
-This procedure is required if your disk does not have
-a master boot record (ie, fresh disk) OR if you want to 
-replace the MBR (as fdisk /mbr). If you install lilo on an active
-partition you do not need to perform this procedure.
-
-Lunar, by default, does not overwrites your MBR. If you are
-installing on an empty disc you and wish to boot from the MBR
-you will need to perform this procedure. This process will
-overwrite your MBR and trash any bootmanagers you may be using.
-
-You will be presented a CANCEL option before replacing the MBR
-on the first disk."  20 65
-
-  if DISC=$(get_disc); then
-    chroot_run dd if=/dev/zero of=/dev/discs/$DISC/disc bs=446 count=1
-    chroot_run /sbin/lilo -M /dev/discs/$DISC/disc
-    sleep 1
-    echo -e "\n/sbin/lilo run\nPress ENTER to continue."
-    read
-  fi
 }
 
 
@@ -968,20 +1038,19 @@ install_kernels()
 install_bootloader() {
     while true ; do
         BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "L" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
-       "L" "lilo" "Install lilo as boot loader" \
-       "G" "grub" "Install grub as boot loader" \
-       "N" "none" "Do not install a boot loader"`
+        "L" "lilo" "Install lilo as boot loader" \
+        "G" "grub" "Install grub as boot loader" \
+        "N" "none" "Do not install a boot loader"`
 
         if [ $? != 0 ] ; then
-            return
+            continue
         fi
 
         case $BCOMMAND in
-            L) BOOTLOADER=lilo ;;
-            G) BOOTLOADER=grub ;;
+            L) BOOTLOADER=lilo ; transfer_package $BOOTLOADER ;;
+            G) BOOTLOADER=grub ; transfer_package $BOOTLOADER ; install_grub ;;
+	    N) $DIALOG --cr-wrap --msgbox "Not installing a boot loader requires you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also does not install lilo or grub on the hard disc." 12 65 ;;
         esac
-
-	transfer_package $BOOTLOADER
 
 	if (( STEP == 6 )); then
 	    (( STEP++ ))
