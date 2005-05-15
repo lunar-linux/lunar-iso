@@ -58,7 +58,7 @@ auto_load_modules()
     done
     if [ -z "$1" ]; then
       echo "Finished loading modules!"
-      sleep 5
+      sleep 2
     fi
 }
 
@@ -81,8 +81,8 @@ load_modules()
         if [ -f "$CHOICE" ]; then
             MODULE=`basename $MODULE | sed -e "s/\.o$//" -e "s/\.ko$//"`
             PARAMETERS=`input_module_parameters` &&
-            modprobe $CHOICE $PARAMETERS
-            sleep 5
+            modprobe $MODULE $PARAMETERS
+            sleep 2
 	elif [ -d "$CHOICE" ]; then
 	    cd "$CHOICE"
 	fi
@@ -224,6 +224,9 @@ devfsd /dev &
 
 KERNEL=`uname -r`
 DEVICE="/dev/cdroms/cdrom"
+
+# short timeout, we really need to be able to see debug info
+sleep 2
 
 # fastboot or not?
 if cat /proc/cmdline | grep -q 'skipinitrd=1'; then

@@ -6,6 +6,7 @@ bin/grep
 bin/ls
 bin/mkdir
 bin/mount
+bin/more
 bin/pgrep
 bin/pkill
 bin/rm
@@ -27,9 +28,8 @@ usr/bin/e3
 usr/bin/e3em
 usr/bin/e3vi
 usr/bin/ldd
-usr/bin/less
+usr/bin/lddlibc4
 usr/bin/nano
-usr/bin/touch
 usr/lib/libexpat.so
 usr/lib/libexpat.so.0
 usr/lib/libexpat.so.0.5.0

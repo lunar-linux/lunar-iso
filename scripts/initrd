@@ -13,7 +13,7 @@ rm -rf BUILD
 
 # template first
 cp -a --no-dereference template BUILD
-find BUILD -type d -name .svn -exec rm -rf {} \;
+find BUILD -type d -name '.svn' -exec rm -rf {} \; >/dev/null 2>&1
 mkdir -p BUILD/{mnt,proc,var/lib/discover}
 
 echo "+ copying binaries and required files"
@@ -75,14 +75,6 @@ fi
 mkdir -p $ISO_SOURCE/aaa_dev
 tar cj -C BUILD -f $ISO_SOURCE/aaa_dev/aaa_dev.tar.bz2 dev/
 
-echo "+ stripping everything"
-for ITEM in $(find BUILD -type f); do
-    strip $ITEM > /dev/null 2>&1
-done
-for ITEM in $(find BUILD -type d -name ".svn" | tac); do
-    rm -rf $ITEM
-done
-
 # compile the initrd image
 echo "+ installing initrd kernels"
 for KERNEL in linux safe ; do
@@ -92,8 +84,11 @@ for KERNEL in linux safe ; do
     cd TMP
     tar xjf $ISO_SOURCE/kernels/TAR/$KVER.tar.bz2
     mkdir -p $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
+    echo "+ cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{ide,scsi} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/"
     cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{ide,scsi} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
+    echo "+ cp lib/modules/$KVER/modules.* $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/"
     cp lib/modules/$KVER/* $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/
+    echo "+ depmod -b $ISO_SOURCE/initrd/BUILD -a -F $ISO_SOURCE/kernels/$KERNEL.map $KVER"
     depmod -b $ISO_SOURCE/initrd/BUILD -a -F $ISO_SOURCE/kernels/$KERNEL.map $KVER
   )
   rm -rf TMP
@@ -106,9 +101,13 @@ cp $ISO_SOURCE/discover/discover.conf BUILD/etc/
 cp $ISO_SOURCE/discover/conffile.dtd BUILD/usr/share/discover/dtd/
 cp $ISO_SOURCE/discover/discover.dtd BUILD/usr/share/discover/dtd/
 cp $ISO_SOURCE/discover/data/* BUILD/usr/share/discover/
-# make sure this is absolutely minimal:
-for file in $(find BUILD/{lib,bin,sbin,usr}); do
-  strip $file 2> /dev/null
+
+echo "+ stripping everything"
+for ITEM in BUILD/{bin,sbin,usr/bin,usr/sbin,lib,usr/lib}/* ; do
+    strip $ITEM > /dev/null 2>&1
+done
+for ITEM in $(find BUILD -type d -name ".svn" | tac); do
+    rm -rf $ITEM
 done
 
 chown -R root:root BUILD/*

@@ -42,24 +42,23 @@ elif [ $# -eq 1 ]; then
 	fi
 fi
 
-cat $1 | while read binary ; do
-	if [ -x $binary ] ; then
-		ldd $binary
+cat $1 | while read FILE JUNK ; do
+	if [ -x $FILE ] ; then
+		ldd $FILE
 	fi
 done | grep "=> /" | cut -d" " -f3 | sort | uniq | while read lib ; do
     echo $lib
     
-    symlinked=`readlink $lib`
-    dir=`dirname $lib`
+    LINK=`readlink $lib`
+    DIR=`dirname $lib`
 
-    symlink=$dir/$symlinked
-    if [ -e "$symlink" ]; then
-       echo "$symlink"
+    if [ -e "$DIR/$LINK" ]; then
+       echo "$DIR/$LINK"
     fi
 
-    stripped=${symlink%%.[0-9]*}
-    if [ -e ${stripped} ]; then
-       echo "${stripped}"
+    STRIPPED=$DIR/${LINK%%.[0-9]*}
+    if [ -e "$STRIPPED" ]; then
+       echo "$STRIPPED"
     fi
 
 done
