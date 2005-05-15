@@ -413,7 +413,7 @@ select_partitions()
         if confirm "Are you done making partitions?"; then
             case $ARCH in
     	        "alpha")
-      	            $DIALOG --cr-warp --msgbox \
+      	            $DIALOG --cr-wrap --msgbox \
 "The partition on which the kernel is located must
 be formatted with the ext2 filesystem. Normally this
 means that your root or boot filesystem should be ext2." 20 60
@@ -446,6 +446,12 @@ make_lilo_conf()
     echo "boot=/dev/discs/$DISC" >> $TARGET/etc/lilo.conf
     echo "root=/dev/discs/$ROOT" >> $TARGET/etc/lilo.conf
     echo "" >> $TARGET/etc/lilo.conf
+}
+
+
+make_grub_conf()
+{
+    # nestu heeeeelp !!!
 }
 
 
@@ -637,6 +643,7 @@ transfer()
 
         echo -e "$FSTAB" >> etc/fstab
         make_lilo_conf
+	make_grub_conf
 
 	# some more missing files:
 	cp /etc/lunar.release $TARGET/etc/
@@ -651,7 +658,7 @@ transfer()
 	fi
         T_OK=\\Z2
 	O_OK=
-	K_OK=
+	L_OK=
     fi
 }
 
@@ -890,22 +897,6 @@ timezone()
 }
 
 
-reconfig_lilo()
-{
-    chroot_run ${EDITOR:-vim} /etc/lilo.conf
-    echo -e "\n/sbin/lilo run\nPress ENTER to continue "
-    read
-}
-
-
-reconfig_grub()
-{
-    chroot_run grub
-    echo -e "\n/sbin/grub run\nPress ENTER to continue "
-    read
-}
-
-
 install_kernels()
 {
     list_precompiled_kernels()
@@ -950,18 +941,26 @@ install_kernels()
 		$(list_precompiled_kernels)`
 		if [ -f "/kernels/$CCOMMAND.tar.bz2" ]; then
 		    cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
-		    echo "" >> $TARGET/etc/lilo.conf
-		    echo "image = /boot/$CCOMMAND"  "" >> $TARGET/etc/lilo.conf
-		    echo "  label = ${CCOMMAND:0:15}" >> $TARGET/etc/lilo.conf
+		    # let the plugin code handle the hard work
+		    chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
 		fi
 	    ;;
 	esac
 
-	if (( STEP == 6 )); then
+	if (( STEP == 7 )); then
             (( STEP++ ))
 	fi
 	K_OK=\\Z2
-	L_OK=
+	R_OK=
+	H_OK=
+	U_OK=
+	V_OK=
+	G_OK=
+	A_OK=
+	C_OK=
+	D_OK=
+	E_OK=
+	J_OK=
     done
 }
 
@@ -984,19 +983,12 @@ install_bootloader() {
 
 	transfer_package $BOOTLOADER
 
-	if (( STEP == 7 )); then
+	if (( STEP == 6 )); then
 	    (( STEP++ ))
 	fi
-	R_OK=
-	H_OK=
-	U_OK=
-	V_OK=
-	G_OK=
-	A_OK=
-	C_OK=
-	D_OK=
-	E_OK=
-	J_OK=
+	L_OK=\\Z2
+	K_OK=
+	return
     done
 }
 
@@ -1034,12 +1026,12 @@ systems performance. You can create a swapfile or
 even whole swap partitions."
         SH[5]="During the transfer all programs and files that you
 need to run lunar-linux will be copied to your system."
-        SH[6]="You cannot boot linux without the kernel. You will
-need to install at least one. You can choose between
-several factory kernels or compile one yourself."
-        SH[7]="To be able to boot linux on reboot, you need to have
+        SH[6]="To be able to boot linux on reboot, you need to have
 a boot loader that loads the kernel when you power on
 your computer. Without it linux does not run."
+        SH[7]="You cannot boot linux without the kernel. You will
+need to install at least one. You can choose between
+several factory kernels or compile one yourself."
         SH[8]="Make sure you set good passwords, especially for
 the root user. Everyone who knows this password can
 destroy your system. By default the root password is
@@ -1082,12 +1074,12 @@ cd-rom tray and reboot. See you at the login prompt!"
         O_LABEL="Configure compiler optimizations"
         O_HELP="Select architecture and optimizations"
         O_OK="\\Z1"
-        K_LABEL="Install kernel(s)"
-        K_HELP="Install kernel(s) on the new installation"
-        K_OK="\\Z1"
         L_LABEL="Install boot loader"
         L_HELP="Install a boot loader to boot into Lunar"
         L_OK="\\Z1"
+        K_LABEL="Install kernel(s)"
+        K_HELP="Install kernel(s) on the new installation"
+        K_OK="\\Z1"
     
         R_LABEL="Set root password"
         R_HELP="Set the default root password needed to access this system (the default password is empty)"
@@ -1150,8 +1142,8 @@ cd-rom tray and reboot. See you at the login prompt!"
 	    3)  DEFAULT=M ; CHOICES="B P M F" ;;
 	    4)  DEFAULT=S ; CHOICES="B P M S F" ;;
 	    5)  DEFAULT=T ; CHOICES="B P M S T F" ;;
-	    6)  DEFAULT=K ; CHOICES="B O K F" ;;
-	    7)  DEFAULT=L ; CHOICES="B O K L F" ;;
+	    6)  DEFAULT=L ; CHOICES="B O L F" ;;
+	    7)  DEFAULT=K ; CHOICES="B O L K F" ;;
 	    8)  DEFAULT=R ; CHOICES="B R F" ;;
 	    9)  DEFAULT=H ; CHOICES="B H F" ;;
 	    10) DEFAULT=U ; CHOICES="B H U F" ;;
@@ -1204,8 +1196,8 @@ cd-rom tray and reboot. See you at the login prompt!"
       T)  transfer               ;;
 
       O)  chroot_run lunar optimize ;;
-      K)  install_kernels        ;;
       L)  install_bootloader     ;;
+      K)  install_kernels        ;;
 
       R)  chroot_run passwd ; if (( STEP == 8 )); then (( STEP++ )); fi ; R_OK=\\Z2 ;;
 
