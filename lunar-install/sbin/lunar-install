@@ -464,91 +464,33 @@ make_grub_conf()
 }
 
 
+map_to_grub() {
+    # TODO - make sure partitions count continuously
+    # TODO - check if ide, scsi, md is the correct order
+    for LINE in $(
+        for N in /dev/discs/disc*/* ; do
+            echo "$(readlink -f $N | sed -e 's/\/dev\/ide/0/g' \
+            -e 's/\/dev\/scsi/1/g' -e 's/\/dev\/md/2/g' | sort):$N"
+        done); do 
+        DEVICE=$(echo $LINE | cut -d: -f1)
+        TARGET=$(echo $LINE | cut -d: -f2)
+        if echo $DEVICE | grep -q "disc" ; then
+            (( DISC++ ))
+        fi
+        echo "hd$((DISC-1)),$(echo $DEVICE | sed -e 's/.*\///' -e 's/disc/0/' -e 's/part//'):$TARGET"
+    done | grep ":$1$" | cut -d: -f1
+}
+
+
 install_grub()
 {
-    # tribute to nestu. One day I'll make this less bulky ;^)
-    get_grub_device()
-    {
-        strip_device()
-    	{
-	    echo $1 | sed -e 's:^/dev/::g' -e 's:^../::g' -e 's:/disc$::g' -e 's:/part.*$::g'
-	}
-
-        create_grub_device_map()
-        {
-            DEV=$1
-    
-            # first we check is the device is a symlink
-            test -h $DEV && DEV=`readlink $DEV`
-	
-            # we search for the devices in the /proc/partition file
-            while read MAJOR MINOR BLOCKS DEVICE OTHERSTUFF 
-            do
-               STRIPPED_DEV=`strip_device $DEVICE`
-               case ${STRIPPED_DEV} in
-	          \#*) 
-                     continue ;;
-                  hd? | ide/host*/bus*/target*/lun*)
-                     echo "${STRIPPED_DEV}" >> /tmp/proc.partitions.ide ;;
-                  sd? | scsi/host*/bus*/target*/lun*)
-                     echo "${STRIPPED_DEV}" >> /tmp/proc.partitions.scsi ;;
-               esac
-            done < /proc/partitions | grep -v "name"
-
-            # proc.partitions.devices will hold the devices on the box
-            # ordered first ide and then scsi, as grub does
-            test -e /tmp/proc.partitions.ide  &&
-	      sort /tmp/proc.partitions.ide  | uniq >> /tmp/proc.partitions.devices
-            test -e /tmp/proc.partitions.scsi &&
-	      sort /tmp/proc.partitions.scsi | uniq >> /tmp/proc.partitions.devices
-
-            DEV=`strip_device $DEV`
-
-            numdev=0
-            found=0
-
-            # the device number will the n'th in the proc.partitions.devices file
-            # the candidate can still be a symlink, so that has to be checked too
-            while read candidate
-            do
-              test "$candidate" = "$DEV" ||
-	          test "`strip_device $(readlink /dev/$candidate)`" = "$DEV" &&
-		  found=1 && break;
-              (( numdev++ ))
-            done < /tmp/proc.partitions.devices
-
-            # remove temp files.
-            rm -f /tmp/proc.partitions.{ide,scsi,devices} 
-    
-            # if we found the device, echo it
-            test $found -eq 1 && echo $numdev
-        }
-
-        local HD PARTITION DISK=$1
-
-        case $DISK in
-    	    /dev/hd* | /dev/sd*)
-	        DEVICE=${DISK:0:8}
-	        PARTITION=${DISK##/dev/?d?}
-	        HD=`create_grub_device_map $DEVICE`
-	        ;;
-	    /dev/ide/host*/bus*/target*/lun*/part* | /dev/discs/disc*/part*)
-	        DEVICE=${DISK%%/part*}
-	        HD=`create_grub_device_map $DEVICE`
-	        PARTITION=${DISK##*/part}
-	        ;;
-        esac
-
-        # in grub, counts start at 0, not at 1
-        let "PARTITION=$PARTITION - 1";
-	GRUB_DISC=hd${HD}
-	GRUB_PART=${PARTITION}
-    }
-
-    get_grub_device /dev/discs/$ROOT
+    GRUB_ROOT=$(map_to_grub /dev/discs/$ROOT)
+    GRUB_DISC=$(echo $GRUB_ROOT | cut -d, -f1)
+    # filty trick to make kernel compiles work later on:
+    export GRUB_ROOT GRUB_DISC
     
     (
-      echo "root ($GRUB_DISC,$GRUB_PART)"
+      echo "root ($GRUB_DISC,0)"
       echo "setup ($GRUB_DISC)"
       echo "quit"
     ) | grub
@@ -751,6 +693,10 @@ transfer()
 	cp /etc/lunar.release $TARGET/etc/
 	> $TARGET/etc/lunar/local/config
 	cp /etc/lunar/local/.config $TARGET/etc/lunar/local/
+	
+	# moo, more more more!
+	chroot_run lunar set GCCVER 3
+	chroot_run lsh update_plugins
 	
 	# initialize the new machine:
 	touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
@@ -1052,8 +998,19 @@ install_bootloader() {
         fi
 
         case $BCOMMAND in
-            L) BOOTLOADER=lilo ; transfer_package $BOOTLOADER ;;
-            G) BOOTLOADER=grub ; transfer_package $BOOTLOADER ; install_grub ;;
+            L)
+	        BOOTLOADER=lilo
+		transfer_package $BOOTLOADER
+		chroot_run lsh update_plugin $BOOTLOADER "install"
+		$DIALOG --cr-wrap --msgbox "The lilo boot loader package was installed. From now on, when you add a kernel, lilo will be run after the /etc/lilo.conf configuration file has been updated. " 10 65
+		;;
+            G)
+	        BOOTLOADER=grub
+		transfer_package $BOOTLOADER
+		chroot_run lsh update_plugin $BOOTLOADER "install"
+		install_grub
+		$DIALOG --cr-wrap --msgbox "The grub boot loader package was installed. From now on, when you add a kernel, it will be available through grub on boot." 10 65
+		;;
 	    N) $DIALOG --cr-wrap --msgbox "Not installing a boot loader requires you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also does not install lilo or grub on the hard disc." 12 65 ;;
         esac
 
