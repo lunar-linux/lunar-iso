@@ -1002,7 +1002,6 @@ install_kernels()
 		"A" "linux-2.4-agr" "Low-latency and preemptive kernel" \
 		"O" "linux-2.4-om" "OpenMosix clustering kernel"`
 
-                chroot_run lunar exile kernel-reqs
 		case $CCOMMAND in
 		    L) chroot_run lin -r linux-2.4            ;;
 		    S) chroot_run lin -r linux-2.4-stable     ;;
@@ -1011,7 +1010,6 @@ install_kernels()
 		    A) chroot_run lin -r linux-2.4-aggressive ;;
 		    O) chroot_run lin -r linux-2.4-om         ;;
 		esac
-                chroot_run lunar unexile kernel-reqs
 	    ;;
 	    P)
 	        CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --item-help --menu "" 0 0 0 \
