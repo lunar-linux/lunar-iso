@@ -752,6 +752,11 @@ transfer()
 	> $TARGET/etc/lunar/local/config
 	cp /etc/lunar/local/.config $TARGET/etc/lunar/local/
 	
+	# initialize the new machine:
+	touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
+	chmod 0644 $TARGET/var/log/{utmp,wtmp,lastlog}
+	chmod 0600 $TARGET/var/log/btmp
+	
         DONE_COPIED="YES"
         echo "Done transferring."
 
