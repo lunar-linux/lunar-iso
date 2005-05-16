@@ -486,16 +486,20 @@ install_grub()
 {
     GRUB_ROOT=$(map_to_grub /dev/discs/$ROOT)
     GRUB_DISC=$(echo $GRUB_ROOT | cut -d, -f1)
-    # filty trick to make kernel compiles work later on:
-    export GRUB_ROOT GRUB_DISC
     
     (
       echo "root ($GRUB_DISC,0)"
       echo "setup ($GRUB_DISC)"
       echo "quit"
     ) | grub
+
     echo "grub was installed on the MBR of $GRUB_DISC"
     sleep 2
+
+    # filty trick to make kernel compiles work later on:
+    GRUB_ROOT="($GRUB_ROOT)"
+    GRUB_BOOT=/boot
+    export GRUB_ROOT GRUB_BOOT
 }
 
 
