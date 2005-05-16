@@ -14,6 +14,9 @@ chroot $ISO_TARGET lunar set ARCHIVE on
 
 mount -t proc proc $ISO_TARGET/proc
 
+echo "+ updating plugins first"
+chroot $ISO_TARGET lsh update_plugins
+
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          STARTING CONFIGURING MODULES                +"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
