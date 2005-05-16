@@ -35,8 +35,10 @@ echo "+          STARTING KERNEL COMPILE                     +"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo ""
 
+chroot $ISO_TARGET lunar hold kernel-reqs
 chroot $ISO_TARGET lin linux-${ISO_KSUFFIX}
 chroot $ISO_TARGET lin kernel-headers-${ISO_KSUFFIX}
+chroot $ISO_TARGET lunar unhold kernel-reqs
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          STARTING COMPILE PHASE OF ALL MODULES       +"
