@@ -31,11 +31,19 @@ chroot $ISO_TARGET ldconfig
   chroot $ISO_TARGET /sbin/lsh create_module_index
   echo "+ installing depends.cache"
   chroot $ISO_TARGET /sbin/lsh create_depends_cache
+  echo "+ installing plugins"
+  chroot $ISO_TARGET /sbin/lsh update_plugins
 )
   
 # manual fixes needed before compiling:
 [ ! -e $ISO_TARGET/lib/cpp ] && ln -s /usr/bin/cpp $ISO_TARGET/lib/cpp
 [ ! -e $ISO_TARGET/usr/bin/cc ] && ln -s /usr/bin/gcc $ISO_TARGET/usr/bin/cc
 [ ! -e $ISO_TARGET/usr/include/gnu/stubs.h ] && mkdir -p $ISO_TARGET/usr/include/gnu && cp /usr/include/gnu/stubs.h $ISO_TARGET/usr/include/gnu/stubs.h
+
+echo "+ running ldconfig"
+chroot $ISO_TARGET /sbin/ldconfig
+
+chroot $ISO_TARGET lunar set ARCHIVE on
+
 
 touch $ISO_TARGET/.etcf
