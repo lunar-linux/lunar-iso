@@ -474,18 +474,16 @@ install_grub()
     GRUB_DISC=$(echo $GRUB_ROOT | cut -d, -f1)
     
     (
-      echo "root ($GRUB_DISC,0)"
+      echo "root ($GRUB_ROOT)"
       echo "setup ($GRUB_DISC)"
       echo "quit"
     ) | grub
 
     # setup grub details
     if [ "$BOOT" == "$ROOT" ]; then
-        GRUB_ROOT="($GRUB_ROOT)"
     	GRUB_BOOT=/boot
     else
-        GRUB_ROOT="($(lsh map_device_to_grub /dev/discs/$BOOT))"
-        GRUB_BOOT=""
+        GRUB_BOOT="($GRUB_ROOT)"
     fi
     export GRUB_ROOT GRUB_BOOT
 
