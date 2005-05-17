@@ -113,3 +113,18 @@ blank:
 burn:
 	@scripts/burn
 
+# these are for hacking around and doing manual adjustments
+tar:
+	tar cf BUILD.tar BUILD
+
+moonbase-extract:
+	tar xf $(ISO_TARGET)/var/lib/lunar/moonbase.tar.bz2 -C $(ISO_TARGET)/var/lib/lunar
+	rm $(ISO_TARGET)/var/lib/lunar/moonbase.tar.bz2
+	@echo "Don't forget to do a 'make moonbase-pack!'"
+
+moonbase-pack:
+	tar cjf $(ISO_TARGET)/var/lib/lunar/moonbase.tar.bz2 -C $(ISO_TARGET)/var/lib/lunar moonbase/
+	rm -rf $(ISO_TARGET)/var/lib/lunar/moonbase
+	@echo "Packed up moonbase."
+
+
