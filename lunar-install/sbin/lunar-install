@@ -453,18 +453,28 @@ make_lilo_conf()
 }
 
 
+reverse_device()
+{
+    for DEV in $(ls -1d /dev/[hs]d* 2> /dev/null); do
+        if [ "$(readlink -f $DEV)" == "$(readlink -f $1)" ]; then
+	    echo $DEV
+	fi
+    done
+}
+
+
 make_grub_conf()
 {
-    if [ ! -f $TARGET/boot/grub/menu.lst ]; then
-      (
+    (
         mkdir -p $TARGET/boot/grub
 	echo "timeout 30"
 	echo "default 0"
 	echo "fallback 1"
 	echo "color light-gray/blue black/light-gray"
 	echo ""
-      ) > $TARGET/boot/grub/menu.lst
-    fi
+	echo "kopt=root=$(reverse_device /dev/discs/$ROOT) ro"
+	echo ""
+    ) > $TARGET/boot/grub/menu.lst
 }
 
 
@@ -483,7 +493,7 @@ install_grub()
     if [ "$BOOT" == "$ROOT" ]; then
     	GRUB_BOOT=/boot
     else
-        GRUB_BOOT="($GRUB_ROOT)"
+        GRUB_BOOT=""
     fi
     export GRUB_ROOT GRUB_BOOT
 
