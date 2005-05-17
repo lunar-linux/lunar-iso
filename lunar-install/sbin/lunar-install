@@ -1163,7 +1163,7 @@ cd-rom tray and reboot. See you at the login prompt!"
     }
    
     if [ "$GUIDE" == "off" ]; then
-        CHOICES="I P M S T O K L R H U V G A C D E J Z"
+        CHOICES="I P M S T O L K R H U V G A C D E J Z"
 	STEPHELP="Step $STEP of $STEPS:"
     else
         case $STEP in
