@@ -399,7 +399,9 @@ select_partition()
 	    FORMAT=no
 	fi
 	MNT_OPTS=$(determine_mount_opts $FSYS) &&
-	MNT_PNT=${MNT_PNT%%/}
+	if [ "$MNT_PNT" != "/" ]; then
+	    MNT_PNT=${MNT_PNT%%/}
+	fi
         FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
 
         PARTITIONS=(${PARTITIONS[@]} "$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT" )
