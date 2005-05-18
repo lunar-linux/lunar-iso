@@ -48,7 +48,7 @@ $(ISO_SOURCE)/discover/discover:
 	@echo "Generating static discover"
 	@scripts/discover
 
-kernels: $(ISO_SOURCE)/kernels/.kernels
+kernels: rebuild $(ISO_SOURCE)/kernels/.kernels
 $(ISO_SOURCE)/kernels/.kernels:
 	@echo "Building precompiled kernels"
 	@scripts/kernels

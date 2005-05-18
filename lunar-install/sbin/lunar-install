@@ -453,14 +453,20 @@ means that your root or boot filesystem should be ext2." 20 60
 
 make_lilo_conf()
 {
-    if [ ! -f $TARGET/etc/lilo.conf ]; then
-        cp /etc/lilo.conf $TARGET/etc/lilo.conf
-    fi
     DISC=$(echo $ROOT | sed 's/part.*/disc/')
-    echo "" >> $TARGET/etc/lilo.conf
-    echo "boot=$(reverse_device /dev/discs/$DISC)" >> $TARGET/etc/lilo.conf
-    echo "root=$(reverse_device /dev/discs/$ROOT)" >> $TARGET/etc/lilo.conf
-    echo "" >> $TARGET/etc/lilo.conf
+    (
+      echo "# lba32"
+      echo "prompt"
+      echo "delay=100"
+      echo "timeout=100"
+      echo "install=menu"
+      echo "append=\"devfs=nomount\""
+      echo "read-only"
+      echo ""
+      echo "boot=$(reverse_device /dev/discs/$DISC)"
+      echo "root=$(reverse_device /dev/discs/$ROOT)"
+      echo ""
+    ) > $TARGET/etc/lilo.conf
 }
 
 
