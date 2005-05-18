@@ -973,7 +973,7 @@ install_kernels()
 		    S) chroot_run lin -r linux-2.4-stable     ;;
 		    V) chroot_run lin -r linuz-2.4-vanilla    ;;
 		    G) chroot_run lin -r linux-2.4-grsec      ;;
-		    A) chroot_run lin -r linux-2.4-aggressive ;;
+		    A) chroot_run lin -r linux-2.4-agr        ;;
 		    O) chroot_run lin -r linux-2.4-om         ;;
 		esac
 	    ;;
