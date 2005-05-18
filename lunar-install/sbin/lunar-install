@@ -12,7 +12,9 @@
 introduction()
 {
     $DIALOG --title "Welcome to Lunar Linux" --msgbox \
-"The purpose of Lunar Linux is to return control to System Administrators that the wizards and maintainers of modern distributions have steadily chipped away." 8 65
+"The purpose of Lunar Linux is to return control to System
+Administrators that the wizards and maintainers of modern
+distributions have steadily chipped away." 8 65
 
     $DIALOG --cr-wrap --title "The Benefits of Lunar Linux" --msgbox \
 "Lunar Linux empowers System Administrators to choose:
@@ -32,6 +34,7 @@ And it provides the conveniences of:
     if (( STEP == 1 )); then
         (( STEP++ ))
     fi
+    DEFAULT=C
 }
 
 
@@ -149,7 +152,7 @@ list_discs()
     LIST=$(ls /dev/discs)
     for LINE in $LIST; do
         echo "$LINE"
-        echo "disk"
+        echo "$(reverse_device /dev/discs/$LINE) - disk"
     done
 }
 
@@ -178,11 +181,11 @@ list_parts()
 	        if echo ${PARTITIONS[$N]} | grep -q "^$PART:"; then
 		    FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
 		    MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
-		    echo "$FSTYPE partition, size $FSIZE"
+		    echo "$(reverse_device /dev/discs/$PART) - $FSTYPE partition, size $FSIZE"
 		    continue 2
 		fi		
 	    done
-            echo "unassigned $PTYPE, size $FSIZE"
+            echo "$(reverse_device /dev/discs/$PART) - unassigned, size $FSIZE, $PTYPE"
         fi
     done
 }
@@ -251,6 +254,7 @@ keymap_menu()
     HELP="Please select your preferred keymapping."
     KEYMAPS=$(show_keymaps)
     KEYMAP=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 $KEYMAPS`
+    loadkeys $KEYMAP
     C_OK=\\Z2
     DEFAULT=D
 }
@@ -287,7 +291,7 @@ fdisc()
     if confirm "$PROMPT"; then
 		unset PARTITIONS
         $PROG /dev/discs/$DISC/disc
-	if (( STEP == 2 )); then
+	if (( STEP == 3 )); then
 	    (( STEP++ ))
 	fi
         P_OK=\\Z2
@@ -323,7 +327,7 @@ select_swap_file()
     (( SWAPSIZE = ( ( SWAPSIZE / 128 ) + 1 ) * 256 )) &&
 
     SWAPSIZE=$(inputbox "$SIZE_PROMPT" "$SWAPSIZE") &&
-    if (( STEP == 4 )); then
+    if (( STEP == 5 )); then
         (( STEP++ ))
     fi
     S_OK=\\Z2
@@ -402,9 +406,14 @@ select_partition()
         (( NUM_PARTITIONS++ ))
 
         if [ "$MNTPNT" == "/" ]; then
-            ROOT=$PART
+	    ROOT=$PART
+	    # make sure BOOT is set to ROOT ... ->
+            if [ -z "$BOOT" ]; then
+	        BOOT=$ROOT
+	    fi
         fi
 	if [ "$MNTPNT" == "/boot" ]; then
+	    # ... -> except when this is a /boot partition
 	    BOOT=$PART
 	fi
     done
@@ -430,8 +439,8 @@ means that your root or boot filesystem should be ext2." 20 60
     fi
 
     if [ -n "$ROOT" ]; then
-        if (( STEP == 3 )) || (( STEP == 2 )); then
-            STEP=4
+        if (( STEP =< 4 )) ; then
+            STEP=5
         fi
         S_OK=
         T_OK=
@@ -447,19 +456,23 @@ make_lilo_conf()
     fi
     DISC=$(echo $ROOT | sed 's/part.*/disc/')
     echo "" >> $TARGET/etc/lilo.conf
-    echo "boot=/dev/discs/$DISC" >> $TARGET/etc/lilo.conf
-    echo "root=/dev/discs/$ROOT" >> $TARGET/etc/lilo.conf
+    echo "boot=$(reverse_device /dev/discs/$DISC)" >> $TARGET/etc/lilo.conf
+    echo "root=$(reverse_device /dev/discs/$ROOT)" >> $TARGET/etc/lilo.conf
     echo "" >> $TARGET/etc/lilo.conf
 }
 
 
 reverse_device()
 {
-    for DEV in $(ls -1d /dev/[hs]d* 2> /dev/null); do
-        if [ "$(readlink -f $DEV)" == "$(readlink -f $1)" ]; then
-	    echo $DEV
+    local DEVICE
+    for DEVICE in $(ls -1d /dev/[hs]d* 2> /dev/null); do
+        if [ "$(readlink -f $DEVICE)" == "$(readlink -f $1)" ]; then
+	    echo $DEVICE
+	    return 0
 	fi
     done
+    echo $1
+    return 0
 }
 
 
@@ -495,6 +508,7 @@ install_grub()
     else
         GRUB_BOOT=""
     fi
+    GRUB_ROOT="(GRUB_ROOT)"
     export GRUB_ROOT GRUB_BOOT
 
     echo ""
@@ -715,7 +729,7 @@ transfer()
         DONE_COPIED="YES"
         echo "Done transferring."
 
-        if (( STEP == 5 )); then
+        if (( STEP == 6 )); then
 	    (( STEP++ ))
 	fi
         T_OK=\\Z2
@@ -805,6 +819,7 @@ font_menu()
     HELP="Please select your preferred console fonts."
     FONTS=`show_consolefonts`
     CONSOLEFONT=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 $FONTS`
+    consolechars -f $CONSOLEFONT
     D_OK=\\Z2
     DEFAULT=E
 }
@@ -838,7 +853,6 @@ not expect any changes till you finish and reboot."
 
     LANG=`select_lang`
     export LANG
-    [ ! -e "$TARGET/etc" ] || echo -e "# you can add declarations for LC_ALL etc in here\n\nexport LANG=\"$LANG\"\n" > $TARGET/etc/LOCALE
     E_OK=\\Z2
     DEFAULT=J
 }
@@ -850,7 +864,7 @@ editor_menu()
     NANO_HELP="nano is an enchanced free pico clone"
     JOE_HELP="joe is a WS compatible editor"
 
-    HELP="Actually all are same, we are using e3, only keys differ."
+    HELP="During installation this maps e3 to the requested behaviour."
     TITLE="Editor Selection Menu"
 
     EDITOR=`$DIALOG --title "Editor Selection Menu" --item-help --menu "$HELP" 0 0 0 \
@@ -859,9 +873,8 @@ editor_menu()
                    "nano"   ""  "$NANO_HELP"`
 
     export EDITOR
-    [ ! -e "$TARGET/etc" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
     J_OK=\\Z2
-    DEFAULT=Z
+    DEFAULT=F
 }
 
 
@@ -921,8 +934,6 @@ timezone()
                 ln -s ../init.d/localtime $TARGET/etc/rcS.d/S15localtime
                 ;;
         esac
-        A_OK=\\Z2
-	DEFAULT=C
     fi
 }
 
@@ -977,20 +988,15 @@ install_kernels()
 	    ;;
 	esac
 
-	if (( STEP == 7 )); then
+	if (( STEP == 8 )); then
             (( STEP++ ))
 	fi
 	K_OK=\\Z2
 	R_OK=
 	H_OK=
-	U_OK=
 	V_OK=
 	G_OK=
 	A_OK=
-	C_OK=
-	D_OK=
-	E_OK=
-	J_OK=
     done
 }
 
@@ -1023,7 +1029,7 @@ install_bootloader() {
 	    N) $DIALOG --cr-wrap --msgbox "Not installing a boot loader requires you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also does not install lilo or grub on the hard disc." 12 65 ;;
         esac
 
-	if (( STEP == 6 )); then
+	if (( STEP == 7 )); then
 	    (( STEP++ ))
 	fi
 	L_OK=\\Z2
@@ -1039,8 +1045,6 @@ make_server_keys()  {
   if (( STEP == 12 )); then
       (( STEP++ ))
   fi
-  G_OK=\\Z2
-  DEFAULT=A
 }
 
 
@@ -1054,33 +1058,33 @@ install_menu()
 If you want to know more about the installation procedure
 and recent changes please visit http://lunar-linux.org/
 before proceeding."
-        SH[2]="You need to create partitions if you are installing on
+        SH[2]="You can now set various system defaults that
+are not vital but make your linux system more friendly
+to your users."
+        SH[3]="You need to create partitions if you are installing on
 a new disc or in free space. If you want to delete other
 operating systems you will also need to partition your disc."
-        SH[3]="You need to mount a filesystem so that lunar can be
+        SH[4]="You need to mount a filesystem so that lunar can be
 transferred to it. Usually you make 3 to 5 separate
 partitions like /boot, /var and /usr. After mounting
 them the lunar packages can be transferred to them."
-        SH[4]="Swap is like temporary memory. It improves your
+        SH[5]="Swap is like temporary memory. It improves your
 systems performance. You can create a swapfile or
 even whole swap partitions."
-        SH[5]="During the transfer all programs and files that you
+        SH[6]="During the transfer all programs and files that you
 need to run lunar-linux will be copied to your system."
-        SH[6]="To be able to boot linux on reboot, you need to have
+        SH[7]="To be able to boot linux on reboot, you need to have
 a boot loader that loads the kernel when you power on
 your computer. Without it linux does not run."
-        SH[7]="You cannot boot linux without the kernel. You will
+        SH[8]="You cannot boot linux without the kernel. You will
 need to install at least one. You can choose between
 several factory kernels or compile one yourself."
-        SH[8]="Make sure you set good passwords, especially for
+        SH[9]="Make sure you set good passwords, especially for
 the root user. Everyone who knows this password can
 destroy your system. By default the root password is
 epmty so you should really change it"
-        SH[9]="You can now set the name and domain of the machine
+        SH[10]="You can now set the name and domain of the machine
 and configure it's networking connections."
-        SH[10]="You should always normally do work on your system
-as a non-root user. In order to do so, you need to create
-user accounts and set various properties for users."
         SH[11]="By default there are no services installed and
 running. With this tool you can add or remove them to
 the list of startup services and enable or disable them."
@@ -1088,9 +1092,9 @@ the list of startup services and enable or disable them."
 you must once create unique keys for this system. These
 keys are the identification of your system and make it
 recognizeable across the network."
-        SH[13]="You can now set various system defaults that
-are not vital but make your linux system more friendly
-to your users."
+        SH[13]="Select the local timezone of your computer
+to make sure that applications running are using the correct
+time zone information and adjust daylight savings."
         SH[14]="You are done! you should remove the ISO from the
 cd-rom tray and reboot. See you at the login prompt!"
     
@@ -1101,6 +1105,16 @@ cd-rom tray and reboot. See you at the login prompt!"
 
         I_LABEL="Introduction into lunar-linux"
         I_HELP="Read about the advantages of using Lunar Linux"
+
+	C_LABEL="Select a keyboard map"
+        C_HELP="Select keyboard map"
+        D_LABEL="Select a console font"
+        D_HELP="Select a console font"
+        E_LABEL="Set global language"
+        E_HELP="Set global language"
+        J_LABEL="Select a default editor"
+        J_HELP="Select a default editor"
+
         P_LABEL="Partition discs"
         P_HELP="Use fdisk or cfdisk to prepare hard drive partitions"
         M_LABEL="Select target partitions"
@@ -1127,31 +1141,15 @@ cd-rom tray and reboot. See you at the login prompt!"
         H_LABEL="Setup hostname and networking"
         H_HELP="Configure your network devices and hostname settings"
         H_OK="\\Z1"
-        U_LABEL="Administrate users"
-        U_HELP="Edit and create user accounts, groups"
-        U_OK="\\Z1"
         V_LABEL="Administrate services"
         V_HELP="Configure services to start automatically at boot time"
         V_OK="\\Z1"
         G_LABEL="Create SSH server keys"
         G_HELP="Generate the SSH server keys"
         G_OK="\\Z1"
-
         A_LABEL="Select a timezone"
         A_HELP="Select a timezone"
         A_OK="\\Z1"
-        C_LABEL="Select a keyboard map"
-        C_HELP="Select keyboard map"
-        C_OK="\\Z1"
-        D_LABEL="Select a console font"
-        D_HELP="Select a console font"
-        D_OK="\\Z1"
-        E_LABEL="Set global language"
-        E_HELP="Set global language"
-        E_OK="\\Z1"
-        J_LABEL="Select a default editor"
-        J_HELP="Select a default editor"
-        J_OK="\\Z1"
 
         Z_LABEL="Finished installing!"
         Z_HELP="You're done! Now go reboot and use lunar-linux!"
@@ -1173,23 +1171,23 @@ cd-rom tray and reboot. See you at the login prompt!"
     }
    
     if [ "$GUIDE" == "off" ]; then
-        CHOICES="I P M S T O L K R H U V G A C D E J Z"
+        CHOICES="I C D E J P M S T O L K R H V G A Z"
 	STEPHELP="Step $STEP of $STEPS:"
     else
         case $STEP in
             1)  DEFAULT=I ; CHOICES="I F" ;;
-	    2)  DEFAULT=P ; CHOICES="B P M F" ;;
-	    3)  DEFAULT=M ; CHOICES="B P M F" ;;
-	    4)  DEFAULT=S ; CHOICES="B P M S F" ;;
-	    5)  DEFAULT=T ; CHOICES="B P M S T F" ;;
-	    6)  DEFAULT=L ; CHOICES="B O L F" ;;
-	    7)  DEFAULT=K ; CHOICES="B O L K F" ;;
-	    8)  DEFAULT=R ; CHOICES="B R F" ;;
-	    9)  DEFAULT=H ; CHOICES="B H F" ;;
-	    10) DEFAULT=U ; CHOICES="B H U F" ;;
-	    11) DEFAULT=V ; CHOICES="B H U V F" ;;
-	    12) DEFAULT=G ; CHOICES="B H U V G F" ;;
-	    13) CHOICES="B A C D E J F" ;;
+	    2)              CHOICES="B C D E J F" ;;
+	    3)  DEFAULT=P ; CHOICES="B P M F" ;;
+	    4)  DEFAULT=M ; CHOICES="B P M F" ;;
+	    5)  DEFAULT=S ; CHOICES="B P M S F" ;;
+	    6)  DEFAULT=T ; CHOICES="B P M S T F" ;;
+	    7)  DEFAULT=L ; CHOICES="B O L F" ;;
+	    8)  DEFAULT=K ; CHOICES="B O L K F" ;;
+	    9)  DEFAULT=R ; CHOICES="B R F" ;;
+	    10) DEFAULT=H ; CHOICES="B H F" ;;
+	    11) DEFAULT=V ; CHOICES="B H V F" ;;
+	    12) DEFAULT=G ; CHOICES="B H V G F" ;;
+	    13) DEFAULT=A ; CHOICES="B H V G A F" ;;
 	    14) DEFAULT=Z ; CHOICES="B Z"
         esac
     fi
@@ -1230,6 +1228,12 @@ cd-rom tray and reboot. See you at the login prompt!"
 	  fi ;;
 
       I)  introduction           ;;
+
+      C)  keymap_menu            ;;
+      D)  font_menu              ;;
+      E)  lang_menu              ;;
+      J)  editor_menu            ;;
+
       P)  fdisc                  ;;
       M)  select_partitions      ;;
       S)  select_swap_file       ;;
@@ -1239,18 +1243,11 @@ cd-rom tray and reboot. See you at the login prompt!"
       L)  install_bootloader     ;;
       K)  install_kernels        ;;
 
-      R)  chroot_run passwd ; if (( STEP == 8 )); then (( STEP++ )); fi ; R_OK=\\Z2 ;;
-
-      H)  chroot_run lnet ; (( STEP++ )) ; H_OK=\\Z2 ;;
-      U)  chroot_run luser ; (( STEP++ )) ; U_OK=\\Z2 ;;
-      V)  chroot_run lservices ; (( STEP++ )) ; V_OK=\\Z2 ;;
-      G)  make_server_keys       ;;
-
-      A)  timezone               ;;
-      C)  keymap_menu            ;;
-      D)  font_menu              ;;
-      E)  lang_menu              ;;
-      J)  editor_menu            ;;
+      R)  chroot_run passwd    ; if (( STEP ==  9 )) ; then (( STEP++ )); fi ; R_OK=\\Z2 ;;
+      H)  chroot_run lnet      ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
+      V)  chroot_run lservices ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
+      G)  make_server_keys     ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; G_OK=\\Z2 ;;
+      A)  timezone             ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
 
       Z)  goodbye                ;;
     esac

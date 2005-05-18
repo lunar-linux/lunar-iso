@@ -50,3 +50,5 @@ findutils
 pciutils
 hdparm
 net-tools
+console-data
+console-tools
