@@ -53,7 +53,7 @@ $(ISO_SOURCE)/kernels/.kernels:
 	@echo "Building precompiled kernels"
 	@scripts/kernels
 
-memtest: $(ISO_SOURCE)/memtest/memtest
+memtest: rebuild $(ISO_SOURCE)/memtest/memtest
 $(ISO_SOURCE)/memtest/memtest:
 	@echo "Generating memtest boot image"
 	@scripts/memtest
@@ -85,8 +85,8 @@ $(ISO_TARGET)/.unpack:
 
 cachefill: dirs $(ISO_TARGET)/.cachefill
 $(ISO_TARGET)/.cachefill:
-	echo "Fetching cache tarballs and sources"
-	scripts/cachefill
+	@echo "Fetching cache tarballs and sources"
+	@scripts/cachefill
 
 dirs: init $(ISO_TARGET)/.dirs
 $(ISO_TARGET)/.dirs:
