@@ -1043,11 +1043,9 @@ install_bootloader() {
 
 make_server_keys()  {
   chroot $TARGET make -C /etc/ssh server-keys
-  echo -e "\nSSH server keys were created\nPress ENTER to continue."
-  read
-  if (( STEP == 12 )); then
-      (( STEP++ ))
-  fi
+  echo ""
+  echo "SSH server keys were created."
+  sleep 2
 }
 
 
