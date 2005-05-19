@@ -52,16 +52,17 @@ prepare_version()
     sedit "s/^EXTRAVERSION =.*/EXTRAVERSION = $1/" $ISO_SOURCE/kernels/linux-$ISO_KVER/Makefile
 }
 
+
 build_kernel()
 {
     echo "+ building $ISO_KVER$1"
     cd $ISO_SOURCE/kernels/linux-$ISO_KVER
     yes n | make oldconfig &&
 	if [ "${ISO_KSUFFIX}" = "2.4" ]; then
-		make dep
+               make dep
 	fi &&
-    make bzImage &&
-    make modules &&
+    make ${ISO_MAKES:+-j$ISO_MAKES} bzImage &&
+    make ${ISO_MAKES:+-j$ISO_MAKES} modules &&
     mkdir -p $ISO_SOURCE/kernels/TAR
     mkdir -p $ISO_SOURCE/kernels/BUILD
     mkdir -p $ISO_SOURCE/kernels/BUILD/boot
@@ -141,7 +142,7 @@ if [ "${ISO_KSUFFIX}" = "2.4" ]; then
 	# build -om-smp-4gb "smp mem om" "fix om" \
 	# 	"OpenMosix clustering, SMP, 4GB"
 
-else
+else # [ "${ISO_KSUFFIX}" = "2.6" ]; then
 
 	build -safe-i386 "i386 nosmp lowmem safe" "" \
 		"Very safe i386 (default is i686) minimal kernel (no ACPI, DMA, SMP)" "safe"

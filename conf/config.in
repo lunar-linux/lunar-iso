@@ -26,3 +26,5 @@ ISO_PVER = r8.0
 # which lunar core tools do we want on the ISO
 ISO_LUNAR_MODULE = lunar
 
+# set this to number of makes for parallel builds or leave empty
+#ISO_MAKES = 2

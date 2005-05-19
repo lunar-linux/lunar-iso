@@ -8,10 +8,6 @@ optimize
 resurrect ()
 {
   CACHE=$1-$(module_version $1)-$BUILD.tar.bz2
-  if [ ! -f cache/$CACHE ]; then
-    echo "# $CACHE"
-    cp /var/cache/lunar/$CACHE cache/
-  fi
   if [ ! -f cache/$CACHE ] ; then
     echo -e "\n! $1: $CACHE missing"
   else
@@ -38,10 +34,6 @@ for mod in $(cat conf/sources.list conf/sources.list-${ISO_KSUFFIX} conf/base.li
     echo -n "."
     if [ -f ${ISO_SOURCE}/spool/$file ] ; then
       cp -p ${ISO_SOURCE}/spool/$file $ISO_TARGET/var/spool/lunar/
-    elif [ -f /var/spool/lunar/$file ] ; then
-      echo -e "\n# /var/spool/lunar/$file"
-      cp -p /var/spool/lunar/$file ${ISO_SOURCE}/spool/
-      cp -p /var/spool/lunar/$file $ISO_TARGET/var/spool/lunar/
     else
       echo -ne "\n! $mod: $file\n"
     fi

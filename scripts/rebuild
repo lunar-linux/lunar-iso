@@ -3,8 +3,16 @@
 echo "+ Starting rebuild of all modules"
 . /etc/lunar/config
 
+# do the parallel thingy?
+if [ -n "$ISO_MAKES" ]; then
+  sedit '/MAKES=/d' $ISO_TARGET/etc/lunar/local/optimizations
+  echo "MAKES=$ISO_MAKES" >> $ISO_TARGET/etc/lunar/local/optimizations
+fi
+
 export VERBOSE=off
 optimize
+
+mkdir -p $ISO_TARGET/var/build
 
 mount -t proc proc $ISO_TARGET/proc
 

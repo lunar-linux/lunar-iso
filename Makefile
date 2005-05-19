@@ -16,7 +16,7 @@ ISO_SOURCE = $(shell bash -c "pwd -P")
 # define the location where the ISO will be generated
 ISO_TARGET = $(ISO_SOURCE)/BUILD
 
-export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_PVER ISO_LUNAR_MODULE ISO_KSUFFIX
+export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_PVER ISO_LUNAR_MODULE ISO_KSUFFIX ISO_MAKES
 
 all: iso
 
@@ -78,11 +78,15 @@ $(ISO_SOURCE)/template/moonbase.tar.bz2:
 	@echo "Getting a proper moonbase"
 	@scripts/moonbase
 
-
-unpack: dirs $(ISO_TARGET)/.unpack
+unpack: cachefill dirs $(ISO_TARGET)/.unpack
 $(ISO_TARGET)/.unpack:
 	@echo "Unpacking binaries and copying sources"
 	@scripts/unpack
+
+cachefill: dirs $(ISO_TARGET)/.cachefill
+$(ISO_TARGET)/.cachefill:
+       @echo "Fetching cache tarballs and sources"
+       @scripts/cachefill
 
 dirs: init $(ISO_TARGET)/.dirs
 $(ISO_TARGET)/.dirs:
@@ -93,6 +97,7 @@ init: $(ISO_TARGET)/.init
 $(ISO_TARGET)/.init:
 	@echo "Creating BUILD root"
 	@scripts/init
+
 
 clean:
 	umount BUILD/dev &> /dev/null || true
