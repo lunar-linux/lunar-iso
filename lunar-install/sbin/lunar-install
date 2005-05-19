@@ -511,7 +511,7 @@ install_grub()
     else
         GRUB_BOOT=""
     fi
-    GRUB_ROOT="(GRUB_ROOT)"
+    GRUB_ROOT="($GRUB_ROOT)"
     export GRUB_ROOT GRUB_BOOT
 
     echo ""
