@@ -384,17 +384,12 @@ select_partition()
             return; 
         fi &&
 
-        if [ "$FSYS" == "xfs" ]; then 
-            get_xfs_logsize
-        fi
-
         MNTPNT=$(get_mount_point $FSYS) &&
 
 	PROMPT="$PART might already be formatted with the $FSYS filesystem and may contain data. Formatting it again will destroy all present data on this partition. Do you wish to format it?"
 	if $DIALOG --defaultno --yesno "$PROMPT" 0 0 ; then
 	    FORMAT=yes
-            CHECK=$(check_partition $FSYS) &&
-            FORCE=$(use_the_force $FSYS)
+            CHECK=$(check_partition $FSYS)
 	else
 	    FORMAT=no
 	fi
@@ -441,7 +436,7 @@ means that your root or boot filesystem should be ext2." 20 60
     fi
 
     if [ -n "$ROOT" ]; then
-        if (( STEP =< 4 )) ; then
+        if (( STEP <= 4 )) ; then
             STEP=5
         fi
         S_OK=
