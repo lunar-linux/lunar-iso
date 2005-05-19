@@ -15,7 +15,6 @@ tar xj -C $ISO_TARGET -f $ISO_SOURCE/kernels/linux-modules.tar.bz2
 # copy the installed code over:
 echo "+ copying installer program"
 cp lunar-install/init.d/lunar-install $ISO_TARGET/etc/init.d/
-ln -s /etc/init.d/lunar-install $ISO_TARGET/etc/rc2.d/S20lunar-install
 cp lunar-install/sbin/lunar-install $ISO_TARGET/sbin/
 sedit "s:%VERSION%:${ISO_VERSION}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
 sedit "s:%CODENAME%:${ISO_CODENAME}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
