@@ -85,8 +85,8 @@ $(ISO_TARGET)/.unpack:
 
 cachefill: dirs $(ISO_TARGET)/.cachefill
 $(ISO_TARGET)/.cachefill:
-       @echo "Fetching cache tarballs and sources"
-       @scripts/cachefill
+	echo "Fetching cache tarballs and sources"
+	scripts/cachefill
 
 dirs: init $(ISO_TARGET)/.dirs
 $(ISO_TARGET)/.dirs:
