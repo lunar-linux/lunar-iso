@@ -35,7 +35,7 @@ cd ${ISO_SOURCE}/discover
   sed -i "s:/usr/local:/usr:g" Makefile
   sed -i "s:(datadir)/tools:(prefix)/bin:g" Makefile
   make
-  mkdir ${ISO_SOURCE}/discover/data
+  mkdir -p ${ISO_SOURCE}/discover/data
   cp *.xml ${ISO_SOURCE}/discover/data
   cd ${ISO_SOURCE}/discover
   rm -rf $SOURCE_DIRECTORY
