@@ -54,7 +54,6 @@ rm -f $ISO_TARGET/root/.bash_history
 rm -f $ISO_TARGET/{lib,usr/lib}/lib*.a
 rm -f $ISO_TARGET/boot/${ISO_KVER}*
 rm -rf $ISO_TARGET/lib/modules/${ISO_KVER}*
-sed -i 's/^MAKES=.*/MAKES=/' $ISO_TARGET/etc/lunar/local/optimizations
 
 rm -f $ISO_TARGET/etc/mtab
 ln -s /proc/mounts $ISO_TARGET/etc/mtab
