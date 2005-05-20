@@ -683,9 +683,13 @@ transfer()
 	[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
 	[ -z "$CONSOLEFONT" ] || echo "$CONSOLEFONT" > $TARGET/etc/consolefont
 	[ -z "$LANG" ] || echo -e "# you can add declarations for LC_ALL etc in here\n\nexport LANG=\"$LANG\"\n" > $TARGET/etc/LOCALE
-	
         [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
+
+	# post-first-boot message:
+	cp /etc/init.d/lunar-install $TARGET/etc/init.d/
+	ln -s /etc/init.d/lunar-install $TARGET/etc/rc2.d/S20lunar-install
 	
+	# save proxies
         if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
 	(
 	    echo "# these proxy settings apply to wget only"
