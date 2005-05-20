@@ -14,12 +14,10 @@ diffutils
 texinfo
 portmap
 lunar-tools
-console-data
 rpmunpack
 ppp
 tnftp
 rsync
-console-tools
 lynx
 pppconfig
 nfs-utils
