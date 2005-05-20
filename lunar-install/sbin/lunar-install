@@ -152,7 +152,7 @@ list_discs()
     LIST=$(ls /dev/discs)
     for LINE in $LIST; do
         echo "$LINE"
-        echo "$(lsh unmap_device "/dev/discs/$LINE") - disk"
+        echo "$(lsh unmap_device "/dev/discs/$LINE/disc") - disk"
     done
 }
 
