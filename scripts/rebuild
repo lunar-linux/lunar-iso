@@ -54,6 +54,8 @@ done
 
 # openssh installs ssh keys so these are now tracked in the module :^(
 chroot $ISO_TARGET /sbin/lin -c openssh
+# e2fsprogs nabs /etc/mtab
+chroot $ISO_TARGET /sbin/lin -c e2fsprogs
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          REBUILD FINISHED                            +"
