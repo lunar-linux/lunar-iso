@@ -22,7 +22,7 @@ transfer()
 {
 	while read ITEM DIR; do
 		if [ -n "$DIR" ]; then
-			mkdir -p BUILD/$DIR
+			mkdir -p "$ISO_SOURCE/initrd/BUILD/$DIR"
 			cp --no-dereference "$ISO_TARGET/$ITEM" "$ISO_SOURCE/initrd/BUILD/$DIR"
 		else
 	    	mkdir -p "$ISO_SOURCE/initrd/BUILD/$(dirname $ITEM)"
