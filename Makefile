@@ -20,15 +20,10 @@ export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVE
 
 all: iso
 
-iso: isolinux $(ISO_TARGET)/.iso
+iso: initrd proper $(ISO_TARGET)/.iso
 $(ISO_TARGET)/.iso:
-	@echo "Generating .iso file"
+	@echo "Generating ISO"
 	@scripts/isofs
-
-isolinux: proper memtest $(ISO_TARGET)/isolinux
-$(ISO_TARGET)/isolinux:
-	@echo "Generating isolinux files"
-	@scripts/isolinux
 
 proper: aaa_dev aaa_base $(ISO_TARGET)/.proper
 $(ISO_TARGET)/.proper:

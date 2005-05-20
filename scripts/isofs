@@ -17,9 +17,6 @@ echo "+ copying installer program"
 cp lunar-install/init.d/lunar-install $ISO_TARGET/etc/init.d/
 cp lunar-install/sbin/lunar-install $ISO_TARGET/sbin/
 ln -s /etc/init.d/lunar-install $ISO_TARGET/etc/rc2.d/S20lunar-install
-sedit "s:%VERSION%:${ISO_VERSION}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
-sedit "s:%CODENAME%:${ISO_CODENAME}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
-sedit "s:%ISO_DATE%:${ISO_DATE}:g" $ISO_TARGET/sbin/lunar-install $ISO_TARGET/etc/motd
 cp $ISO_SOURCE/lunar-install/etc/inittab $ISO_TARGET/etc/
 
 echo "+ adding isolinux code"
@@ -31,13 +28,12 @@ cp $ISO_SOURCE/kernels/linux $ISO_TARGET/isolinux/
 cp $ISO_SOURCE/kernels/safe $ISO_TARGET/isolinux/
 cp $ISO_SOURCE/memtest/memtest $ISO_TARGET/isolinux/
 
-cd $ISO_SOURCE/isolinux
-for file in f{1,2,3}.txt boot.cat isolinux.bin isolinux.cfg ; do
-  VERBOSE=off
-  cp $file $ISO_TARGET/isolinux
-  sedit "s:%VERSION%:${ISO_VERSION}:g" $ISO_TARGET/isolinux/f?.txt
-  sedit "s:%CODENAME%:${ISO_CODENAME}:g" $ISO_TARGET/isolinux/f?.txt
-  sedit "s:%KERNEL%:${ISO_KVER}:g" $ISO_TARGET/isolinux/f?.txt
+cp $ISO_SOURCE/isolinux/{f{1,2,3}.txt,boot.cat,isolinux.{bin,cfg},generate-iso.sh,README} $ISO_TARGET/isolinux/
+
+for file in $ISO_TARGET/isolinux/{f{1,2,3}.txt,boot.cat,isolinux.{bin,cfg}} $ISO_TARGET/etc/motd $ISO_TARGET/etc/motd $ISO_TARGET/sbin/lunar-install ; do
+  sed -i -e "s:%VERSION%:${ISO_VERSION}:g" \
+         -e "s:%CODENAME%:${ISO_CODENAME}:g" \
+         -e "s:%KERNEL%:${ISO_KVER}:g" $file
 done
 
 echo "+ copying package listing"
