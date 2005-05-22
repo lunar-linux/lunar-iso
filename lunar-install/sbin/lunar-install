@@ -688,7 +688,7 @@ transfer()
 
 	# post-first-boot message:
 	cp /etc/init.d/lunar-install $TARGET/etc/init.d/
-	ln -s /etc/init.d/lunar-install $TARGET/etc/rc3.d/S30lunar-install
+	ln -s /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
 	
 	# save proxies
         if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
