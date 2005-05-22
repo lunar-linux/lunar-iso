@@ -170,7 +170,7 @@ list_parts()
 		*) PTYPE="(unrecognized)" ;;
             esac
 		
-	    FSIZE=$(nice_size `fdisk -l $PART | grep ^Disk | grep bytes | awk '{print $5}'`)
+	    FSIZE=$(nice_size `fdisk -l $PART 2>&1 | grep ^Disk | grep bytes | awk '{print $5}'`)
 	    # this prevents listing EXTENDED partitions
 	    if [ "$FSIZE" == "" ]; then
 	        continue
@@ -572,7 +572,7 @@ transfer()
 				MNTOPTARGS=""
 			fi
 			if mount -n /dev/discs/$PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
-		        	FSTAB="$FSTAB\n/dev/discs/$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
+		        	FSTAB="$FSTAB\n$(lsh unmap_device /dev/discs/$PART)\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
 		    	else
 		        	sleep 3
 		        	$DIALOG --msgbox "Problem mounting filesystem on /dev/discs/$PART. Installation will continue." 8 50
