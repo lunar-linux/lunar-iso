@@ -43,9 +43,11 @@ cp $ISO_SOURCE/aaa_base/aaa_base.tar.bz2 $ISO_TARGET/var/cache/lunar/
 echo "+ copying aaa_dev.tar.bz2"
 cp $ISO_SOURCE/aaa_dev/aaa_dev.tar.bz2 $ISO_TARGET/var/cache/lunar/
 
+# reverse approach this:
+rmdir $ISO_TARGET/var/build
 cd $ISO_TARGET
-
 touch .lunar-cd
+rm .cachefill .dirs .etcf .init .proper .rebuild .unpack
 
 mkisofs -o ../lunar-${ISO_VERSION}.iso -R \
         -V "Lunar-Linux ${ISO_CODENAME}" -v  \
@@ -54,4 +56,7 @@ mkisofs -o ../lunar-${ISO_VERSION}.iso -R \
         -c isolinux/boot.cat \
         -A "Lunar-${ISO_VERSION}" .
 
+touch .cachefill .dirs .etcf .init .proper .rebuild .unpack
 rm -f .lunar.cd
+cd $ISO_SOURCE
+mkdir -p $ISO_TARGET/var/build
