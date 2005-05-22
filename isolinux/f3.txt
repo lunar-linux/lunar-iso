@@ -18,7 +18,7 @@ recovery of a broken system, boot into the installer and use the 03shell07
 option to start a rescue shell
 
 
-type ^O02safe^O07 followed by optional kernel parameters to use this boot option
+type 02safe07 followed by optional kernel parameters to use this boot option
 
-                             0aF107 install  0aF207 modules  00F307 safe  0aF407 memtest
+                             0aF107 install  0aF207 modules  02F302 safe  0aF407 memtest
 

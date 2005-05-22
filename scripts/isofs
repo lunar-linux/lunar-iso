@@ -28,7 +28,7 @@ cp $ISO_SOURCE/kernels/linux $ISO_TARGET/isolinux/
 cp $ISO_SOURCE/kernels/safe $ISO_TARGET/isolinux/
 cp $ISO_SOURCE/memtest/memtest $ISO_TARGET/isolinux/
 
-cp $ISO_SOURCE/isolinux/{f{1,2,3}.txt,boot.cat,isolinux.{bin,cfg},generate-iso.sh,README} $ISO_TARGET/isolinux/
+cp $ISO_SOURCE/isolinux/{f{1,2,3,4}.txt,boot.cat,isolinux.{bin,cfg},generate-iso.sh,README} $ISO_TARGET/isolinux/
 
 echo "+ copying package listing"
 cp $ISO_SOURCE/aaa_base/packages $ISO_TARGET/.packages
@@ -39,7 +39,7 @@ cp $ISO_SOURCE/aaa_dev/aaa_dev.tar.bz2 $ISO_TARGET/var/cache/lunar/
 echo "+ copying README"
 cp $ISO_SOURCE/template/README $ISO_TARGET
 
-for file in $ISO_TARGET/isolinux/{f{1,2,3}.txt,boot.cat,isolinux.{bin,cfg}} $ISO_TARGET/etc/motd $ISO_TARGET/etc/motd $ISO_TARGET/sbin/lunar-install $ISO_TARGET/README ; do
+for file in $ISO_TARGET/isolinux/{f{1,2,3,4}.txt,boot.cat,isolinux.{bin,cfg}} $ISO_TARGET/etc/motd $ISO_TARGET/etc/motd $ISO_TARGET/sbin/lunar-install $ISO_TARGET/README ; do
   sed -i -e "s:%VERSION%:${ISO_VERSION}:g" \
          -e "s:%CODENAME%:${ISO_CODENAME}:g" \
          -e "s:%KERNEL%:${ISO_KVER}:g" $file

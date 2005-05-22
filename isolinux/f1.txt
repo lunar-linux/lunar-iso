@@ -20,5 +20,5 @@ F4 - memtest86+
 
 To continue, press 02ENTER07
 
-                             00F107 install  0aF207 modules  0aF307 safe  0aF407 memtest
+                             02F102 install  0aF207 modules  0aF307 safe  0aF407 memtest
 

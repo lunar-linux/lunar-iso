@@ -20,5 +20,5 @@ This version is memtest86+ v1.55
 
 To test your RAM, type 02memtest07 to the boot prompt and press ENTER.
 
-                             0aF107 install  0aF207 modules  0aF307 safe  00F407 memtest
+                             0aF107 install  0aF207 modules  0aF307 safe  02F402 memtest
 
