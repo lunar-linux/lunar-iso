@@ -15,10 +15,10 @@ To continue press enter, or use the function keys to select other pages.
 Optionally, type: 02linux07 followed by kernel parameters. Kernel
 parameters might be required to properly recognize and initialize 
 0aSCSI07 hardware. For booting from iso kernel and mounting your root, type:
-linux root=/dev/discs/disc0/part1 devfs=nomount   (if your root is on part1)
+linux root=/dev/hda1 devfs=nomount   (if your root is on hda1)
 
-If you intend to use this ISO for rescue, select "Continue Boot" 
-from the init menu and choose "Shell" from the Installation menu.
+more information on how to boot this ISO: press F1, F2 or F3! if you
+need special IDE or SCSI modules, type 'linux', otherwise press ENTER
 
                              00F100-Main Page07 0aF207-Safe Mode07 0aF307-RAM Test00
 

@@ -14,8 +14,8 @@ SAFE MODE
 
 In order to boot with DMA disabled, type 02safe07 to the boot prompt and
 press enter. This option also disables MTRR, RAID, LVM, USB keyboard, 
-Pre-emptive kernel, Advanced Partitions and FireWire.  Kernel module loading
-may or may not work either.
+Pre-emptive kernel, Advanced Partitions and FireWire and much more such as
+APM, ACPI, APIC etc. Some hardware may not function as well.
 
 If you intent to use this ISO for rescue, select "Continue Boot" 
 from the init menu and choose "Shell" from the Installation menu.
