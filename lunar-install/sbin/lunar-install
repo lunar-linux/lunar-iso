@@ -41,7 +41,7 @@ chroot_run()
     umount $TARGET/proc
 
     # debug the problem in case there is one
-    if [ $RESULT != 0 ] ; then 
+    if [ $RESULT == 1 ] ; then 
       (
     	echo ""
 	echo "ERROR: An error occurred while executing a command. The command was:"
