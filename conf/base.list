@@ -52,3 +52,6 @@ hdparm
 net-tools
 console-data
 console-tools
+popt
+rsync
+zile

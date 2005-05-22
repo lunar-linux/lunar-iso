@@ -7,7 +7,6 @@ openssh
 xdelta
 cracklib
 chkconfig
-popt
 installwatch
 check
 diffutils
@@ -17,7 +16,6 @@ lunar-tools
 rpmunpack
 ppp
 tnftp
-rsync
 lynx
 pppconfig
 nfs-utils
@@ -52,3 +50,4 @@ gcc
 acl
 attr
 vim
+joe
