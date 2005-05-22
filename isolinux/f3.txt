@@ -5,19 +5,20 @@ Lunar-%VERSION%.iso, 0cLunar (%CODENAME%)07, kernel %KERNEL%
 09Lunar-Linux team <maintainer@lunar-linux.org>07
 All Rights Reserved.
 
-Lunar Linux is distributed under the terms of the GNU GPLv2. Please see
-0dhttp://www.gnu.org/copyleft/gpl.html07 for the GNU GPL.
+SAFE MODE
 
-Download Lunar Linux and docs from 0dhttp://lunar-linux.org/07
+In order to boot with certain hardware and kernel features disabled,
+type 02safe07 to the boot prompt and press ENTER. This option
+also disables MTRR, RAID, LVM, USB keyboard, FireWire and much more such
+as APM, ACPI, APIC etc. Some hardware may not function as well.
 
-MEMTEST
+This safe mode does not restrict your access to write to devices, so
+beware when you need to recover a broken system. If you wish to perform
+recovery of a broken system, boot into the installer and use the 03shell07
+option to start a rescue shell
 
-In order to test RAMs with memtest86, type 02memtest07 to the boot prompt and
-press enter.
 
+type ^O02safe^O07 followed by optional kernel parameters to use this boot option
 
-If you intent to use this ISO for rescue, select "Continue Boot" 
-from the init menu and choose "Shell" from the Installation menu.
-
-                             0aF107-Main Page07 0aF207-Safe Mode07 00F300-RAM Test00
+                             0aF107 install  0aF207 modules  00F307 safe  0aF407 memtest
 

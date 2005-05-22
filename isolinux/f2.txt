@@ -5,20 +5,20 @@ Lunar-%VERSION%.iso, 0cLunar (%CODENAME%)07, kernel %KERNEL%
 09Lunar-Linux team <maintainer@lunar-linux.org>07
 All Rights Reserved.
 
-Lunar Linux is distributed under the terms of the GNU GPLv2. Please see
-0dhttp://www.gnu.org/copyleft/gpl.html07 for the GNU GPL.
+Loading IDE/SCSI drivers
 
-Download Lunar Linux and docs from 0dhttp://lunar-linux.org/07
+When you need special modules to install on special IDE hardware or
+SCSI cards, you will need to load certain kernel modules before
+installing. This will allow you to load a SCSI or IDE driver and
+read the installation files from a CD-ROM drive attached to such
+a device.
 
-SAFE MODE
+To load these modules, type 02linux07 and load the modules from the initrd
+menu. The auto-detection code can attempt to find the required modules
+for you automatically, but this might not work.
 
-In order to boot with DMA disabled, type 02safe07 to the boot prompt and
-press enter. This option also disables MTRR, RAID, LVM, USB keyboard, 
-Pre-emptive kernel, Advanced Partitions and FireWire and much more such as
-APM, ACPI, APIC etc. Some hardware may not function as well.
 
-If you intent to use this ISO for rescue, select "Continue Boot" 
-from the init menu and choose "Shell" from the Installation menu.
+type 02linux07 followed by optional kernel parameters to use this boot option
 
-                             0aF107-Main Page07 00F200-Safe Mode07 0aF307-RAM Test00
+                             0aF107 install  00F207 modules  0aF307 safe  0aF407 memtest
 

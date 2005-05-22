@@ -10,15 +10,15 @@ Lunar Linux is distributed under the terms of the GNU GPLv2. Please see
 
 Download Lunar Linux and docs from 0dhttp://lunar-linux.org/07
 
-To continue press enter, or use the function keys to select other pages.
+To continue press ENTER, or use the function keys to select other pages.
 
-Optionally, type: 02linux07 followed by kernel parameters. Kernel
-parameters might be required to properly recognize and initialize 
-0aSCSI07 hardware. For booting from iso kernel and mounting your root, type:
-linux root=/dev/hda1 devfs=nomount   (if your root is on hda1)
+F1 - this page
+F2 - booting when you need IDE or SCSI drivers
+F3 - safe mode booting
+F4 - memtest86+
 
-more information on how to boot this ISO: press F1, F2 or F3! if you
-need special IDE or SCSI modules, type 'linux', otherwise press ENTER
 
-                             00F100-Main Page07 0aF207-Safe Mode07 0aF307-RAM Test00
+To continue, press 02ENTER07
+
+                             00F107 install  0aF207 modules  0aF307 safe  0aF407 memtest
 

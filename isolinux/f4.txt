@@ -1,0 +1,24 @@
+
+Lunar-%VERSION%.iso, 0cLunar (%CODENAME%)07, kernel %KERNEL%
+
+0eWelcome07 to 05Lunar Linux07 Copyright (C) 2005 by the
+09Lunar-Linux team <maintainer@lunar-linux.org>07
+All Rights Reserved.
+
+MEMTEST
+
+Memtest86+ is a thorough RAM memory tester. It can determine if your 
+system is unreliable with respect to memory operations and possibly
+uncover defects. If you have frequent erratic crashes and random
+failures then you should run Memtest86+ on your system to check it.
+
+This version is memtest86+ v1.55
+
+
+
+
+
+To test your RAM, type 02memtest07 to the boot prompt and press ENTER.
+
+                             0aF107 install  0aF207 modules  0aF307 safe  00F407 memtest
+
