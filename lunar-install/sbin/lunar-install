@@ -41,7 +41,8 @@ chroot_run()
     umount $TARGET/proc
 
     # debug the problem in case there is one
-    (
+    if [ $RESULT != 0 ] ; then 
+      (
     	echo ""
 	echo "ERROR: An error occurred while executing a command. The command was:"
 	echo "ERROR: \"$@\""
@@ -52,7 +53,8 @@ chroot_run()
 	echo ""
 	echo "Press ENTER to continue"
 	read JUNK
-    ) >&2
+      ) >&2
+    fi
     return $RESULT
 }
 
@@ -704,11 +706,10 @@ transfer()
 
 	# some more missing files:
 	cp /etc/lunar.release $TARGET/etc/
-	> $TARGET/etc/lunar/local/config
+	echo "GCCVER=3" > $TARGET/etc/lunar/local/config
 	cp /etc/lunar/local/.config $TARGET/etc/lunar/local/
 	
 	# moo, more more more!
-	chroot_run lunar set GCCVER 3
 	chroot_run lsh update_plugins
 	
 	# initialize the new machine:
