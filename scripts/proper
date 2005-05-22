@@ -58,6 +58,10 @@ rm -rf $ISO_TARGET/lib/modules/${ISO_KVER}*
 rm -f $ISO_TARGET/etc/mtab
 ln -s /proc/mounts $ISO_TARGET/etc/mtab
 
+# e3 symlinks
+ln -s /usr/bin/e3vi $ISO_TARGET/usr/bin/vi
+ln -s /usr/bin/zile $ISO_TARGET/usr/bin/emacs
+
 mkdir -p $ISO_TARGET/var/lib/discover
 rm -f $ISO_TARGET/etc/*/*modutils
 rm -f $ISO_TARGET/etc/*/*bootmisc
