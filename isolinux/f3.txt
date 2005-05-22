@@ -21,4 +21,3 @@ option to start a rescue shell
 type 02safe07 followed by optional kernel parameters to use this boot option
 
                              0aF107 install  0aF207 modules  02F302 safe  0aF407 memtest
-
