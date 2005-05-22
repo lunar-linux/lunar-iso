@@ -2,7 +2,7 @@
 
 if touch / 2> /dev/null ; then
   # clean up if successfull!
-  rm -f /sbin/lunar-install /etc/rc3.d/S20lunar-install /etc/init.d/lunar-install &
+  rm -f /etc/rc3.d/S30lunar-install /etc/init.d/lunar-install &
   echo "    /----------------------------------------------------------------\\"
   echo "    |                                                                |"
   echo "    |   Lunar Linux installation finished succesfully!               |"
