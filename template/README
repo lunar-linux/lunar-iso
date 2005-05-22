@@ -4,64 +4,63 @@
     \\\\                                ////
 
 
-You are reading the README file which is present in the root of the ISO.
-This version comes with the following ISO:
+You are reading the README file which is present in the root of
+the ISO.  This version comes with the following ISO:
 
  %VERSION% - %CODENAME%
 
-To navigate through this file, use PgUp, PgDn, Up, Down etc. to browse
-through this file, or start your favorite editor on this file. Please
-read on for some general tips and hints first, and more detailed info
-on the installer procedure below.
+To navigate through this file, use PgUp, PgDn, Up, Down etc. to
+browse through this file, or start your favorite editor on this
+file. Please read on for some general tips and hints first, and
+more detailed info on the installer procedure below.
 
 ========
 
 
 Index:
 
-1. About lunar-linux
-2. General tips and hints
-3. Installer procedure
-4. Where to get more help
-5. What more to do with this ISO
-6. After installation
+1. About lunar-linux 2. General tips and hints 3. Installer procedure
+4. Where to get more help 5. What more to do with this ISO 6. After
+installation
 
 ========
 
 
 1. About lunar-linux
 
-Lunar-Linux is a source distribution. This means that lunar is just like
-any other distrobution, except that you compile packages instead of
-installing precompiled packages. That really is the only difference with
-so-called "binary" distributions.
+Lunar-Linux is a source distribution. This means that lunar is
+just like any other distrobution, except that you compile packages
+instead of installing precompiled packages. That really is the only
+difference with so-called "binary" distributions.
 
-This means that you have the control over how you compile packages yourself,
-instead of relying on the willingness of others to provide you the features
-of software that you need or want. This control is what allows you to do
-the following with lunar that other distributions typically don't allow you
-to do:
+This means that you have the control over how you compile packages
+yourself, instead of relying on the willingness of others to
+provide you the features of software that you need or want. This
+control is what allows you to do the following with lunar that
+other distributions typically don't allow you to do:
 
 * optimize your entire system for speed, or size
 * sacrifice stability for speed or vice versa
 * insert or remove features of packages that require recompiling
 * upgrade core system components without reinstalling
 
-But this is just an incomplete list. There are many more benefits that are
-not mentioned here.
+But this is just an incomplete list. There are many more benefits
+that are not mentioned here.
 
-The downside is that you need to spend time compiling packages. However,
-with the current power of systems, this hardly stops people from choosing
-such an approach!
+The downside is that you need to spend time compiling
+packages. However, with the current power of systems, this hardly
+stops people from choosing such an approach!
 
-A little history about lunar: Lunar-Linux was born as a fork from Sorcerer
-GNU Linux (SGL). Nowadays SGL doesn't exist anymore because the original
-author (Kyle Sallee) retracted his GPL code and distributes it under a 
-non-OSSI approved license, and renamed it "Sorcerer". Another group of
-people also forked SGL into SourceMage GNU Linux, and they work side
-by side Lunar-Linux, often sharing concepts and ideas.
+A little history about lunar: Lunar-Linux was born as a fork
+from Sorcerer GNU Linux (SGL). Nowadays SGL doesn't exist anymore
+because the original author (Kyle Sallee) retracted his GPL code
+and distributes it under a non-OSSI approved license, and renamed it
+"Sorcerer". Another group of people also forked SGL into SourceMage
+GNU Linux, and they work side by side Lunar-Linux, often sharing
+concepts and ideas.
 
-Lunar will provide you with an excellent platform for the following tasks:
+Lunar will provide you with an excellent platform for the following
+tasks:
 
 * server oriented systems
 * development and programming systems
@@ -69,9 +68,9 @@ Lunar will provide you with an excellent platform for the following tasks:
 * High-end gaming
 * Desktop computing
 
-But be warned: depending on your needs you might need to invest a large
-amount of time into your system. Lunar is not a hands-off distribution
-per se, although it can be under specific circumstances.
+But be warned: depending on your needs you might need to invest
+a large amount of time into your system. Lunar is not a hands-off
+distribution per se, although it can be under specific circumstances.
 
 It is all up to you!
 
@@ -80,68 +79,71 @@ It is all up to you!
 
 2. General tips and hints
 
-There are many tips that we can give you now but a few are more important
-than others:
+There are many tips that we can give you now but a few are more
+important than others:
 
 * Know your system's hardware or get to know it
 
-Picking good drivers, configuring your system is important. Choose wisely
-and get to know your system by reading `lspci` and /proc/cpuinfo. Read
-documentation and howto's, and other people's experiences online.
+Picking good drivers, configuring your system is important. Choose
+wisely and get to know your system by reading `lspci` and
+/proc/cpuinfo. Read documentation and howto's, and other people's
+experiences online.
 
 * Don't over-optimize!
 
 Optimizations are nice, but they can break your entire system. Start
 with modest optimizations, and increase them slowly as you understand
-what they do and how dangerous they can be. 
+what they do and how dangerous they can be.
 
 * Make backups!
 
-Always make sure you can fall back to a known-good state if you are 
-changing vital parts of your system!
+Always make sure you can fall back to a known-good state if you
+are changing vital parts of your system!
 
 * RTFM, search, ask, document
 
-There is always someone who has solved a problem before you. First use
-the documentation provided as much as possible (man, info, howtos), then
-search the internet first. If you can't find anything to help you, ask
-on the lunar mailinglists (see our website), and last, let others know
-how you solved your problem.
+There is always someone who has solved a problem before you. First
+use the documentation provided as much as possible (man, info,
+howtos), then search the internet first. If you can't find anything
+to help you, ask on the lunar mailinglists (see our website),
+and last, let others know how you solved your problem.
 
 
 I hope you realize with these tips that you can help yourself much
-more than we can help you. 
+more than we can help you.
 
 
 ========
 
 3. Installer procedure
 
-The lunar ISO installer consists of 3 major stages. Globally they are:
+The lunar ISO installer consists of 3 major stages. Globally
+they are:
 
 I - prepare your system
 
-In this stage you prepare partitions and select the filesystems that you
-wish to use. The partitioning is done instantly, so be careful with what
-you choose. If you already have proper partitions you can select them
-and choose filesytems for them. Lunar will not format them initially.
+In this stage you prepare partitions and select the filesystems that
+you wish to use. The partitioning is done instantly, so be careful
+with what you choose. If you already have proper partitions you can
+select them and choose filesytems for them. Lunar will not format
+them initially.
 
 II - installation
 
-In this stage all partitions are formatted if needed and requested, swap
-or swapfiles are created, and all required packages are installed onto
-your system.
+In this stage all partitions are formatted if needed and requested,
+swap or swapfiles are created, and all required packages are
+installed onto your system.
 
-The second part of this phase allows you to select and install a bootloader,
-which allows you to boot any kernels you choose next. Without this, your
-box would be quite useless.
+The second part of this phase allows you to select and install
+a bootloader, which allows you to boot any kernels you choose
+next. Without this, your box would be quite useless.
 
 III - configuration
 
-After your box is finished installing and made ready for operation, you
-can configure certain parts before actualy booting the system. This 
-includes setting a root password, administrating your network already
-and a few more settings can be set.
+After your box is finished installing and made ready for operation,
+you can configure certain parts before actualy booting the
+system. This includes setting a root password, administrating your
+network already and a few more settings can be set.
 
 
 ========
@@ -153,87 +155,90 @@ you can get more help the following way:
 
 * The Internet - websites
 
-Countless websites describe pretty much every problem out there. Most of
-the time they can be solved without the need of a person, and some very
-good documentation websites provide very detailed help on most common
-tasks. Good website to start: tldp.org (linux documentation project)
+Countless websites describe pretty much every problem out there. Most
+of the time they can be solved without the need of a person,
+and some very good documentation websites provide very detailed
+help on most common tasks. Good website to start: tldp.org (linux
+documentation project)
 
 * lunar-linux.org
 
-As everyone out there, we have a website with specific lunar documentation
-that is constantly adjusted.
+As everyone out there, we have a website with specific lunar
+documentation that is constantly adjusted.
 
 * mailing lists and mailing lists archives
 
-Visit our homepage and you will find the way to subscribe to our mailing-
-list. From there you can contact many lunar-fanatics who are willing to
-help you with your problems.
+Visit our homepage and you will find the way to subscribe to our
+mailing- list. From there you can contact many lunar-fanatics who
+are willing to help you with your problems.
 
 * IRC: #lunar on irc.freenode.net
 
-Join our IRC (Internet Relay Chat) channel #lunar on the freenode IRC
-network. There you can contact not only many lunar developers and users
-almost 24 hours a day, but also 50.000 other linux users and OSS developers
-online.
+Join our IRC (Internet Relay Chat) channel #lunar on the freenode
+IRC network. There you can contact not only many lunar developers
+and users almost 24 hours a day, but also 50.000 other linux users
+and OSS developers online.
 
 * e-mail
 
-If all else fails, and you have no way of contacting use through the
-mentioned methods above, you can send an e-mail to maintainer@lunar-linux.org
+If all else fails, and you have no way of contacting use
+through the mentioned methods above, you can send an e-mail to
+maintainer@lunar-linux.org
 
 
 ========
 
 5. What more to do with this ISO
 
-Next to installing Lunar on your system, the ISO also provides you with
-a well-filled live-ISO image with many installation and rescue system
-components. This can help you in case you have problems with your
-installed system.
+Next to installing Lunar on your system, the ISO also provides you
+with a well-filled live-ISO image with many installation and rescue
+system components. This can help you in case you have problems with
+your installed system.
 
-The ISO provides cache tarballs for the most critical components too,
-in /var/cache/lunar. These can help you recover from serious problems
-with your system instantly.
+The ISO provides cache tarballs for the most critical components
+too, in /var/cache/lunar. These can help you recover from serious
+problems with your system instantly.
 
-You can also use the ISO to boot a system that has problematic bootloader
-configurations, and correct them.
+You can also use the ISO to boot a system that has problematic
+bootloader configurations, and correct them.
 
-This is just a short summary of possibilities. Many more things are
-possible!
+This is just a short summary of possibilities. Many more things
+are possible!
 
 
 ========
 
 5. After installation
 
-As always, the fun just starts when you are done installing. Then it is
-up to you to really "finish" your system. Here's a few pointers:
+As always, the fun just starts when you are done installing. Then it
+is up to you to really "finish" your system. Here's a few pointers:
 
 * read 'man lfirsttime'. This manual page should provide you with the
 things that you really should know and do first after you installed
 lunar on your system.
 
-* setup users and permissions. Run 'luser' and start working as a normal
-user as fast as possible. If you don't have to be root, don't.
+* setup users and permissions. Run 'luser' and start working as a
+normal user as fast as possible. If you don't have to be root, don't.
 
-* install services and support libraries. Nothing is worse then a blank
-box that doesn't provide basic programs. Look through the module list
-and sections, and figure out what features you wish to have installed.
+* install services and support libraries. Nothing is worse then
+a blank box that doesn't provide basic programs. Look through the
+module list and sections, and figure out what features you wish to
+have installed.
 
 * tweak the optimizations. Perhaps the default (and safe, but fast)
-optimizations are not enough for you. Optionally you might want to
-rebuild your entire system after installing, to make sure all components
-are build with the preferences you want.
+optimizations are not enough for you. Optionally you might want
+to rebuild your entire system after installing, to make sure all
+components are build with the preferences you want.
 
-* keep your system up2date. As soon as you are done installing, your system
-most likely will need some updates already. Keep your system up2date! This
-will prevent people from breaking into your box, or from serious defects
-to cause harm to your system.
+* keep your system up2date. As soon as you are done installing,
+your system most likely will need some updates already. Keep your
+system up2date! This will prevent people from breaking into your box,
+or from serious defects to cause harm to your system.
 
-* keep your system clean. Run 'lunar prune' to minimize old sources lying
-around. Remove packages that you don't really need anymore. A clean box
-is a safe box, and nothing can be so dangerous as tons of old programs
-luring around.
+* keep your system clean. Run 'lunar prune' to minimize old sources
+lying around. Remove packages that you don't really need anymore. A
+clean box is a safe box, and nothing can be so dangerous as tons
+of old programs luring around.
 
 
 ========
