@@ -209,6 +209,10 @@ possible!
 As always, the fun just starts when you are done installing. Then it is
 up to you to really "finish" your system. Here's a few pointers:
 
+* read 'man lfirsttime'. This manual page should provide you with the
+things that you really should know and do first after you installed
+lunar on your system.
+
 * setup users and permissions. Run 'luser' and start working as a normal
 user as fast as possible. If you don't have to be root, don't.
 
