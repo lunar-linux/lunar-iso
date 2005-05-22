@@ -41,7 +41,6 @@ tcp_wrappers
 gettext
 nasm
 mailx
-db
 iproute2
 iptables
 xinetd
