@@ -11,25 +11,7 @@
 
 introduction()
 {
-    $DIALOG --title "Welcome to Lunar Linux" --msgbox \
-"The purpose of Lunar Linux is to return control to System
-Administrators that the wizards and maintainers of modern
-distributions have steadily chipped away." 8 65
-
-    $DIALOG --cr-wrap --title "The Benefits of Lunar Linux" --msgbox \
-"Lunar Linux empowers System Administrators to choose:
-
- the architecture that programs are compiled for,
- the dependencies a program is compiled with,
- compiler optimizations, and compile time options.
-
-And it provides the conveniences of:
-
- command line and menu driven package management,
- ASCII configuration and data files,
- FSH 2.2 compliant filesystem hierarchy,
- LSB 1.1 compliance,
- System V Init, and Networking." 18 65
+    $DIALOG --textbox /README 0 0
     I_OK="\\Z2"
     if (( STEP == 1 )); then
         (( STEP++ ))
@@ -60,15 +42,15 @@ chroot_run()
 
     # debug the problem in case there is one
     (
-    	echo "ERROR: "
+    	echo ""
 	echo "ERROR: An error occurred while executing a command. The command was:"
 	echo "ERROR: \"$@\""
 	echo "ERROR: "
 	echo "ERROR: You should inspect any output above and retry the command with"
 	echo "ERROR: different input or parameters. Please report the problem if"
 	echo "ERROR: you think this error is displayed by mistake."
-	echo "ERROR: "
-	echo "ERROR: Press ENTER to continue"
+	echo ""
+	echo "Press ENTER to continue"
 	read JUNK
     ) >&2
     return $RESULT
