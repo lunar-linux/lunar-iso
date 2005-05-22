@@ -657,7 +657,7 @@ transfer()
                   (
                     cd $TARGET/var/lib/lunar
                     tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
-		    tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%ISO_DATE%
+		    tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
                   )
 	        (( CNT++ ))
             fi
@@ -672,7 +672,7 @@ transfer()
 	) | $DIALOG --title " Installing $NUM packages " --gauge "" 10 70 0 
 
         # setup list of installed packages etc.
-        echo "moonbase:%ISO_DATE%:installed:%ISO_DATE%:37M" >> $TARGET/var/state/lunar/packages
+        echo "moonbase:%DATE%:installed:%DATE%:37M" >> $TARGET/var/state/lunar/packages
 	cp /var/state/lunar/depends        $TARGET/var/state/lunar/
 	cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
 	cp /var/state/lunar/depends.cache  $TARGET/var/state/lunar/
@@ -1270,11 +1270,12 @@ main()
 # no screen blanking
 /usr/bin/setterm -blank 0
 
+cd /
+
 # start shells on vt's
 for i in 2 3 4; do
   (
     export PS1="[vt$i] \033[0;32m\]\u@\h \w $ \[\033[0m\]"
-    cd /
     /sbin/agetty -n -l /bin/bash 38400 tty$i &
   )
 done
@@ -1284,7 +1285,7 @@ export  IFS="
 "
 DIALOG="dialog
 --backtitle
-Lunar Linux Installer %VERSION% - %CODENAME%
+Lunar Linux Installer %VERSION% - %CODENAME% (%DATE%)
 --stdout"
 ARCH=`arch`
 
