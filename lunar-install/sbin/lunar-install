@@ -852,17 +852,17 @@ editor_menu()
 {
     EDITOR=`$DIALOG --title "Editor Selection Menu" --item-help --cr-wrap \
             --menu "Not all of these editors are available right away. Some require that you compile them yourself (like emacs) or are only available on the target installation, and possibly emulated through another editor" 0 0 0 \
-	    "e3"    "available" \
+	    "e3"    "fully available" \
 	            "an emacs, vim, pico emulator" \
-	    "emacs" "not available on the ISO" \
+	    "emacs" "emulated on the ISO, not installed" \
 	            "Richard Stallmans editor" \
-            "joe"   "available" \
+            "joe"   "fully available" \
 	            "WS compatible editor" \
-            "nano"  "available" \
+            "nano"  "fully available" \
 	            "a pico clone" \
             "vi"    "emulated on the live ISO, but also fully installed" \
 	            "good old vi" \
-	    "zile"  "available" \
+	    "zile"  "fully available" \
 	            "an emacs clone"`
 
     export EDITOR
