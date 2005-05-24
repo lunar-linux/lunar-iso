@@ -2,7 +2,7 @@
 
 if touch / 2> /dev/null ; then
   # clean up if successfull!
-  rm -f /etc/rc3.d/S99lunar-install /etc/init.d/lunar-install &
+  rm -f /etc/rc3.d/S99lunar-install /etc/init.d/lunar-install 1>&2 /dev/null &
   echo "    /----------------------------------------------------------------\\"
   echo "    |                                                                |"
   echo "    |   Lunar Linux installation finished succesfully!               |"
@@ -17,9 +17,9 @@ if touch / 2> /dev/null ; then
   echo "    |                                                                |"
   echo "    |   Read 'man lfirsttime' for more tips and help                 |"
   echo "    |                                                                |"
-  echo "    \\----------------------------------------------------------------/"
+  echo "    \\---------------------------------------------------------------/"
   # update the locate db in the background once - no need to wait on it
-  updatedb &
+  updatedb 1>&2 /dev/null &
 else
   /sbin/lunar-install
 fi
