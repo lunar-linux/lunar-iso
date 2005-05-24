@@ -13,7 +13,7 @@ E=`echo -en '\e[0m'`
 cat << EOF
 ${B}       ________________________________________________________________
       |                                                                |
-      |         ${G}Lunar Linux${E} ${G}installation finished succesfully!         ${E}${B}|
+      |         ${G}${B}Lunar Linux${E} ${G}installation finished succesfully!         ${E}${B}|
       |                                                                |
       |       ${E}Please log in as root and start using your system!       ${B}|
       |                                                                |
