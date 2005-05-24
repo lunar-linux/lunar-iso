@@ -23,7 +23,7 @@ done
 for mod in $(cat conf/sources.list conf/sources.list-${ISO_KSUFFIX} conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list) ; do
   for file in $(lvu sources $mod) ; do
     if [ ! -f ${ISO_SOURCE}/spool/$file ] ; then
-      echo -e "\n# /var/spool/lunar/$file"
+      echo -e "# /var/spool/lunar/$file"
       cp -p /var/spool/lunar/$file ${ISO_SOURCE}/spool/ || RESULT=1
     fi
   done
