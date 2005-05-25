@@ -16,7 +16,7 @@ ISO_SOURCE = $(shell bash -c "pwd -P")
 # define the location where the ISO will be generated
 ISO_TARGET = $(ISO_SOURCE)/BUILD
 
-export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_PVER ISO_LUNAR_MODULE ISO_KSUFFIX ISO_MAKES
+export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_PVER ISO_LUNAR_MODULE ISO_KSUFFIX ISO_MAKES ISO_REDUCE
 
 all: iso
 
@@ -33,15 +33,10 @@ $(ISO_TARGET)/.proper:
 aaa_dev: $(ISO_SOURCE)/aaa_dev/aaa_dev.tar.bz2
 $(ISO_SOURCE)/aaa_dev/aaa_dev.tar.bz2: initrd
 
-initrd: discover memtest kernels $(ISO_SOURCE)/initrd/initrd
+initrd: memtest kernels $(ISO_SOURCE)/initrd/initrd
 $(ISO_SOURCE)/initrd/initrd:
 	@echo "Generating initrd image"
 	@scripts/initrd
-
-discover: $(ISO_SOURCE)/discover/discover
-$(ISO_SOURCE)/discover/discover:
-	@echo "Generating static discover"
-	@scripts/discover
 
 kernels: rebuild $(ISO_SOURCE)/kernels/.kernels
 $(ISO_SOURCE)/kernels/.kernels:
