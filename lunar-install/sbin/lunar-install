@@ -399,6 +399,11 @@ select_partition()
 	    MNT_PNT=${MNT_PNT%%/}
 	fi
         FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
+	if [ "$FSYS" == "xfs" ]; then
+	    FORCE="-f"
+	else
+	    unset FORCE
+	fi
 
         PARTITIONS=(${PARTITIONS[@]} "$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT" )
         (( NUM_PARTITIONS++ ))
@@ -549,7 +554,7 @@ transfer()
 			fi
                     # create the filesystems if needed for every partition
 	            elif [ "$FORMAT" == "yes" ]; then
-	                if ! mkfs.$FSYS /dev/discs/$PART $CHECK ; then
+	                if ! mkfs.$FSYS $FORCE /dev/discs/$PART $CHECK ; then
 		            sleep 3
 		            $DIALOG --msgbox "Problem creating filesystem on /dev/discs/$PART. Installation will continue." 8 50
 		        fi
