@@ -1150,6 +1150,8 @@ cd-rom tray and reboot. See you at the login prompt!"
         A_HELP="Select a timezone"
         A_OK="\\Z1"
 
+	X_LABEL="Exit into rescue shell or reboot"
+	X_HELP="This launches a a rescue shell or reboots your system"
         Z_LABEL="Finished installing!"
         Z_HELP="You're done! Now go reboot and use lunar-linux!"
         Z_OK="\\Z0"
@@ -1170,11 +1172,11 @@ cd-rom tray and reboot. See you at the login prompt!"
     }
    
     if [ "$GUIDE" == "off" ]; then
-        CHOICES="I C D E J P M S T O L K R H V G A Z"
+        CHOICES="X I C D E J P M S T O L K R H V G A Z"
 	STEPHELP="Step $STEP of $STEPS:"
     else
         case $STEP in
-            1)  DEFAULT=I ; CHOICES="I F" ;;
+            1)  DEFAULT=I ; CHOICES="X I F" ;;
 	    2)              CHOICES="B C D E J F" ;;
 	    3)  DEFAULT=P ; CHOICES="B P M F" ;;
 	    4)  DEFAULT=M ; CHOICES="B P M F" ;;
@@ -1226,6 +1228,7 @@ cd-rom tray and reboot. See you at the login prompt!"
               (( STEP-- ))
 	  fi ;;
 
+      X)  goodbye                ;;
       I)  introduction           ;;
 
       C)  keymap_menu            ;;
