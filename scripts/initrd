@@ -94,14 +94,6 @@ for KERNEL in linux safe ; do
   rm -rf TMP
 done
 
-# install discover in the initrd BUILD
-mkdir -p BUILD/{bin,etc} BUILD/usr/share/discover/dtd 
-cp $ISO_SOURCE/discover/discover BUILD/bin/
-cp $ISO_SOURCE/discover/discover.conf BUILD/etc/
-cp $ISO_SOURCE/discover/conffile.dtd BUILD/usr/share/discover/dtd/
-cp $ISO_SOURCE/discover/discover.dtd BUILD/usr/share/discover/dtd/
-cp $ISO_SOURCE/discover/data/* BUILD/usr/share/discover/
-
 echo "+ stripping everything"
 for ITEM in BUILD/{bin,sbin,usr/bin,usr/sbin,lib,usr/lib}/* ; do
     strip $ITEM > /dev/null 2>&1
