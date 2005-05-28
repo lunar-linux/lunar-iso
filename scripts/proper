@@ -7,8 +7,6 @@ echo ""
 echo "Broken compiles:"
 (cd $ISO_TARGET/var/build && ls -1)
 echo ""
-echo "Press ENTER to continue with cleanup && .iso generation"
-read
 
 umount $ISO_TARGET/proc &> /dev/null
 umount $ISO_TARGET/dev &> /dev/null
@@ -88,6 +86,33 @@ cp $ISO_SOURCE/cache/${ISO_LUNAR_MODULE}-${ISO_DATE}-*.tar.bz2 $ISO_TARGET/var/c
 # more more more!
 rm -rf $ISO_TARGET/usr/src $ISO_TARGET/var/build
 mkdir -p $ISO_TARGET/usr/src $ISO_TARGET/var/build
+
+# re-pack tarballs
+if [ "$ISO_REDUCE" == 1 ]; then
+  SIZE_IN=$(du -k $ISO_TARGET/var/cache/lunar/ | cut -f1)
+  echo "+ stripping install cache tarballs"
+  for TARBZ in $(ls -1 $ISO_TARGET/var/cache/lunar/*bz2); do
+    echo -n "++ $(basename $TARBZ)"
+    tar xj -C $ISO_TARGET/var/build -f $TARBZ > /dev/null 2>&1
+    LINES=$(cat $ISO_TARGET/var/build/var/log/lunar/install/* | wc -l)
+    DELETED=0
+    while read ITEM ; do
+      if [ -e "$ISO_TARGET/$ITEM" ]; then
+        (( DELETED++ ))
+	rm -f "$ISO_TARGET/var/build/$ITEM" > /dev/null 2>&1
+      fi
+    done < $ISO_TARGET/var/build/var/log/lunar/install/*
+    echo -n " ( $(echo $DELETED) / $(echo $LINES) )"
+    rm -f $TARBZ
+    tar cj -C $ISO_TARGET/var/build -f $TARBZ . > /dev/null 2>&1
+    echo " OK"
+    rm -rf $ISO_TARGET/var/build
+    mkdir -p $ISO_TARGET/var/build
+  done
+  SIZE_OUT=$(du -k $ISO_TARGET/var/cache/lunar/ | cut -f1)
+  echo "Size in : ${SIZE_IN}k"
+  echo "Size out: ${SIZE_OUT}k"
+fi
 
 touch $ISO_TARGET/.proper
 
