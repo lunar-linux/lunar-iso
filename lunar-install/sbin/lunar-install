@@ -152,23 +152,24 @@ list_discs()
 {
     LIST=$(ls /dev/discs)
     for LINE in $LIST; do
-        echo "$LINE"
-        echo "$(lsh unmap_device "/dev/discs/$LINE/disc") - disk"
+        echo "$(lsh unmap_device "/dev/discs/$LINE/disc")"
+        echo "disk"
     done
 }
 
 
 list_parts()
 {
-    for PART in $(ls -L /dev/discs/*/part* | sort -t t -k 2 -n); do
+    for PART in $(ls -L /dev/discs/*/part* | sort -t t -k 2 -n) $SPECIAL_DEVICES ; do
+    	PART=$(lsh unmap_device $PART)
         if [ -e $PART ]; then
-	    PTYPE=$(file -Ls $PART)
+	    PTYPE=$(file -Ls $PART 2>&1 | cat)
 	    case $PTYPE in
-	        *ext3*) PTYPE="(maybe ext3?)" ;;
-		*ext2*) PTYPE="(maybe ext2?)" ;;
-		*XFS*) PTYPE="(maybe XFS?)" ;;
-		*Minix*) PTYPE="(Maybe Minix?)" ;;
-		*) PTYPE="(unrecognized)" ;;
+	        *ext3*) PTYPE="(ext3)" ;;
+		*ext2*) PTYPE="(ext2)" ;;
+		*XFS*) PTYPE="(XFS)" ;;
+		*Minix*) PTYPE="(minix)" ;;
+		*) PTYPE="(unknown)" ;;
             esac
 		
 	    FSIZE=$(nice_size `fdisk -l $PART 2>&1 | grep ^Disk | grep bytes | awk '{print $5}'`)
@@ -176,17 +177,16 @@ list_parts()
 	    if [ "$FSIZE" == "" ]; then
 	        continue
 	    fi
-            PART="${PART/\/dev\/discs\//}"
 	    echo $PART
 	    for (( N=0 ; N < NUM_PARTITIONS ; N++ )); do
 	        if echo ${PARTITIONS[$N]} | grep -q "^$PART:"; then
 		    FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
 		    MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
-		    echo "$(lsh unmap_device /dev/discs/$PART) - $FSTYPE partition, size $FSIZE"
+		    echo "$FSTYPE partition, size $FSIZE"
 		    continue 2
 		fi		
 	    done
-            echo "$(lsh unmap_device /dev/discs/$PART) - unassigned, size $FSIZE, $PTYPE"
+            echo "unassigned, size $FSIZE, $PTYPE"
         fi
     done
 }
@@ -196,7 +196,18 @@ get_part()
 {
     TITLE="Partition Selection Menu"
     HELP="Please select a partition"
-    $DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_parts`
+    PART=$($DIALOG --title "$TITLE" --extra-button --extra-label "Add..." --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_parts`)
+    if [ $? == 3 ]; then
+    	PART=$(inputbox "Enter special device node" "/dev/")
+	if [ ! -c $(readlink -f $PART) -a ! -b $(readlink -f $PART)  ]; then
+	    $DIALOG --msgbox "Device $PART does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?" 0 0
+	    unset PART
+	elif echo $SPECIAL_DEVICES | grep -qw $PART ; then
+	    $DIALOG --msgbox "Device $PART was already added!" 0 0
+	    unset PART
+	fi
+    fi
+    echo $PART
 }
 
 
@@ -211,14 +222,14 @@ get_disc()
 get_filesystem()
 {
     TITLE="Filesystem Selection Menu"
-    HELP="Please select a filesystem"
+    HELP="Please select a filesystem. A '*' means that this is a journalling filesystem, which provides better data security against system crashes etc."
     
-    EXT3="Third Extended journaling file system"
+    EXT3="Third Extended file system (*)"
     EXT2="Second Extended file system"
-    REISER="Reiserfs journaling file system"
-    XFS="XFS journaling file system"
-    JFS="JFS journaling file system"
-    SWAP="Swap Partition"
+    REISER="Reiserfs file system (*)"
+    XFS="XFS file system (*)"
+    JFS="JFS file system (*)"
+    SWAP="Swap (Virtual memory or paging filesystem)"
 
     $DIALOG --title "$TITLE" --default-item "ext3" --menu "$HELP" 0 0 0 \
            "ext3"      "$EXT3"    \
@@ -291,7 +302,7 @@ fdisc()
     PROMPT="Are you certain that you want to run $PROG on $DISC? (This will erase any partition selection you might have already performed)" &&
     if confirm "$PROMPT"; then
 		unset PARTITIONS
-        $PROG /dev/discs/$DISC/disc
+        $PROG $DISC
 	if (( STEP == 3 )); then
 	    (( STEP++ ))
 	fi
@@ -376,10 +387,23 @@ get_mount_point()
 select_partition()
 {
     while true; do
-        PART=$(get_part) 
+        PART=$(get_part)
         if [ -z "$PART" ]; then
             return 
         fi &&
+	# scan if we are re-assigning a partition
+	for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do
+	    if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$PART" ]; then
+	        $DIALOG --msgbox "Unassigned partition $PART. You can now change the parameters for this partition if you wish." 0 0
+	        unset PARTITIONS[$N]
+		continue 2
+	    fi
+	done
+	# add special device nodes to the secondary list
+	SYSTEM_DEVICES=$(for DEV in $(ls -L /dev/discs/*/part*) ; do lsh unmap_device $DEV ; done)
+	if ! echo $SYSTEM_DEVICES | grep -wq "$PART" ; then
+	    export SPECIAL_DEVICES="$SPECIAL_DEVICES $PART"
+	fi &&
         FSYS=$(get_filesystem) 
         if [ -z "$FSYS" ]; then
             return; 
@@ -454,7 +478,7 @@ means that your root or boot filesystem should be ext2." 20 60
 
 make_lilo_conf()
 {
-    DISC=$(echo $ROOT | sed 's/part.*/disc/')
+    DISC=$(echo $ROOT | sed 's/[0-9]*$//')
     (
       echo "# lba32"
       echo "prompt"
@@ -464,8 +488,8 @@ make_lilo_conf()
       echo "append=\"devfs=nomount\""
       echo "read-only"
       echo ""
-      echo "boot=$(lsh unmap_device /dev/discs/$DISC)"
-      echo "root=$(lsh unmap_device /dev/discs/$ROOT)"
+      echo "boot=$DISC"
+      echo "root=$ROOT"
       echo ""
     ) > $TARGET/etc/lilo.conf
 }
@@ -486,7 +510,7 @@ make_grub_conf()
 
 install_grub()
 {
-    GRUB_ROOT=$(lsh map_device_to_grub /dev/discs/$ROOT)
+    GRUB_ROOT=$(lsh map_device_to_grub $ROOT)
     GRUB_DISC=$(echo $GRUB_ROOT | cut -d, -f1)
     
     (
@@ -548,24 +572,24 @@ transfer()
 		    FORMAT=$(echo ${PARTITIONS[$N]} | cut -d: -f8)
 		    # handle swap
 		    if [ "$FSYS" == "swap" ]; then
-		        if ! mkswap /dev/discs/$PART ; then
+		        if ! mkswap $PART ; then
 			    sleep 3
-			    $DIALOG --msgbox "Problem creating swap on /dev/discs/$PART. Installation will continue." 8 50
+			    $DIALOG --msgbox "Problem creating swap on $PART. Installation will continue." 8 50
 			fi
                     # create the filesystems if needed for every partition
 	            elif [ "$FORMAT" == "yes" ]; then
-	                if ! mkfs.$FSYS $FORCE /dev/discs/$PART $CHECK ; then
+	                if ! mkfs.$FSYS $FORCE $PART $CHECK ; then
 		            sleep 3
-		            $DIALOG --msgbox "Problem creating filesystem on /dev/discs/$PART. Installation will continue." 8 50
+		            $DIALOG --msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue." 8 50
 		        fi
     	            fi
 		    # again, weed out swap first
 		    if [ "$FSYS" == "swap" ]; then
-		        if swapon /dev/discs/$PART; then
-			    FSTAB="$FSTAB\n/dev/discs/$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+		        if swapon $PART; then
+			    FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
 			else
 		            sleep 3
-		            $DIALOG --msgbox "Problem mounting swap on /dev/discs/$PART. Installation will continue." 8 50
+		            $DIALOG --msgbox "Problem mounting swap on $PART. Installation will continue." 8 50
 			fi
 		    # then try to mount normal FS's
 		    else
@@ -577,11 +601,11 @@ transfer()
 			else
 				MNTOPTARGS=""
 			fi
-			if mount -n /dev/discs/$PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
-		        	FSTAB="$FSTAB\n$(lsh unmap_device /dev/discs/$PART)\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
+			if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
+		        	FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
 		    	else
 		        	sleep 3
-		        	$DIALOG --msgbox "Problem mounting filesystem on /dev/discs/$PART. Installation will continue." 8 50
+		        	$DIALOG --msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue." 8 50
 			fi
 		    fi
     		fi
@@ -1290,12 +1314,14 @@ for i in 2 3 4; do
 done
 export PS1="[vt1] \033[0;36m\]\u@\h \w $ \[\033[0m\]"
 
-export  IFS="	
+export IFS="	
 "
+
 DIALOG="dialog
 --backtitle
 Lunar Linux Installer %VERSION% - %CODENAME% (%DATE%)
 --stdout"
+
 ARCH=`arch`
 
 trap ":" INT QUIT
