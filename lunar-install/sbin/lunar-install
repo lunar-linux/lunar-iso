@@ -969,7 +969,16 @@ install_kernels()
 	    echo $LINE | cut -d: -f1
 	    echo $LINE | cut -d: -f2-
 	    echo $LINE | cut -d: -f2-
-	done < /.kernels
+	done < /kernels/.kernels
+    }
+
+    list_kernel_modules()
+    {
+    	while read LINE; do
+		echo $LINE | cut -d: -f1
+		echo $LINE | cut -d: -f2
+		echo $LINE | cut -d: -f3
+	done < /kernels/.kernel-modules
     }
 
     while true ; do
@@ -983,22 +992,10 @@ install_kernels()
 
 	case $KCOMMAND in
             C)
-	        CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 \
-		"L" "linux-2.4" "Default kernel with fixes and extra features" \
-		"S" "linux-2.4-stable"  "Stable kernel with only crucial fixes" \
-		"V" "linuz-2.4-vanilla" "Plain unpatched kernel" \
-		"G" "linux-2.4-grsec" "Heavily patched with extra security options" \
-		"A" "linux-2.4-agr" "Low-latency and preemptive kernel" \
-		"O" "linux-2.4-om" "OpenMosix clustering kernel"`
-
-		case $CCOMMAND in
-		    L) chroot_run lin -r linux-2.4            ;;
-		    S) chroot_run lin -r linux-2.4-stable     ;;
-		    V) chroot_run lin -r linuz-2.4-vanilla    ;;
-		    G) chroot_run lin -r linux-2.4-grsec      ;;
-		    A) chroot_run lin -r linux-2.4-agr        ;;
-		    O) chroot_run lin -r linux-2.4-om         ;;
-		esac
+	        CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 $(list_kernel_modules)`
+		if grep -q "^$CCOMMAND:" /kernels/kernel-modules ; then
+		    chroot_run lin -r $(grep "^$CCOMMAND:" /kernels/kernel-modules | cut -d: -f2)
+		fi
 	    ;;
 	    P)
 	        CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --item-help --menu "" 0 0 0 \
