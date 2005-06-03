@@ -5,6 +5,7 @@ unset VERBOSE
 optimize
 
 BUILD_DIRECTORY=${ISO_SOURCE}/memtest
+mkdir -p ${ISO_SOURCE}/memtest
 cd ${ISO_SOURCE}/memtest
 
 # build curl without ssl first statically
