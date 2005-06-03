@@ -95,10 +95,9 @@ clean:
 	rm -rf BUILD
 	rm -rf initrd/BUILD initrd/initrd
 	rm -rf aaa_base aaa_dev
+	rm -rf memtest
 	rm -rf kernels/TAR kernels/*.tar.bz2 kernels/.kernels kernels/.initrd_kernels
 	rm -f template/moonbase.tar.bz2
-	rm -f discover/discover
-	rm -f memtest/memtest
 	rm -f kernels/linux kernels/linux.map
 	rm -f kernels/safe kernels/safe.map
 
