@@ -14,7 +14,7 @@ mkdir -p ${ISO_SOURCE}/{spool,cache}
 for mod in ${ISO_LUNAR_MODULE} $(cat conf/base.list conf/base.list-$ISO_KSUFFIX conf/extended.list) ; do
   CACHE=$mod-$(module_version $mod)-$BUILD.tar.bz2
   if [ ! -f ${ISO_SOURCE}/cache/$CACHE ]; then
-    echo "# $CACHE"
+    echo "# $mod: $CACHE"
     cp /var/cache/lunar/$CACHE ${ISO_SOURCE}/cache/ || RESULT=1
   fi
 done
@@ -23,7 +23,7 @@ done
 for mod in $(cat conf/sources.list conf/sources.list-${ISO_KSUFFIX} conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list) ; do
   for file in $(lvu sources $mod) ; do
     if [ ! -f ${ISO_SOURCE}/spool/$file ] ; then
-      echo -e "# /var/spool/lunar/$file"
+      echo -e "# $mod: $file"
       cp -p /var/spool/lunar/$file ${ISO_SOURCE}/spool/ || RESULT=1
     fi
   done
