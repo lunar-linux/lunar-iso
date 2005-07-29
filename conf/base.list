@@ -36,7 +36,6 @@ cpio
 file
 tar
 grub
-busybox
 lilo
 man
 parted

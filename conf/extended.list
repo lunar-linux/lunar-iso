@@ -21,6 +21,7 @@ pppconfig
 nfs-utils
 dhcpcd
 iputils
+wireless_tools
 BitchX
 wget
 pkgconfig
