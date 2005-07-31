@@ -10,6 +10,7 @@ if [ -n "$ISO_MAKES" ]; then
 fi
 
 export VERBOSE=off
+export BOOTLOADER=none
 optimize
 
 mkdir -p $ISO_TARGET/var/build
