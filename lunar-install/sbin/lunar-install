@@ -265,7 +265,8 @@ keymap_menu()
     TITLE="Keymap Selection Menu"
     HELP="Please select your preferred keymapping."
     KEYMAPS=$(show_keymaps)
-    KEYMAP=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 $KEYMAPS`
+    DEFAULT=${KEYMAP:-defkeymap}
+    KEYMAP=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 $KEYMAPS`
     if [ -n "$KEYMAP" ]; then
     	loadkeys $KEYMAP
     fi
@@ -840,7 +841,8 @@ font_menu()
     TITLE="Console Font Selection Menu"
     HELP="Please select your preferred console fonts."
     FONTS=`show_consolefonts`
-    CONSOLEFONT=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 $FONTS`
+    DEFAULT=${CONSOLEFONT:-default8x16}
+    CONSOLEFONT=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 $FONTS`
     consolechars -f $CONSOLEFONT
     D_OK=\\Z2
     DEFAULT=E
@@ -857,12 +859,6 @@ show_languages()
 }
 
 
-select_lang()
-{
-    $DIALOG --title "Language Selection Menu" --menu "$HELP" 0 0 0 `show_languages`
-}
-
-
 lang_menu()
 {
     TITLE="Language Selection Menu"
@@ -873,7 +869,8 @@ Please select your preferred langauge.
 This process will ONLY set the LANG environment variable. Do
 not expect any changes till you finish and reboot."
 
-    LANG=`select_lang`
+    DEFAULT=${LANG:-en_US}
+    LANG=$($DIALOG --title "Language Selection Menu" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 `show_languages`)
     export LANG
     E_OK=\\Z2
     DEFAULT=J
@@ -882,7 +879,8 @@ not expect any changes till you finish and reboot."
 
 editor_menu()
 {
-    EDITOR=`$DIALOG --title "Editor Selection Menu" --item-help --cr-wrap \
+    DEFAULT=${EDITOR:-vi}
+    EDITOR=`$DIALOG --title "Editor Selection Menu" --default-item "$DEFAULT" --item-help --cr-wrap \
             --menu "Not all of these editors are available right away. Some require that you compile them yourself (like emacs) or are only available on the target installation, and possibly emulated through another editor" 0 0 0 \
 	    "e3"    "fully available" \
 	            "an emacs, vim, pico emulator" \
@@ -926,10 +924,12 @@ timezone()
     TITLE="Time Zone Selection Menu"
     HELP="Select timezone or directory"
     ZONE=""
+    DEFAULT=${ZONE:-GMT}
 
     while
       TIMEZONES=`show_timezones $ZONE`  &&
       ZONE=`$DIALOG  --title  "$TITLE"  \
+                     --default-item "$DEFAULT" \
                      --menu             \
                      "$HELP"            \
                      0 0 0              \
@@ -945,8 +945,10 @@ timezone()
         TITLE="GMT or Local"
         HELP="Does the hardware clock store time in GMT or local?"
 
+	DEFAULT=${CLOCK:-Local}
         CLOCK=`$DIALOG --title "$TITLE"   \
                        --menu "$HELP"     \
+		       --default-item "$DEFAULT" \
                        0 0 0              \
                        "GMT"    ""        \
                        "Local"  ""`       &&
