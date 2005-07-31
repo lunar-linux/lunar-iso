@@ -266,7 +266,9 @@ keymap_menu()
     HELP="Please select your preferred keymapping."
     KEYMAPS=$(show_keymaps)
     KEYMAP=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 $KEYMAPS`
-    loadkeys $KEYMAP
+    if [ -n "$KEYMAP" ]; then
+    	loadkeys $KEYMAP
+    fi
     C_OK=\\Z2
     DEFAULT=D
 }
