@@ -182,6 +182,7 @@ list_parts()
 	        if echo ${PARTITIONS[$N]} | grep -q "^$PART:"; then
 		    FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
 		    MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
+		    FSTYPE=${FSTYPE/none/swap}
 		    echo "$FSTYPE partition, size $FSIZE"
 		    continue 2
 		fi		
@@ -721,6 +722,7 @@ transfer()
 	# post-first-boot message:
 	cp /etc/init.d/lunar-install $TARGET/etc/init.d/
 	ln -s /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
+	cp /etc/motd $TARGET/etc/motd
 	
 	# save proxies
         if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
