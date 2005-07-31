@@ -63,6 +63,7 @@ ln -s /usr/bin/zile $ISO_TARGET/usr/bin/emacs
 mkdir -p $ISO_TARGET/var/lib/discover
 rm -f $ISO_TARGET/etc/*/*modutils
 rm -f $ISO_TARGET/etc/*/*bootmisc
+rm -f $ISO_TARGET/etc/*/*sysctl
 
 # this is a space killer:
 echo "+ stripping binaries"
