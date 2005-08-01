@@ -36,6 +36,7 @@ automake
 libtool
 glib
 groff
+XML-Parser
 intltool
 tcp_wrappers
 gettext
