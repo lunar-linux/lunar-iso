@@ -15,13 +15,11 @@ lunar-tools
 rpmunpack
 ppp
 tnftp
-lynx
 pppconfig
 nfs-utils
 dhcpcd
 iputils
 wireless_tools
-BitchX
 wget
 pkgconfig
 patch
@@ -54,3 +52,5 @@ joe
 Time-HiRes
 TimeDate
 lard
+links
+irssi
