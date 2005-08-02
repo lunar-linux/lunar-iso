@@ -14,6 +14,9 @@ ISO_CODENAME = UNNAMED
 # the release/offical date tag - must be in the form of YYYYMMDD
 ISO_DATE = 20050201
 
+# the iso BUILD arch:
+ISO_BUILD = i686-pc-linux-gnu
+
 # this copncatenates the full name
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 

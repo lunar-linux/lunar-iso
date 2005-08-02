@@ -12,7 +12,7 @@ mkdir -p ${ISO_SOURCE}/{spool,cache}
 # unpack all the ISO required var/cache/lunar tarballs
 # in case of file conflict preserve glibc and gcc files first!
 for mod in ${ISO_LUNAR_MODULE} $(cat conf/base.list conf/base.list-$ISO_KSUFFIX conf/extended.list) ; do
-  CACHE=$mod-$(module_version $mod)-$BUILD.tar.bz2
+  CACHE=$mod-$(module_version $mod)-$ISO_BUILD.tar.bz2
   if [ ! -f ${ISO_SOURCE}/cache/$CACHE ]; then
     echo "# $mod: $CACHE"
     cp /var/cache/lunar/$CACHE ${ISO_SOURCE}/cache/ || RESULT=1

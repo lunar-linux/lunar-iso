@@ -7,7 +7,7 @@ optimize
 
 resurrect ()
 {
-  CACHE=$1-$(module_version $1)-$BUILD.tar.bz2
+  CACHE=$1-$(module_version $1)-$ISO_BUILD.tar.bz2
   if [ ! -f cache/$CACHE ] ; then
     echo -e "\n! $1: $CACHE missing"
   else
