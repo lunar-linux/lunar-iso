@@ -35,6 +35,7 @@ libtool
 glib
 groff
 XML-Parser
+XML-Parser
 intltool
 tcp_wrappers
 gettext
