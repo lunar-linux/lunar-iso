@@ -12,7 +12,7 @@ system is unreliable with respect to memory operations and possibly
 uncover defects. If you have frequent erratic crashes and random
 failures then you should run Memtest86+ on your system to check it.
 
-This version is memtest86+ v1.55
+This version is memtest86+ v1.55.1
 
 
 
