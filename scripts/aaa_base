@@ -7,8 +7,9 @@ umount $ISO_TARGET/dev &> /dev/null
 unset VERBOSE
 optimize
 
-echo "+ cleaning up file structure"
+echo "+ cleaning up (some) file structure items"
 rm -rf $ISO_TARGET/var/cache/ccache/*
+rmdir /usr/lib/locale/*
 chroot $ISO_TARGET ccache -C
 chroot $ISO_TARGET ccache -M 256M
 rm -rf $ISO_TARGET/etc/ssh/ssh_host_*key $ISO_TARGET/etc/ssh/ssh_host_*key.pub
@@ -53,7 +54,7 @@ find $ISO_TARGET/{bin,boot,etc,home,lib,mnt,opt,root,sbin,srv,usr,var} | sort | 
 find $ISO_TARGET/usr/include/{linux,asm} | sed "s:^$ISO_TARGET::g" >> $ISO_TARGET/.present
 # add the install logs
 cat $ISO_TARGET/var/log/lunar/install/* | sort | uniq > $ISO_TARGET/.tracked
-diff -Bad $ISO_TARGET/.present $ISO_TARGET/.tracked | grep -e "^< " | cut -c 3- > $ISO_TARGET/.aaa_base.list
+diff -U0 $ISO_TARGET/.tracked $ISO_TARGET/.present | grep '^\+[^+]' | sed 's/^+//g' > $ISO_TARGET/.aaa_base.list
 echo "/etc/lunar/local/optimizations" >> $ISO_TARGET/.aaa_base.list
 
 # make the tarball
