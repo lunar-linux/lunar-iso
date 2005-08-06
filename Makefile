@@ -121,4 +121,6 @@ moonbase-pack:
 	rm -rf $(ISO_TARGET)/var/lib/lunar/moonbase
 	@echo "Packed up moonbase."
 
-
+test:
+	@echo "running tests"
+	@scripts/test

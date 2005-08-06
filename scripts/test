@@ -1,0 +1,44 @@
+#!/bin/bash
+
+if [ -f $ISO_TARGET/.rebuild ]; then
+	# first define the tests:
+	TESTS=(
+		"bash --version"
+		"sh --version"
+		"perl --version"
+		"echo 1234"
+		"date -u +%Y%m%d-%T"
+		"awk -F: {print} /dev/null"
+		"cut /dev/null -d: -f2"
+		"cat /dev/null"
+		"lvu installed"
+		"lsh find_depends XML-Parser | wc -l | grep 4"
+		"lunar set"
+		"cfdisk -v"
+		"fdisk -l"
+		"parted -v"
+		"mkfs.ext3 -V"
+		"mkfs.reiserfs -V"
+		"mkfs.xfs -V"
+		"mkswap -V"
+		"dd --version"
+		"lsmod"
+		"echo \"ABC\" | bzip2 -L -V > /dev/null"
+		"echo \"ABC\" | gzip -L -V > /dev/null"
+		"tar --version"
+		)
+	for TEST in "${TESTS[@]}"; do
+		echo -n "$TEST: "
+		if chroot $ISO_TARGET $TEST &> /dev/null ; then
+			echo "OK"
+		else
+			echo "FAILED"
+			RESULT=1
+		fi
+	done
+	set -x
+	exit ${RESULT:-0}
+else
+	echo "Can't run tests now!"
+	exit 1
+fi
