@@ -1,2 +1,1 @@
-CONFIGURED="y"
-OPTS=" --enable-largefile --enable-nls"
+WITH_NLS="y"

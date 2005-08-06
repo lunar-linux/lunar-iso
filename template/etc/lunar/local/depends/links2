@@ -1,2 +1,2 @@
-OPTS=" --enable-javascript"
-CONFIGURED="y"
+USE_GRAPHICS="n"
+USE_JSCRIPT="y"

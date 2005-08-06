@@ -1,2 +1,2 @@
-OPTS="$OPTS --disable-profile"
+OPTS="$OPTS  --disable-profile"
 CONFIGURED=y

@@ -1,2 +1,2 @@
-OPTS="--without-debug --without-profile"
+OPTS=" --without-debug --without-profile"
 CONFIGURED="y"

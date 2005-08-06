@@ -1,1 +1,0 @@
-OPTS="--without-x --enable-gui=no --disable-tclinterp --disable-pythoninterp"

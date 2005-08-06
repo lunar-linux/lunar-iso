@@ -1,2 +1,2 @@
-CUSTOM=n
-SUIDPERL=y
+CUSTOM="n"
+SUIDPERL="y"
