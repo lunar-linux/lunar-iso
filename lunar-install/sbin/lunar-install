@@ -11,535 +11,535 @@
 
 introduction()
 {
-    $DIALOG --textbox /README 0 0
-    I_OK="\\Z2"
-    if (( STEP == 1 )); then
-        (( STEP++ ))
-    fi
-    DEFAULT=C
+	$DIALOG --textbox /README 0 0
+	I_OK="\\Z2"
+	if (( STEP == 1 )); then
+		(( STEP++ ))
+	fi
+	DEFAULT=C
 }
 
 
 inputbox()
 {
-    $DIALOG --nocancel --inputbox "$1" 0 0 "$2"
+	$DIALOG --nocancel --inputbox "$1" 0 0 "$2"
 }
 
 
 chroot_run()
 {
-    local RESULT
-    mount -t proc proc $TARGET/proc
-    mount -t devfs devfs $TARGET/dev
-    mount -t tmpfs tmpfs $TARGET/tmp
-    chroot $TARGET swapon -a
-    chroot $TARGET $1 $2 $3 $4 $5 $6 $7 $8 $9
-    RESULT=$?
-    chroot $TARGET swapoff -a
-    umount $TARGET/tmp
-    umount $TARGET/dev
-    umount $TARGET/proc
+	local RESULT
+	mount -t proc proc $TARGET/proc
+	mount -t devfs devfs $TARGET/dev
+	mount -t tmpfs tmpfs $TARGET/tmp
+	chroot $TARGET swapon -a
+	chroot $TARGET $1 $2 $3 $4 $5 $6 $7 $8 $9
+	RESULT=$?
+	chroot $TARGET swapoff -a
+	umount $TARGET/tmp
+	umount $TARGET/dev
+	umount $TARGET/proc
 
-    # debug the problem in case there is one
-    if [ $RESULT == 1 ] ; then 
-      (
-    	echo ""
-	echo "ERROR: An error occurred while executing a command. The command was:"
-	echo "ERROR: \"$@\""
-	echo "ERROR: "
-	echo "ERROR: You should inspect any output above and retry the command with"
-	echo "ERROR: different input or parameters. Please report the problem if"
-	echo "ERROR: you think this error is displayed by mistake."
-	echo ""
-	echo "Press ENTER to continue"
-	read JUNK
-      ) >&2
-    fi
-    return $RESULT
+	# debug the problem in case there is one
+	if [ $RESULT == 1 ] ; then 
+	  (
+		echo ""
+		echo "ERROR: An error occurred while executing a command. The command was:"
+		echo "ERROR: \"$@\""
+		echo "ERROR: "
+		echo "ERROR: You should inspect any output above and retry the command with"
+		echo "ERROR: different input or parameters. Please report the problem if"
+		echo "ERROR: you think this error is displayed by mistake."
+		echo ""
+		echo "Press ENTER to continue"
+		read JUNK
+	  ) >&2
+	fi
+	return $RESULT
 }
 
 
 confirm()
 {
-    if [ "$CONFIRM" == "off" ]; then
-        if [ -n "$2" ]; then
-            false
-        else
-            true
-        fi
-    else
-        $DIALOG $2 --yesno "$1" 8 50
-    fi
+	if [ "$CONFIRM" == "off" ]; then
+		if [ -n "$2" ]; then
+			false
+		else
+			true
+		fi
+	else
+		$DIALOG $2 --yesno "$1" 8 50
+	fi
 }
 
 
 goodbye()
 {
-    # lets make the initscripts executable
-    chroot $TARGET chmod +x /etc/init.d/*
-    PROMPT="Reboot now?"
-    if confirm "$PROMPT" "--defaultno"; then
-        shutdown -r now
-        exit 0
-    else
-        exit 0
-    fi
+	# lets make the initscripts executable
+	chroot $TARGET chmod +x /etc/init.d/*
+	PROMPT="Reboot now?"
+	if confirm "$PROMPT" "--defaultno"; then
+		shutdown -r now
+		exit 0
+	else
+		exit 0
+	fi
 }
 
 
 show_modules()
 {
-    if [ "$(pwd)" != "/lib/modules" ]; then
-        echo ".."
-        echo "Directory"
-    fi
-    for ITEM in *; do
-        case $ITEM in
-            modules.*) continue ;;
-        esac
-        /bin/echo "$ITEM"
-        if [ -d "$ITEM" ]; then
-            /bin/echo "Directory"
-        else
-            /bin/echo "Module"
-        fi
-    done
+	if [ "$(pwd)" != "/lib/modules" ]; then
+		echo ".."
+		echo "Directory"
+	fi
+	for ITEM in *; do
+		case $ITEM in
+			modules.*) continue ;;
+		esac
+		/bin/echo "$ITEM"
+		if [ -d "$ITEM" ]; then
+			/bin/echo "Directory"
+		else
+			/bin/echo "Module"
+		fi
+	done
 }
 
 
 input_module_parameters()
 {
-    HELP="Optionally, enter module parameters"
-    $DIALOG --nocancel --inputbox "$HELP" 0 0
+	HELP="Optionally, enter module parameters"
+	$DIALOG --nocancel --inputbox "$HELP" 0 0
 }
 
 
 load_module()
 {
   (
-    MODULES_ROOT="/lib/modules"
-    cd $MODULES_ROOT/$(uname -r)/kernel/drivers
-    TITLE="Module Menu"
-    HELP="Select a module to load or enter a subdirectory (pwd = $(pwd))"
-    CHOICE=""
+	MODULES_ROOT="/lib/modules"
+	cd $MODULES_ROOT/$(uname -r)/kernel/drivers
+	TITLE="Module Menu"
+	HELP="Select a module to load or enter a subdirectory (pwd = $(pwd))"
+	CHOICE=""
 
-    while true; do
-        MODULES=`show_modules $(pwd)`
-        CHOICE=`$DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 $MODULES`
-        if [ $? != 0 ]; then
-            return
-        fi
-        if [ -f "$CHOICE" ]; then
-            MODULE=`/bin/basename $MODULE | /bin/sed -e "s/\.o$//" -e "s/\.ko$//"`
-            PARAMETERS=`input_module_parameters` &&
-            /sbin/modprobe $CHOICE $PARAMETERS
-            /bin/sleep 5
-        elif [ -d "$CHOICE" ]; then
-            cd "$CHOICE"
-        fi
-    done
+	while true; do
+		MODULES=`show_modules $(pwd)`
+		CHOICE=`$DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 $MODULES`
+		if [ $? != 0 ]; then
+			return
+		fi
+		if [ -f "$CHOICE" ]; then
+			MODULE=`/bin/basename $MODULE | /bin/sed -e "s/\.o$//" -e "s/\.ko$//"`
+			PARAMETERS=`input_module_parameters` &&
+			/sbin/modprobe $CHOICE $PARAMETERS
+			/bin/sleep 5
+		elif [ -d "$CHOICE" ]; then
+			cd "$CHOICE"
+		fi
+	done
   )
 }
 
 
 nice_size()
 {
-    echo $1 | sed -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]$\)/\1.\2KB/' -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]\)\(\.[0-9]KB$\)/\1.\2MB/' -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]\)\(\.[0-9]MB$\)/\1.\2GB/'
+	echo $1 | sed -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]$\)/\1.\2KB/' -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]\)\(\.[0-9]KB$\)/\1.\2MB/' -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]\)\(\.[0-9]MB$\)/\1.\2GB/'
 }
 
 
 list_discs()
 {
-    LIST=$(ls /dev/discs)
-    for LINE in $LIST; do
-        echo "$(lsh unmap_device "/dev/discs/$LINE/disc")"
-        echo "disk"
-    done
+	LIST=$(ls /dev/discs)
+	for LINE in $LIST; do
+		echo "$(lsh unmap_device "/dev/discs/$LINE/disc")"
+		echo "disk"
+	done
 }
 
 
 list_parts()
 {
-    for PART in $(ls -L /dev/discs/*/part* | sort -t t -k 2 -n) $SPECIAL_DEVICES ; do
-    	PART=$(lsh unmap_device $PART)
-        if [ -e $PART ]; then
-	    PTYPE=$(file -Ls $PART 2>&1 | cat)
-	    case $PTYPE in
-	        *ext3*) PTYPE="(ext3)" ;;
-		*ext2*) PTYPE="(ext2)" ;;
-		*XFS*) PTYPE="(XFS)" ;;
-		*Minix*) PTYPE="(minix)" ;;
-		*) PTYPE="(unknown)" ;;
-            esac
+	for PART in $(ls -L /dev/discs/*/part* | sort -t t -k 2 -n) $SPECIAL_DEVICES ; do
+		PART=$(lsh unmap_device $PART)
+		if [ -e $PART ]; then
+		PTYPE=$(file -Ls $PART 2>&1 | cat)
+		case $PTYPE in
+			*ext3*) PTYPE="(ext3)" ;;
+			*ext2*) PTYPE="(ext2)" ;;
+			*XFS*) PTYPE="(XFS)" ;;
+			*Minix*) PTYPE="(minix)" ;;
+			*) PTYPE="(unknown)" ;;
+		esac
 		
-	    FSIZE=$(nice_size `fdisk -l $PART 2>&1 | grep ^Disk | grep bytes | awk '{print $5}'`)
-	    # this prevents listing EXTENDED partitions
-	    if [ "$FSIZE" == "" ]; then
-	        continue
-	    fi
-	    echo $PART
-	    for (( N=0 ; N < NUM_PARTITIONS ; N++ )); do
-	        if echo ${PARTITIONS[$N]} | grep -q "^$PART:"; then
-		    FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
-		    MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
-		    FSTYPE=${FSTYPE/none/swap}
-		    echo "$FSTYPE partition, size $FSIZE"
-		    continue 2
-		fi		
-	    done
-            echo "unassigned, size $FSIZE, $PTYPE"
-        fi
-    done
+		FSIZE=$(nice_size `fdisk -l $PART 2>&1 | grep ^Disk | grep bytes | awk '{print $5}'`)
+		# this prevents listing EXTENDED partitions
+		if [ "$FSIZE" == "" ]; then
+			continue
+		fi
+		echo $PART
+		for (( N=0 ; N < NUM_PARTITIONS ; N++ )); do
+			if echo ${PARTITIONS[$N]} | grep -q "^$PART:"; then
+				FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
+				MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
+				FSTYPE=${FSTYPE/none/swap}
+				echo "$FSTYPE partition, size $FSIZE"
+				continue 2
+			fi		
+		done
+			echo "unassigned, size $FSIZE, $PTYPE"
+		fi
+	done
 }
 
 
 get_part()
 {
-    TITLE="Partition Selection Menu"
-    HELP="Please select a partition"
-    PART=$($DIALOG --title "$TITLE" --extra-button --extra-label "Add..." --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_parts`)
-    if [ $? == 3 ]; then
-    	PART=$(inputbox "Enter special device node" "/dev/")
-	if [ ! -c $(readlink -f $PART) -a ! -b $(readlink -f $PART)  ]; then
-	    $DIALOG --msgbox "Device $PART does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?" 0 0
-	    unset PART
-	elif echo $SPECIAL_DEVICES | grep -qw $PART ; then
-	    $DIALOG --msgbox "Device $PART was already added!" 0 0
-	    unset PART
+	TITLE="Partition Selection Menu"
+	HELP="Please select a partition"
+	PART=$($DIALOG --title "$TITLE" --extra-button --extra-label "Add..." --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_parts`)
+	if [ $? == 3 ]; then
+		PART=$(inputbox "Enter special device node" "/dev/")
+		if [ ! -c $(readlink -f $PART) -a ! -b $(readlink -f $PART)  ]; then
+			$DIALOG --msgbox "Device $PART does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?" 0 0
+			unset PART
+		elif echo $SPECIAL_DEVICES | grep -qw $PART ; then
+			$DIALOG --msgbox "Device $PART was already added!" 0 0
+			unset PART
+		fi
 	fi
-    fi
-    echo $PART
+	echo $PART
 }
 
 
 get_disc()
 {
-    TITLE="Disk Selection Menu"
-    HELP="Please select a disk"
-    $DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 `list_discs`
+	TITLE="Disk Selection Menu"
+	HELP="Please select a disk"
+	$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 `list_discs`
 }
 
 
 get_filesystem()
 {
-    TITLE="Filesystem Selection Menu"
-    HELP="Please select a filesystem. A '*' means that this is a journalling filesystem, which provides better data security against system crashes etc."
-    
-    EXT3="Third Extended file system (*)"
-    EXT2="Second Extended file system"
-    REISER="Reiserfs file system (*)"
-    XFS="XFS file system (*)"
-    JFS="JFS file system (*)"
-    SWAP="Swap (Virtual memory or paging filesystem)"
+	TITLE="Filesystem Selection Menu"
+	HELP="Please select a filesystem. A '*' means that this is a journalling filesystem, which provides better data security against system crashes etc."
+	
+	EXT3="Third Extended file system (*)"
+	EXT2="Second Extended file system"
+	REISER="Reiserfs file system (*)"
+	XFS="XFS file system (*)"
+	JFS="JFS file system (*)"
+	SWAP="Swap (Virtual memory or paging filesystem)"
 
-    $DIALOG --title "$TITLE" --default-item "ext3" --menu "$HELP" 0 0 0 \
-           "ext3"      "$EXT3"    \
-           "ext2"      "$EXT2"    \
-           "reiserfs"  "$REISER"  \
-           "xfs"       "$XFS"     \
-           "jfs"       "$JFS"     \
-           "swap"      "$SWAP"
+	$DIALOG --title "$TITLE" --default-item "ext3" --menu "$HELP" 0 0 0 \
+		   "ext3"      "$EXT3"    \
+		   "ext2"      "$EXT2"    \
+		   "reiserfs"  "$REISER"  \
+		   "xfs"       "$XFS"     \
+		   "jfs"       "$JFS"     \
+		   "swap"      "$SWAP"
 }
 
 
 show_keymaps()
 {
-    KEYDIR="/usr/share/keymaps/i386"
+	KEYDIR="/usr/share/keymaps/i386"
 
-    azerty="$(ls $KEYDIR/azerty)"
-    dvorak="$(ls $KEYDIR/dvorak)"
-    fgGIod="$(ls $KEYDIR/fgGIod)"
-    qwerty="$(ls $KEYDIR/qwerty)"
-    qwertz="$(ls $KEYDIR/qwertz)"
+	azerty="$(ls $KEYDIR/azerty)"
+	dvorak="$(ls $KEYDIR/dvorak)"
+	fgGIod="$(ls $KEYDIR/fgGIod)"
+	qwerty="$(ls $KEYDIR/qwerty)"
+	qwertz="$(ls $KEYDIR/qwertz)"
 
-    MAP_FILES=$(echo -e "$azerty\n$dvorak\n$fgGIod\n$qwerty\n$qwertz" | sort | sed "s/\.kmap\.gz//")
+	MAP_FILES=$(echo -e "$azerty\n$dvorak\n$fgGIod\n$qwerty\n$qwertz" | sort | sed "s/\.kmap\.gz//")
 
-    for MAP in $MAP_FILES; do
-        echo $MAP
-        echo keymap                        
-    done
+	for MAP in $MAP_FILES; do
+		echo $MAP
+		echo keymap                        
+	done
 }
 
 
 keymap_menu()
 {
-    TITLE="Keymap Selection Menu"
-    HELP="Please select your preferred keymapping."
-    KEYMAPS=$(show_keymaps)
-    DEFAULT=${KEYMAP:-defkeymap}
-    KEYMAP=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 $KEYMAPS`
-    if [ -n "$KEYMAP" ]; then
-    	loadkeys $KEYMAP
-    fi
-    C_OK=\\Z2
-    DEFAULT=D
+	TITLE="Keymap Selection Menu"
+	HELP="Please select your preferred keymapping."
+	KEYMAPS=$(show_keymaps)
+	DEFAULT=${KEYMAP:-defkeymap}
+	KEYMAP=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 $KEYMAPS`
+	if [ -n "$KEYMAP" ]; then
+		loadkeys $KEYMAP
+	fi
+	C_OK=\\Z2
+	DEFAULT=D
 }
 
 
 fdisc()
 {
-    CFDISK="Curses based disk partition table manipulator"  
-    FDISK="Partition table manipulator"
-    PARTED="Create, destroy, resize, and copy partitions"
-    HELP="Please create a boot and root partition."
-    TITLE="Partitioning Menu"
-    ALPHA="Your drive must be partitioned with a BSD-style partition.  At the first prompt in fdisk, type 'b'."
-    PPC="Your drive must have an Apple partition scheme and have at least one HFS partition of at least 10MB for booting.  Do not mount this partition!"
+	CFDISK="Curses based disk partition table manipulator"  
+	FDISK="Partition table manipulator"
+	PARTED="Create, destroy, resize, and copy partitions"
+	HELP="Please create a boot and root partition."
+	TITLE="Partitioning Menu"
+	ALPHA="Your drive must be partitioned with a BSD-style partition.  At the first prompt in fdisk, type 'b'."
+	PPC="Your drive must have an Apple partition scheme and have at least one HFS partition of at least 10MB for booting.  Do not mount this partition!"
 
-    DISC=$(get_disc) &&
-    case $ARCH in
-        "alpha")
-            PROG="fdisk"
-	    $DIALOG --msgbox "$ALPHA"
-            ;;
-	"ppc")
-	    PROG="parted"
-	    $DIALOG --msgbox "$PPC"
-	    ;;
-	*)
-            PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
-                    "cfdisk"  "$CFDISK"                          \
-                    "fdisk"   "$FDISK"                           \
-                    "parted"  "$PARTED"`                         
-	    ;;
-    esac &&	
-    PROMPT="Are you certain that you want to run $PROG on $DISC? (This will erase any partition selection you might have already performed)" &&
-    if confirm "$PROMPT"; then
+	DISC=$(get_disc) &&
+	case $ARCH in
+		"alpha")
+			PROG="fdisk"
+			$DIALOG --msgbox "$ALPHA"
+			;;
+		"ppc")
+			PROG="parted"
+			$DIALOG --msgbox "$PPC"
+			;;
+		*)
+			PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
+			        "cfdisk"  "$CFDISK"                          \
+			        "fdisk"   "$FDISK"                           \
+			        "parted"  "$PARTED"`                         
+		;;
+	esac &&	
+	PROMPT="Are you certain that you want to run $PROG on $DISC? (This will erase any partition selection you might have already performed)" &&
+	if confirm "$PROMPT"; then
 		unset PARTITIONS
-        $PROG $DISC
+		$PROG $DISC
 	if (( STEP == 3 )); then
-	    (( STEP++ ))
+		(( STEP++ ))
 	fi
-        P_OK=\\Z2
-    fi
+		P_OK=\\Z2
+	fi
 }
 
 
 check_partition()
 {
-    PROMPT="Check for errors?"
-    case $1 in  
-        ext2|ext3|swap)
-            if confirm "$PROMPT" "--defaultno"; then
-                echo "-c";  
-            fi
-            ;;
-        *)
-            true
-            ;;
-    esac
+	PROMPT="Check for errors?"
+	case $1 in  
+		ext2|ext3|swap)
+			if confirm "$PROMPT" "--defaultno"; then
+			    echo "-c";  
+			fi
+			;;
+		*)
+			true
+			;;
+	esac
 }
 
 
 select_swap_file()
 {
-    LOCATION_PROMPT="Please enter the location for the swapfile."
-    SIZE_PROMPT="Enter the size (in MB) of the swapfile you want to generate. It is recommended make it twice the amount of physical RAM. TMPFS users will need more swap (typically 1000MB)."
+	LOCATION_PROMPT="Please enter the location for the swapfile."
+	SIZE_PROMPT="Enter the size (in MB) of the swapfile you want to generate. It is recommended make it twice the amount of physical RAM. TMPFS users will need more swap (typically 1000MB)."
 
-    SWAPFILE=$(inputbox "$LOCATION_PROMPT" "/swapfile") &&
+	SWAPFILE=$(inputbox "$LOCATION_PROMPT" "/swapfile") &&
 
-    # strange calc. but it ends up being ~ 2xRAM rounded up to 256MB blocks
-    SWAPSIZE=$(grep MemTotal: /proc/meminfo | awk '{print $2}' | sed 's/[0-9][0-9][0-9]$//') &&
-    (( SWAPSIZE = ( ( SWAPSIZE / 128 ) + 1 ) * 256 )) &&
+	# strange calc. but it ends up being ~ 2xRAM rounded up to 256MB blocks
+	SWAPSIZE=$(grep MemTotal: /proc/meminfo | awk '{print $2}' | sed 's/[0-9][0-9][0-9]$//') &&
+	(( SWAPSIZE = ( ( SWAPSIZE / 128 ) + 1 ) * 256 )) &&
 
-    SWAPSIZE=$(inputbox "$SIZE_PROMPT" "$SWAPSIZE") &&
-    if (( STEP == 5 )); then
-        (( STEP++ ))
-    fi
-    S_OK=\\Z2
+	SWAPSIZE=$(inputbox "$SIZE_PROMPT" "$SWAPSIZE") &&
+	if (( STEP == 5 )); then
+		(( STEP++ ))
+	fi
+	S_OK=\\Z2
 }
 
 
 determine_mount_opts()
 {
-    if [ "$1" == "swap" ]; then
-        echo "sw"
-    else
-        echo "defaults"
-    fi
+	if [ "$1" == "swap" ]; then
+		echo "sw"
+	else
+		echo "defaults"
+	fi
 }
 
 determine_fsck_pass()
 {
-    if [ "$1" == "swap" ]; then
-        echo "0"
-    else
-        if [ "$2" == "/" ]; then
-            echo "1"
+	if [ "$1" == "swap" ]; then
+		echo "0"
 	else
-            echo "2"
+		if [ "$2" == "/" ]; then
+			echo "1"
+		else
+			echo "2"
+		fi
 	fi
-    fi
 }
 
 
 get_mount_point()
 {
-    if [ "$1" == "swap" ]; then
-        echo "none"
-    else
-        POINT=$(inputbox "Please enter a mount point" "") &&
-        if [ -z "$POINT" -a -z "$ROOT" ]; then
-            echo "/"
+	if [ "$1" == "swap" ]; then
+		echo "none"
 	else
-	    echo "$POINT"
-        fi
-    fi
+		POINT=$(inputbox "Please enter a mount point" "") &&
+		if [ -z "$POINT" -a -z "$ROOT" ]; then
+			echo "/"
+		else
+			echo "$POINT"
+		fi
+	fi
 }
 
 
 select_partition()
 {
-    while true; do
-        PART=$(get_part)
-        if [ -z "$PART" ]; then
-            return 
-        fi &&
-	# scan if we are re-assigning a partition
-	for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do
-	    if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$PART" ]; then
-	        $DIALOG --msgbox "Unassigned partition $PART. You can now change the parameters for this partition if you wish." 0 0
-	        unset PARTITIONS[$N]
-		continue 2
-	    fi
+	while true; do
+		PART=$(get_part)
+		if [ -z "$PART" ]; then
+			return 
+		fi &&
+		# scan if we are re-assigning a partition
+		for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do
+			if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$PART" ]; then
+				$DIALOG --msgbox "Unassigned partition $PART. You can now change the parameters for this partition if you wish." 0 0
+				unset PARTITIONS[$N]
+			continue 2
+			fi
+		done
+		# add special device nodes to the secondary list
+		SYSTEM_DEVICES=$(for DEV in $(ls -L /dev/discs/*/part*) ; do lsh unmap_device $DEV ; done)
+		if ! echo $SYSTEM_DEVICES | grep -wq "$PART" ; then
+			export SPECIAL_DEVICES="$SPECIAL_DEVICES $PART"
+		fi &&
+		FSYS=$(get_filesystem) 
+		if [ -z "$FSYS" ]; then
+			return; 
+		fi &&
+
+		MNTPNT=$(get_mount_point $FSYS) &&
+
+		PROMPT="$PART might already be formatted with the $FSYS filesystem and may contain data. Formatting it again will destroy all present data on this partition. Do you wish to format it?"
+		if $DIALOG --defaultno --yesno "$PROMPT" 0 0 ; then
+			FORMAT=yes
+			CHECK=$(check_partition $FSYS)
+		else
+			FORMAT=no
+		fi
+		MNT_OPTS=$(determine_mount_opts $FSYS) &&
+		if [ "$MNT_PNT" != "/" ]; then
+			MNT_PNT=${MNT_PNT%%/}
+		fi
+		FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
+		if [ "$FSYS" == "xfs" ]; then
+			FORCE="-f"
+		else
+			unset FORCE
+		fi
+
+		PARTITIONS=(${PARTITIONS[@]} "$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT" )
+		(( NUM_PARTITIONS++ ))
+
+		if [ "$MNTPNT" == "/" ]; then
+			ROOT=$PART
+			# make sure BOOT is set to ROOT ... ->
+			if [ -z "$BOOT" ]; then
+				BOOT=$ROOT
+			fi
+		fi
+		if [ "$MNTPNT" == "/boot" ]; then
+			# ... -> except when this is a /boot partition
+			BOOT=$PART
+		fi
 	done
-	# add special device nodes to the secondary list
-	SYSTEM_DEVICES=$(for DEV in $(ls -L /dev/discs/*/part*) ; do lsh unmap_device $DEV ; done)
-	if ! echo $SYSTEM_DEVICES | grep -wq "$PART" ; then
-	    export SPECIAL_DEVICES="$SPECIAL_DEVICES $PART"
-	fi &&
-        FSYS=$(get_filesystem) 
-        if [ -z "$FSYS" ]; then
-            return; 
-        fi &&
-
-        MNTPNT=$(get_mount_point $FSYS) &&
-
-	PROMPT="$PART might already be formatted with the $FSYS filesystem and may contain data. Formatting it again will destroy all present data on this partition. Do you wish to format it?"
-	if $DIALOG --defaultno --yesno "$PROMPT" 0 0 ; then
-	    FORMAT=yes
-            CHECK=$(check_partition $FSYS)
-	else
-	    FORMAT=no
-	fi
-	MNT_OPTS=$(determine_mount_opts $FSYS) &&
-	if [ "$MNT_PNT" != "/" ]; then
-	    MNT_PNT=${MNT_PNT%%/}
-	fi
-        FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
-	if [ "$FSYS" == "xfs" ]; then
-	    FORCE="-f"
-	else
-	    unset FORCE
-	fi
-
-        PARTITIONS=(${PARTITIONS[@]} "$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT" )
-        (( NUM_PARTITIONS++ ))
-
-        if [ "$MNTPNT" == "/" ]; then
-	    ROOT=$PART
-	    # make sure BOOT is set to ROOT ... ->
-            if [ -z "$BOOT" ]; then
-	        BOOT=$ROOT
-	    fi
-        fi
-	if [ "$MNTPNT" == "/boot" ]; then
-	    # ... -> except when this is a /boot partition
-	    BOOT=$PART
-	fi
-    done
 }
 
 
 select_partitions()
 {
-    if [ -z "$ROOT" ]; then
-        if confirm "Are you done making partitions?"; then
-            case $ARCH in
-    	        "alpha")
-      	            $DIALOG --cr-wrap --msgbox \
+	if [ -z "$ROOT" ]; then
+		if confirm "Are you done making partitions?"; then
+			case $ARCH in
+			    "alpha")
+	  	            $DIALOG --cr-wrap --msgbox \
 "The partition on which the kernel is located must
 be formatted with the ext2 filesystem. Normally this
 means that your root or boot filesystem should be ext2." 20 60
-	            ;;
-            esac
-            select_partition
-        fi
-    else
-        select_partition
-    fi
+			    ;;
+			esac
+			select_partition
+		fi
+	else
+		select_partition
+	fi
 
-    if [ -n "$ROOT" ]; then
-        if (( STEP <= 4 )) ; then
-            STEP=5
-        fi
-        S_OK=
-        T_OK=
-	M_OK=\\Z2
-    fi
+	if [ -n "$ROOT" ]; then
+		if (( STEP <= 4 )) ; then
+			STEP=5
+		fi
+		S_OK=
+		T_OK=
+		M_OK=\\Z2
+	fi
 }
 
 
 make_lilo_conf()
 {
-    DISC=$(echo $ROOT | sed 's/[0-9]*$//')
-    (
-      echo "# lba32"
-      echo "prompt"
-      echo "delay=100"
-      echo "timeout=100"
-      echo "install=menu"
-      echo "append=\"devfs=nomount\""
-      echo "read-only"
-      echo ""
-      echo "boot=$DISC"
-      echo "root=$ROOT"
-      echo ""
-    ) > $TARGET/etc/lilo.conf
+	DISC=$(echo $ROOT | sed 's/[0-9]*$//')
+	(
+		echo "# lba32"
+		echo "prompt"
+		echo "delay=100"
+		echo "timeout=100"
+		echo "install=menu"
+		echo "append=\"devfs=nomount\""
+		echo "read-only"
+		echo ""
+		echo "boot=$DISC"
+		echo "root=$ROOT"
+		echo ""
+	) > $TARGET/etc/lilo.conf
 }
 
 
 make_grub_conf()
 {
-    (
-        mkdir -p $TARGET/boot/grub
-	echo "timeout 30"
-	echo "default 0"
-	echo "fallback 1"
-	echo "color light-gray/blue black/light-gray"
-	echo ""
-    ) > $TARGET/boot/grub/menu.lst
+	(
+		mkdir -p $TARGET/boot/grub
+		echo "timeout 30"
+		echo "default 0"
+		echo "fallback 1"
+		echo "color light-gray/blue black/light-gray"
+		echo ""
+	) > $TARGET/boot/grub/menu.lst
 }
 
 
 install_grub()
 {
-    GRUB_ROOT=$(lsh map_device_to_grub $ROOT)
-    GRUB_DISC=$(echo $GRUB_ROOT | cut -d, -f1)
-    
-    (
-      echo "root ($GRUB_ROOT)"
-      echo "setup ($GRUB_DISC)"
-      echo "quit"
-    ) | grub
+	GRUB_ROOT=$(lsh map_device_to_grub $ROOT)
+	GRUB_DISC=$(echo $GRUB_ROOT | cut -d, -f1)
+	
+	(
+		echo "root ($GRUB_ROOT)"
+		echo "setup ($GRUB_DISC)"
+		echo "quit"
+	) | grub
 
-    # setup grub details
-    if [ "$BOOT" == "$ROOT" ]; then
-    	GRUB_BOOT=/boot
-    else
-        GRUB_BOOT=""
-    fi
-    GRUB_ROOT="($GRUB_ROOT)"
-    export GRUB_ROOT GRUB_BOOT
+	# setup grub details
+	if [ "$BOOT" == "$ROOT" ]; then
+		GRUB_BOOT=/boot
+	else
+		GRUB_BOOT=""
+	fi
+	GRUB_ROOT="($GRUB_ROOT)"
+	export GRUB_ROOT GRUB_BOOT
 
-    echo ""
-    echo "grub should use the following parameters from now on:"
-    echo "  root   $GRUB_ROOT"
-    echo "  kernel $GRUB_BOOT/\${ image name }"
-    echo ""
+	echo ""
+	echo "grub should use the following parameters from now on:"
+	echo "  root   $GRUB_ROOT"
+	echo "  kernel $GRUB_BOOT/\${ image name }"
+	echo ""
 
-    echo "grub was installed on the MBR of $GRUB_DISC"
-    sleep 4
+	echo "grub was installed on the MBR of $GRUB_DISC"
+	sleep 4
 }
 
 
@@ -558,254 +558,254 @@ transfer_package()
 
 transfer()
 {
-    $DIALOG --msgbox "You should now be ready to install lunar to your system. Lunar will now create filesystems if needed, make a swapfile if it was selected, and install all lunar packages to the newly setup system. Make sure you are done with partitioning and filesystem selection." 12 60
-    if confirm "Are you ready to install?" ;  then
+	$DIALOG --msgbox "You should now be ready to install lunar to your system. Lunar will now create filesystems if needed, make a swapfile if it was selected, and install all lunar packages to the newly setup system. Make sure you are done with partitioning and filesystem selection." 12 60
+	if confirm "Are you ready to install?" ;  then
 	
-        ORDER=$(for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do echo ${PARTITIONS[$N]} | cut -d: -f2 ; done | sort)
+		ORDER=$(for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do echo ${PARTITIONS[$N]} | cut -d: -f2 ; done | sort)
 
-        for MOUNTPOINT in $ORDER; do
-    	    for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do
-	        M=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
-	        if [ "$M" == "$MOUNTPOINT" ]; then
-	            PART=$(echo ${PARTITIONS[$N]} | cut -d: -f1)
-	            FSYS=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
-		    MNT_OPTS=$(echo ${PARTITIONS[$N]} | cut -d: -f4)
-		    FSCK_PASS=$(echo ${PARTITIONS[$N]} | cut -d: -f5)
-	            CHECK=$(echo ${PARTITIONS[$N]} | cut -d: -f6)
-	            FORCE=$(echo ${PARTITIONS[$N]} | cut -d: -f7)
-		    FORMAT=$(echo ${PARTITIONS[$N]} | cut -d: -f8)
-		    # handle swap
-		    if [ "$FSYS" == "swap" ]; then
-		        if ! mkswap $PART ; then
-			    sleep 3
-			    $DIALOG --msgbox "Problem creating swap on $PART. Installation will continue." 8 50
-			fi
-                    # create the filesystems if needed for every partition
-	            elif [ "$FORMAT" == "yes" ]; then
-	                if ! mkfs.$FSYS $FORCE $PART $CHECK ; then
-		            sleep 3
-		            $DIALOG --msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue." 8 50
-		        fi
-    	            fi
-		    # again, weed out swap first
-		    if [ "$FSYS" == "swap" ]; then
-		        if swapon $PART; then
-			    FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+		for MOUNTPOINT in $ORDER; do
+			for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do
+				M=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
+				if [ "$M" == "$MOUNTPOINT" ]; then
+					PART=$(echo ${PARTITIONS[$N]} | cut -d: -f1)
+					FSYS=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
+					MNT_OPTS=$(echo ${PARTITIONS[$N]} | cut -d: -f4)
+					FSCK_PASS=$(echo ${PARTITIONS[$N]} | cut -d: -f5)
+					CHECK=$(echo ${PARTITIONS[$N]} | cut -d: -f6)
+					FORCE=$(echo ${PARTITIONS[$N]} | cut -d: -f7)
+					FORMAT=$(echo ${PARTITIONS[$N]} | cut -d: -f8)
+					# handle swap
+					if [ "$FSYS" == "swap" ]; then
+						if ! mkswap $PART ; then
+							sleep 3
+							$DIALOG --msgbox "Problem creating swap on $PART. Installation will continue." 8 50
+						fi
+					# create the filesystems if needed for every partition
+					elif [ "$FORMAT" == "yes" ]; then
+						if ! mkfs.$FSYS $FORCE $PART $CHECK ; then
+							sleep 3
+							$DIALOG --msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue." 8 50
+						fi
+					fi
+					# again, weed out swap first
+					if [ "$FSYS" == "swap" ]; then
+						if swapon $PART; then
+							FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+						else
+							sleep 3
+							$DIALOG --msgbox "Problem mounting swap on $PART. Installation will continue." 8 50
+						fi
+					# then try to mount normal FS's
+					else
+						if [ ! -d $TARGET$MOUNTPOINT ] ; then
+							mkdir -p $TARGET$MOUNTPOINT
+						fi
+						if [ "$MNT_OPTS" != "defaults" ]; then
+							MNTOPTARGS="-e $MNT_OPTS"
+						else
+							MNTOPTARGS=""
+						fi
+						if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
+							FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
+						else
+							sleep 3
+							$DIALOG --msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue." 8 50
+						fi
+					fi
+				fi
+			done
+		done
+
+		# last we create the swapfile on the target
+		if [ -n "$SWAPFILE" ]; then
+			mkdir -p $TARGET$(dirname $SWAPFILE) &&
+			if dd if=/dev/zero of=$TARGET$SWAPFILE bs=1M count=$SWAPSIZE &&
+				    mkswap $TARGET$SWAPFILE &&
+				    chmod 000 $TARGET$SWAPFILE
+			then
+				FSTAB="$FSTAB\n$SWAPFILE\tnone\tswap\tsw\t\t0 0"
 			else
-		            sleep 3
-		            $DIALOG --msgbox "Problem mounting swap on $PART. Installation will continue." 8 50
+				sleep 3
+				$DIALOG --msgbox "Problem creating swapfile. Installation will continue." 8 50
 			fi
-		    # then try to mount normal FS's
-		    else
-		    	if [ ! -d $TARGET$MOUNTPOINT ] ; then
-				mkdir -p $TARGET$MOUNTPOINT
-			fi
-			if [ "$MNT_OPTS" != "defaults" ]; then
-				MNTOPTARGS="-e $MNT_OPTS"
-			else
-				MNTOPTARGS=""
-			fi
-			if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
-		        	FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
-		    	else
-		        	sleep 3
-		        	$DIALOG --msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue." 8 50
-			fi
-		    fi
-    		fi
-	    done
-	done
+		fi
+		
+		cd $TARGET
 
-	# last we create the swapfile on the target
-	if [ -n "$SWAPFILE" ]; then
-            mkdir -p $TARGET$(dirname $SWAPFILE) &&
-            if dd if=/dev/zero of=$TARGET$SWAPFILE bs=1M count=$SWAPSIZE &&
-                mkswap $TARGET$SWAPFILE &&
-                chmod 000 $TARGET$SWAPFILE
-            then
-	        FSTAB="$FSTAB\n$SWAPFILE\tnone\tswap\tsw\t\t0 0"
-            else
-                sleep 3
-                $DIALOG --msgbox "Problem creating swapfile. Installation will continue." 8 50
-            fi
+		echo "Creating base LSB directories..."
+		mkdir -p bin boot dev etc home lib mnt media
+		mkdir -p proc root sbin srv tmp usr var opt
+		mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
+		mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
+		mkdir -p usr/share/man/man{1,2,3,4,5,6,7,8}
+		ln -sf share/doc usr/doc
+		ln -sf share/man usr/man
+		ln -sf share/info usr/info
+		mkdir -p etc/lunar/local/depends
+		ln -s . etc/rc.d
+		mkdir -p etc/init.d etc/rc{0,1,2,3,4,5,6,S}.d 
+		mkdir -p var/log/lunar/{install,md5sum,compile}
+		mkdir -p var/{cache,empty,lib,lock,log,run,spool,state,tmp}
+		mkdir -p var/{cache,lib,log,spool,state}/lunar
+		mkdir -p var/state/discover
+		mkdir -p var/spool/mail
+		mkdir -p media/{cdrom0,cdrom1,floppy0,floppy1,mem0,mem1}
+		chmod 0700 root
+		chmod 1777 tmp var/tmp
+	
+		# calculate the total so we can display progress
+		NUM=$(wc -l /.packages | awk '{print $1}')
+		(( NUM = NUM + 4 - 2))
+		(
+			if [ -f /var/cache/lunar/aaa_base.tar.bz2 ]; then
+				echo XXX
+				echo $(( CNT * 100 / NUM ))
+				echo "\n$((CNT+1)): Installing aaa_base: base directories and files\n"
+				echo XXX
+				tar xjf /var/cache/lunar/aaa_base.tar.bz2 2> /dev/null
+				(( CNT++ ))
+			fi
+			if [ -f /var/cache/lunar/aaa_dev.tar.bz2 ]; then
+				echo XXX
+				echo $(( CNT * 100 / NUM ))
+				echo "\n$((CNT+1)): Installing aaa_dev: device nodes\n"
+				echo XXX
+				tar xjf /var/cache/lunar/aaa_dev.tar.bz2 2> /dev/null
+				(( CNT++ ))
+			fi
+			for LINE in $(cat /.packages | grep -v -e '^lilo:' -e '^grub:') ; do
+				MOD=$(echo $LINE | cut -d: -f1)
+				VER=$(echo $LINE | cut -d: -f4)
+				SIZ=$(echo $LINE | cut -d: -f5)
+				echo XXX
+				echo $(( CNT * 100 / NUM ))
+				echo "\n$((CNT+1)): Installing $MOD-$VER ($SIZ)\n\n($(basename /var/cache/lunar/$MOD-$VER-*.tar.bz2))\n"
+				echo XXX
+				transfer_package $MOD
+				(( CNT++ ))
+			done
+			if [ -f /var/lib/lunar/moonbase.tar.bz2 ] ; then
+				echo XXX
+				echo $(( CNT * 100 / NUM ))
+				echo "\n$((CNT+1)): Installing moonbase"
+				echo XXX
+				(
+					cd $TARGET/var/lib/lunar
+					tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
+					tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
+				)
+				(( CNT++ ))
+			fi
+			# transfer sources
+			echo XXX
+			echo $(( CNT * 100 / NUM ))
+			echo "\n$((CNT+1)): Copying sources"
+			echo "XXX"
+			cp /var/spool/lunar/* $TARGET/var/spool/lunar/
+			(( CNT++ ))
+			# done
+		) | $DIALOG --title " Installing $NUM packages " --gauge "" 10 70 0 
+	
+		# setup list of installed packages etc.
+		echo "moonbase:%DATE%:installed:%DATE%:37M" >> $TARGET/var/state/lunar/packages
+		cp /var/state/lunar/depends        $TARGET/var/state/lunar/
+		cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
+		cp /var/state/lunar/depends.cache  $TARGET/var/state/lunar/
+		cp /var/state/lunar/module.index   $TARGET/var/state/lunar/
+	
+		# pass through some of the configuration at this point:
+		[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
+		[ -z "$CONSOLEFONT" ] || echo "$CONSOLEFONT" > $TARGET/etc/consolefont
+		[ -z "$LANG" ] || echo -e "# you can add declarations for LC_ALL etc in here\n\nexport LANG=\"$LANG\"\n" > $TARGET/etc/LOCALE
+		[ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
+	
+		# post-first-boot message:
+		cp /etc/init.d/lunar-install $TARGET/etc/init.d/
+		ln -s /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
+		cp /etc/motd $TARGET/etc/motd
+		cp /README $TARGET/root/README
+		
+		# save proxies
+		if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
+		(
+			echo "# these proxy settings apply to wget only"
+			[ -z "$HPROXY" ] || echo "export http_proxy=\"$HPROXY\""
+			[ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\""
+			[ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\""
+		) > $TARGET/etc/profile.d/proxy.rc
+		fi
+
+		echo -e "$FSTAB" >> etc/fstab
+		make_lilo_conf
+		make_grub_conf
+
+		# some more missing files:
+		cp /etc/lunar.release $TARGET/etc/
+		echo "GCCVER=3" > $TARGET/etc/lunar/local/config
+		cp /etc/lunar/local/.config $TARGET/etc/lunar/local/
+	
+		# moo, more more more!
+		chroot_run lsh update_plugins
+	
+		# initialize the new machine:
+		touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
+		chmod 0644 $TARGET/var/log/{utmp,wtmp,lastlog}
+		chmod 0600 $TARGET/var/log/btmp
+	
+		DONE_COPIED="YES"
+		echo "Done transferring."
+
+		if (( STEP == 6 )); then
+			(( STEP++ ))
+		fi
+		T_OK=\\Z2
+		O_OK=
+		L_OK=
 	fi
-        
-	cd $TARGET
-
-	echo "Creating base LSB directories..."
-        mkdir -p bin boot dev etc home lib mnt media
-        mkdir -p proc root sbin srv tmp usr var opt
-        mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
-        mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
-        mkdir -p usr/share/man/man{1,2,3,4,5,6,7,8}
-        ln -sf share/doc usr/doc
-        ln -sf share/man usr/man
-        ln -sf share/info usr/info
-        mkdir -p etc/lunar/local/depends
-        ln -s . etc/rc.d
-        mkdir -p etc/init.d etc/rc{0,1,2,3,4,5,6,S}.d 
-        mkdir -p var/log/lunar/{install,md5sum,compile}
-        mkdir -p var/{cache,empty,lib,lock,log,run,spool,state,tmp}
-        mkdir -p var/{cache,lib,log,spool,state}/lunar
-        mkdir -p var/state/discover
-        mkdir -p var/spool/mail
-        mkdir -p media/{cdrom0,cdrom1,floppy0,floppy1,mem0,mem1}
-        chmod 0700 root
-        chmod 1777 tmp var/tmp
-
-	# calculate the total so we can display progress
-        NUM=$(wc -l /.packages | awk '{print $1}')
-	(( NUM = NUM + 4 - 2))
-        (
-            if [ -f /var/cache/lunar/aaa_base.tar.bz2 ]; then
-		echo XXX
-	        echo $(( CNT * 100 / NUM ))
-	        echo "\n$((CNT+1)): Installing aaa_base: base directories and files\n"
-		echo XXX
-	        tar xjf /var/cache/lunar/aaa_base.tar.bz2 2> /dev/null
-	        (( CNT++ ))
-            fi
-	    if [ -f /var/cache/lunar/aaa_dev.tar.bz2 ]; then
-	        echo XXX
-	        echo $(( CNT * 100 / NUM ))
-		echo "\n$((CNT+1)): Installing aaa_dev: device nodes\n"
-		echo XXX
-		tar xjf /var/cache/lunar/aaa_dev.tar.bz2 2> /dev/null
-	        (( CNT++ ))
-	    fi
-	    for LINE in $(cat /.packages | grep -v -e '^lilo:' -e '^grub:') ; do
-	        MOD=$(echo $LINE | cut -d: -f1)
-	        VER=$(echo $LINE | cut -d: -f4)
-	        SIZ=$(echo $LINE | cut -d: -f5)
-		echo XXX
-	        echo $(( CNT * 100 / NUM ))
-	        echo "\n$((CNT+1)): Installing $MOD-$VER ($SIZ)\n\n($(basename /var/cache/lunar/$MOD-$VER-*.tar.bz2))\n"
-		echo XXX
-		transfer_package $MOD
-	        (( CNT++ ))
-            done
-            if [ -f /var/lib/lunar/moonbase.tar.bz2 ] ; then
-		echo XXX
-	        echo $(( CNT * 100 / NUM ))
-                echo "\n$((CNT+1)): Installing moonbase"
-		echo XXX
-                  (
-                    cd $TARGET/var/lib/lunar
-                    tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
-		    tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
-                  )
-	        (( CNT++ ))
-            fi
-	    # transfer sources
-	        echo XXX
-		echo $(( CNT * 100 / NUM ))
-		echo "\n$((CNT+1)): Copying sources"
-		echo "XXX"
-		cp /var/spool/lunar/* $TARGET/var/spool/lunar/
-	        (( CNT++ ))
-	    # done
-	) | $DIALOG --title " Installing $NUM packages " --gauge "" 10 70 0 
-
-        # setup list of installed packages etc.
-        echo "moonbase:%DATE%:installed:%DATE%:37M" >> $TARGET/var/state/lunar/packages
-	cp /var/state/lunar/depends        $TARGET/var/state/lunar/
-	cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
-	cp /var/state/lunar/depends.cache  $TARGET/var/state/lunar/
-	cp /var/state/lunar/module.index   $TARGET/var/state/lunar/
-
-        # pass through some of the configuration at this point:
-	[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
-	[ -z "$CONSOLEFONT" ] || echo "$CONSOLEFONT" > $TARGET/etc/consolefont
-	[ -z "$LANG" ] || echo -e "# you can add declarations for LC_ALL etc in here\n\nexport LANG=\"$LANG\"\n" > $TARGET/etc/LOCALE
-        [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
-
-	# post-first-boot message:
-	cp /etc/init.d/lunar-install $TARGET/etc/init.d/
-	ln -s /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
-	cp /etc/motd $TARGET/etc/motd
-	cp /README $TARGET/root/README
-	
-	# save proxies
-        if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
-	(
-	    echo "# these proxy settings apply to wget only"
-	    [ -z "$HPROXY" ] || echo "export http_proxy=\"$HPROXY\""
-            [ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\""
-            [ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\""
-	) > $TARGET/etc/profile.d/proxy.rc
-        fi
-
-        echo -e "$FSTAB" >> etc/fstab
-        make_lilo_conf
-	make_grub_conf
-
-	# some more missing files:
-	cp /etc/lunar.release $TARGET/etc/
-	echo "GCCVER=3" > $TARGET/etc/lunar/local/config
-	cp /etc/lunar/local/.config $TARGET/etc/lunar/local/
-	
-	# moo, more more more!
-	chroot_run lsh update_plugins
-	
-	# initialize the new machine:
-	touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
-	chmod 0644 $TARGET/var/log/{utmp,wtmp,lastlog}
-	chmod 0600 $TARGET/var/log/btmp
-	
-        DONE_COPIED="YES"
-        echo "Done transferring."
-
-        if (( STEP == 6 )); then
-	    (( STEP++ ))
-	fi
-        T_OK=\\Z2
-	O_OK=
-	L_OK=
-    fi
 }
 
 
 shell()
 {
-    echo "Press CTRL-D or type exit to return to the installer"
-    /bin/bash -ls
+	echo "Press CTRL-D or type exit to return to the installer"
+	/bin/bash -ls
 }
 
 
 configure_proxy()
 {
-    HTTP_PROMPT="Please enter the HTTP proxy server\nExample: http://192.168.1.1:8080/"
-    FTP_PROMPT="Please enter the FTP proxy server\nExample: http://192.168.1.1:8080/"
-    NO_PROMPT="Please enter all domains/ip addresses (comma-seperated) proxy should NOT be used for:\nExample: .mit.edu,mysite.com"
-    HPROXY=`inputbox "$HTTP_PROMPT"`           &&
-    FPROXY=`inputbox "$FTP_PROMPT" "$HPROXY"`  &&
-    NPROXY=`inputbox "$NO_PROMPT"` 
+	HTTP_PROMPT="Please enter the HTTP proxy server\nExample: http://192.168.1.1:8080/"
+	FTP_PROMPT="Please enter the FTP proxy server\nExample: http://192.168.1.1:8080/"
+	NO_PROMPT="Please enter all domains/ip addresses (comma-seperated) proxy should NOT be used for:\nExample: .mit.edu,mysite.com"
+	HPROXY=`inputbox "$HTTP_PROMPT"`           &&
+	FPROXY=`inputbox "$FTP_PROMPT" "$HPROXY"`  &&
+	NPROXY=`inputbox "$NO_PROMPT"` 
 }
 
 
 confirm_proxy_settings()
 {
-    FINISHED=NO
-    while [ "$FINISHED" != "YES" ]; do
-	PROMPT="Are these settings correct?"
-	PROMPT="$PROMPT\nHTTP Proxy:  $HPROXY"
-	PROMPT="$PROMPT\n FTP Proxy:  $FPROXY"
-	PROMPT="$PROMPT\n  No Proxy:  $NPROXY"
+	FINISHED=NO
+	while [ "$FINISHED" != "YES" ]; do
+		PROMPT="Are these settings correct?"
+		PROMPT="$PROMPT\nHTTP Proxy:  $HPROXY"
+		PROMPT="$PROMPT\n FTP Proxy:  $FPROXY"
+		PROMPT="$PROMPT\n  No Proxy:  $NPROXY"
 
-	if confirm "$PROMPT" "--cr-wrap"; then
-	    FINISHED=YES
-	else
-	    configure_proxy
-	    FINISHED=NO
-	fi
-    done
+		if confirm "$PROMPT" "--cr-wrap"; then
+			FINISHED=YES
+		else
+			configure_proxy
+			FINISHED=NO
+		fi
+	done
 }
 
 
 proxy_exit_message()
 {
-    $DIALOG --cr-wrap --title "Lunar Proxy Settings Complete" --msgbox \
-        "Your proxy configuration has been saved. 
+	$DIALOG --cr-wrap --title "Lunar Proxy Settings Complete" --msgbox \
+		"Your proxy configuration has been saved. 
 
 Please note that these proxy settings will only be used
 by Lunar (wget) and possibly some other command-line utilities.
@@ -818,493 +818,491 @@ web browser, etc..." 12 65
 
 toggle()
 {
-    if [ `eval echo \\$$1` == "on" ]; then
-        eval $1=off
-    else
-        eval $1=on
-    fi
+	if [ `eval echo \\$$1` == "on" ]; then
+		eval $1=off
+	else
+		eval $1=on
+	fi
 }
 
 
 show_consolefonts()
 {
-    FONTDIR="/usr/share/consolefonts"
-    cd $FONTDIR
-    FONTS=`ls *.gz | sed "s/\.psf\.gz//"`
+	FONTDIR="/usr/share/consolefonts"
+	cd $FONTDIR
+	FONTS=`ls *.gz | sed "s/\.psf\.gz//"`
 
-    for FONT in $FONTS; do
-        echo $FONT
-        echo font
-    done
+	for FONT in $FONTS; do
+		echo $FONT
+		echo font
+	done
 }
 
 
 font_menu()
 {
-    TITLE="Console Font Selection Menu"
-    HELP="Please select your preferred console fonts."
-    FONTS=`show_consolefonts`
-    DEFAULT=${CONSOLEFONT:-default8x16}
-    CONSOLEFONT=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 $FONTS`
-    consolechars -f $CONSOLEFONT
-    D_OK=\\Z2
-    DEFAULT=E
+	TITLE="Console Font Selection Menu"
+	HELP="Please select your preferred console fonts."
+	FONTS=`show_consolefonts`
+	DEFAULT=${CONSOLEFONT:-default8x16}
+	CONSOLEFONT=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 $FONTS`
+	consolechars -f $CONSOLEFONT
+	D_OK=\\Z2
+	DEFAULT=E
 }
 
 
 show_languages()
 {
-    while read L D; do
-        echo "$L" | cut -d/ -f1
-        echo "$D"
-        shift 2
-    done < /etc/lunar/local/locales
+	while read L D; do
+		echo "$L" | cut -d/ -f1
+		echo "$D"
+		shift 2
+	done < /etc/lunar/local/locales
 }
 
 
 lang_menu()
 {
-    TITLE="Language Selection Menu"
-    HELP="While lunar is entirely in English 
+	TITLE="Language Selection Menu"
+	HELP="While lunar is entirely in English 
 it is possible to change the languages of many other programs.
 Please select your preferred langauge.
 
 This process will ONLY set the LANG environment variable. Do
 not expect any changes till you finish and reboot."
 
-    DEFAULT=${LANG:-en_US}
-    LANG=$($DIALOG --title "Language Selection Menu" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 `show_languages`)
-    export LANG
-    E_OK=\\Z2
-    DEFAULT=J
+	DEFAULT=${LANG:-en_US}
+	LANG=$($DIALOG --title "Language Selection Menu" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 `show_languages`)
+	export LANG
+	E_OK=\\Z2
+	DEFAULT=J
 }
 
 
 editor_menu()
 {
-    DEFAULT=${EDITOR:-vi}
-    EDITOR=`$DIALOG --title "Editor Selection Menu" --default-item "$DEFAULT" --item-help --cr-wrap \
-            --menu "Not all of these editors are available right away. Some require that you compile them yourself (like emacs) or are only available on the target installation, and possibly emulated through another editor" 0 0 0 \
-	    "e3"    "fully available" \
-	            "an emacs, vim, pico emulator" \
-	    "emacs" "emulated on the ISO, not installed" \
-	            "Richard Stallmans editor" \
-            "joe"   "fully available" \
-	            "WS compatible editor" \
-            "nano"  "fully available" \
-	            "a pico clone" \
-            "vi"    "emulated on the live ISO, but also fully installed" \
-	            "good old vi" \
-	    "zile"  "fully available" \
-	            "an emacs clone"`
+	DEFAULT=${EDITOR:-vi}
+	EDITOR=`$DIALOG --title "Editor Selection Menu" --default-item "$DEFAULT" --item-help --cr-wrap \
+			--menu "Not all of these editors are available right away. Some require that you compile them yourself (like emacs) or are only available on the target installation, and possibly emulated through another editor" 0 0 0 \
+			"e3"    "fully available" \
+			    "an emacs, vim, pico emulator" \
+			"emacs" "emulated on the ISO, not installed" \
+			    "Richard Stallmans editor" \
+			"joe"   "fully available" \
+			    "WS compatible editor" \
+			"nano"  "fully available" \
+			    "a pico clone" \
+			"vi"    "emulated on the live ISO, but also fully installed" \
+			    "good old vi" \
+			"zile"  "fully available" \
+			    "an emacs clone"`
 
-    export EDITOR
-    J_OK=\\Z2
-    DEFAULT=F
+	export EDITOR
+	J_OK=\\Z2
+	DEFAULT=F
 }
 
 
 show_timezones()
 {
-    for ITEM in `ls $LOCALTIME/$1`; do
-        if [ -n "$1" ]; then
-	    echo "$1/$ITEM"
-        else
-	    echo "$ITEM"
-	fi
-        if [ -d $LOCALTIME/$1/$ITEM ]; then
-	    echo "Directory"
-	else
-	    echo "Timezone"
-	fi
-    done
+	for ITEM in `ls $LOCALTIME/$1`; do
+		if [ -n "$1" ]; then
+			echo "$1/$ITEM"
+		else
+			echo "$ITEM"
+		fi
+		if [ -d $LOCALTIME/$1/$ITEM ]; then
+			echo "Directory"
+		else
+			echo "Timezone"
+		fi
+	done
 }
 
 
 timezone()
 {
-    LOCALTIME=/usr/share/zoneinfo
-    TITLE="Time Zone Selection Menu"
-    HELP="Select timezone or directory"
-    ZONE=""
-    DEFAULT=${ZONE:-GMT}
+	LOCALTIME=/usr/share/zoneinfo
+	TITLE="Time Zone Selection Menu"
+	HELP="Select timezone or directory"
+	ZONE=""
+	DEFAULT=${ZONE:-GMT}
 
-    while
-      TIMEZONES=`show_timezones $ZONE`  &&
-      ZONE=`$DIALOG  --title  "$TITLE"  \
-                     --default-item "$DEFAULT" \
-                     --menu             \
-                     "$HELP"            \
-                     0 0 0              \
-                     $TIMEZONES`        &&
-      [ -d $LOCALTIME/$ZONE ]
-      do
-        true
-    done
+	while
+	  TIMEZONES=`show_timezones $ZONE`  &&
+	  ZONE=`$DIALOG  --title  "$TITLE"  \
+			         --default-item "$DEFAULT" \
+			         --menu             \
+			         "$HELP"            \
+			         0 0 0              \
+			         $TIMEZONES`        &&
+	  [ -d $LOCALTIME/$ZONE ]
+	  do
+		true
+	done
 
-    if [ -f "$LOCALTIME/$ZONE" ]; then
-        ln -sf $LOCALTIME/$ZONE $TARGET/etc/localtime
+	if [ -f "$LOCALTIME/$ZONE" ]; then
+		ln -sf $LOCALTIME/$ZONE $TARGET/etc/localtime
 
-        TITLE="GMT or Local"
-        HELP="Does the hardware clock store time in GMT or local?"
+		TITLE="GMT or Local"
+		HELP="Does the hardware clock store time in GMT or local?"
 
-	DEFAULT=${CLOCK:-Local}
-        CLOCK=`$DIALOG --title "$TITLE"   \
-                       --menu "$HELP"     \
-		       --default-item "$DEFAULT" \
-                       0 0 0              \
-                       "GMT"    ""        \
-                       "Local"  ""`       &&
-        case $CLOCK in
-            GMT) true ;;
-            Local) HWCLOCK="/sbin/hwclock --hctosys --localtime"
-                echo "#!/bin/sh" > $TARGET/etc/init.d/localtime
-                echo "$HWCLOCK" >> $TARGET/etc/init.d/localtime
-                chmod a+x $TARGET/etc/init.d/localtime
-                ln -s ../init.d/localtime $TARGET/etc/rcS.d/S15localtime
-                ;;
-        esac
-    fi
+		DEFAULT=${CLOCK:-Local}
+		CLOCK=`$DIALOG --title "$TITLE"   \
+			           --menu "$HELP"     \
+			           --default-item "$DEFAULT" \
+			           0 0 0              \
+			           "GMT"    ""        \
+			           "Local"  ""`       &&
+		case $CLOCK in
+			GMT) true ;;
+			Local) HWCLOCK="/sbin/hwclock --hctosys --localtime"
+				echo "#!/bin/sh" > $TARGET/etc/init.d/localtime
+				echo "$HWCLOCK" >> $TARGET/etc/init.d/localtime
+				chmod a+x $TARGET/etc/init.d/localtime
+				ln -s ../init.d/localtime $TARGET/etc/rcS.d/S15localtime
+			;;
+		esac
+	fi
 }
 
 
 install_kernels()
 {
-    list_precompiled_kernels()
-    {
-        while read LINE; do
-	    echo $LINE | cut -d: -f1
-	    echo $LINE | cut -d: -f2-
-	    echo $LINE | cut -d: -f2-
+	list_precompiled_kernels()
+	{
+		while read LINE; do
+		echo $LINE | cut -d: -f1
+		echo $LINE | cut -d: -f2-
+		echo $LINE | cut -d: -f2-
 	done < /kernels/.kernels
-    }
+	}
 
-    list_kernel_modules()
-    {
-    	while read LINE; do
+	list_kernel_modules()
+	{
+		while read LINE; do
 		echo $LINE | cut -d: -f1
 		echo $LINE | cut -d: -f2
 		echo $LINE | cut -d: -f3
 	done < /kernels/.kernel-modules
-    }
+	}
 
-    while true ; do
-        KCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "C" --item-help --menu "In order to succesfully run linux you need to install the linux kernel, the heart of the operating system. You can choose between compiling one yourself or select a precompiled modular kernel." 0 0 0 \
-                  "C" "Compile a kernel" "Custom configure and compile one of the linux kernels"\
+	while true ; do
+		KCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "C" --item-help --menu "In order to succesfully run linux you need to install the linux kernel, the heart of the operating system. You can choose between compiling one yourself or select a precompiled modular kernel." 0 0 0 \
+		      "C" "Compile a kernel" "Custom configure and compile one of the linux kernels"\
 		  "P" "Install a precompiled kernel" "Fast and safe: these kernels should work on almost all machines"`
 	
-	if [ $? != 0 ]; then
-	    return
-	fi
-
-	case $KCOMMAND in
-            C)
-	        CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 $(list_kernel_modules)`
-		if grep -q "^$CCOMMAND:" /kernels/kernel-modules ; then
-		    chroot_run lin -r $(grep "^$CCOMMAND:" /kernels/kernel-modules | cut -d: -f2)
+		if [ $? != 0 ]; then
+			return
 		fi
-	    ;;
-	    P)
-	        CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --item-help --menu "" 0 0 0 \
-		$(list_precompiled_kernels)`
-		if [ -f "/kernels/$CCOMMAND.tar.bz2" ]; then
-		    cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
-		    # let the plugin code handle the hard work
-		    chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
-		fi
-	    ;;
-	esac
 
-	if (( STEP == 8 )); then
-            (( STEP++ ))
-	fi
-	K_OK=\\Z2
-	R_OK=
-	H_OK=
-	V_OK=
-	G_OK=
-	A_OK=
-    done
+		case $KCOMMAND in
+			C)
+				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 $(list_kernel_modules)`
+				if grep -q "^$CCOMMAND:" /kernels/kernel-modules ; then
+					chroot_run lin -r $(grep "^$CCOMMAND:" /kernels/kernel-modules | cut -d: -f2)
+				fi
+			;;
+			P)
+				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --item-help --menu "" 0 0 0 \
+					$(list_precompiled_kernels)`
+				if [ -f "/kernels/$CCOMMAND.tar.bz2" ]; then
+					cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
+					# let the plugin code handle the hard work
+					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
+				fi
+			;;
+		esac
+
+		if (( STEP == 8 )); then
+			(( STEP++ ))
+		fi
+		K_OK=\\Z2
+		R_OK=
+		H_OK=
+		V_OK=
+		G_OK=
+		A_OK=
+	done
 }
 
 
 install_bootloader() {
-    while true ; do
-        BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "L" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
-        "L" "lilo" "Install lilo as boot loader" \
-        "G" "grub" "Install grub as boot loader" \
-        "N" "none" "Do not install a boot loader"`
+	while true ; do
+		BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "L" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
+		"L" "lilo" "Install lilo as boot loader" \
+		"G" "grub" "Install grub as boot loader" \
+		"N" "none" "Do not install a boot loader"`
 
-        if [ $? != 0 ] ; then
-            continue
-        fi
+		if [ $? != 0 ] ; then
+			continue
+		fi
 
-        case $BCOMMAND in
-            L)
-	        BOOTLOADER=lilo
-		transfer_package $BOOTLOADER
-		chroot_run lsh update_plugin $BOOTLOADER "install"
-		$DIALOG --cr-wrap --msgbox "The lilo boot loader package was installed. From now on, when you add a kernel, lilo will be run after the /etc/lilo.conf configuration file has been updated. " 10 65
+		case $BCOMMAND in
+			L)
+			BOOTLOADER=lilo
+			transfer_package $BOOTLOADER
+			chroot_run lsh update_plugin $BOOTLOADER "install"
+			$DIALOG --cr-wrap --msgbox "The lilo boot loader package was installed. From now on, when you add a kernel, lilo will be run after the /etc/lilo.conf configuration file has been updated. " 10 65
 		;;
-            G)
-	        BOOTLOADER=grub
-		transfer_package $BOOTLOADER
-		chroot_run lsh update_plugin $BOOTLOADER "install"
-		install_grub
-		$DIALOG --cr-wrap --msgbox "The grub boot loader package was installed. From now on, when you add a kernel, it will be available through grub on boot." 10 65
+			G)
+			BOOTLOADER=grub
+			transfer_package $BOOTLOADER
+			chroot_run lsh update_plugin $BOOTLOADER "install"
+			install_grub
+			$DIALOG --cr-wrap --msgbox "The grub boot loader package was installed. From now on, when you add a kernel, it will be available through grub on boot." 10 65
 		;;
-	    N)
-	        $DIALOG --cr-wrap --msgbox "Not installing a boot loader requires you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also does not install lilo or grub on the hard disc." 12 65
-	        ;;
-        esac
+		N)
+			$DIALOG --cr-wrap --msgbox "Not installing a boot loader requires you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also does not install lilo or grub on the hard disc." 12 65
+			;;
+		esac
 
-	if (( STEP == 7 )); then
-	    (( STEP++ ))
-	fi
-	L_OK=\\Z2
-	K_OK=
-	return
-    done
+		if (( STEP == 7 )); then
+			(( STEP++ ))
+		fi
+		L_OK=\\Z2
+		K_OK=
+		return
+	done
 }
 
 make_server_keys()  {
-  chroot $TARGET make -C /etc/ssh server-keys
-  echo ""
-  echo "SSH server keys were created."
-  sleep 2
+	chroot $TARGET make -C /etc/ssh server-keys
+	echo ""
+	echo "SSH server keys were created."
+	sleep 2
 }
 
 
 install_menu()
 {
-    if [ -z "$STEPS" ]; then
-        # the total number of steps in the installer:
-        STEPS=15
+	if [ -z "$STEPS" ]; then
+		# the total number of steps in the installer:
+		STEPS=15
 
-        SH[1]="Please read the introduction if you are new to lunar-linux.
+		SH[1]="Please read the introduction if you are new to lunar-linux.
 If you want to know more about the installation procedure
 and recent changes please visit http://lunar-linux.org/
 before proceeding."
-        SH[2]="You can now set various system defaults that
+		SH[2]="You can now set various system defaults that
 are not vital but make your linux system more friendly
 to your users."
-        SH[3]="You need to create partitions if you are installing on
+		SH[3]="You need to create partitions if you are installing on
 a new disc or in free space. If you want to delete other
 operating systems you will also need to partition your disc."
-        SH[4]="You need to mount a filesystem so that lunar can be
+		SH[4]="You need to mount a filesystem so that lunar can be
 transferred to it. Usually you make 3 to 5 separate
 partitions like /boot, /var and /usr. After mounting
 them the lunar packages can be transferred to them."
-        SH[5]="Swap is like temporary memory. It improves your
+		SH[5]="Swap is like temporary memory. It improves your
 systems performance. You can create a swapfile or
 even whole swap partitions."
-        SH[6]="During the transfer all programs and files that you
+		SH[6]="During the transfer all programs and files that you
 need to run lunar-linux will be copied to your system."
-        SH[7]="To be able to boot linux on reboot, you need to have
+		SH[7]="To be able to boot linux on reboot, you need to have
 a boot loader that loads the kernel when you power on
 your computer. Without it linux does not run."
-        SH[8]="You cannot boot linux without the kernel. You will
+		SH[8]="You cannot boot linux without the kernel. You will
 need to install at least one. You can choose between
 several factory kernels or compile one yourself."
-        SH[9]="Make sure you set good passwords, especially for
+		SH[9]="Make sure you set good passwords, especially for
 the root user. Everyone who knows this password can
 destroy your system. By default the root password is
 epmty so you should really change it"
-	SH[10]="Add normal user accounts to this system. Normal users do not have special privileges and you should not work as root all the time if not needed."
-        SH[11]="You can now set the name and domain of the machine
+		SH[10]="Add normal user accounts to this system. Normal users do not have special privileges and you should not work as root all the time if not needed."
+		SH[11]="You can now set the name and domain of the machine
 and configure it's networking connections."
-        SH[12]="By default there are no services installed and
+		SH[12]="By default there are no services installed and
 running. With this tool you can add or remove them to
 the list of startup services and enable or disable them."
-        SH[13]="If you want to run a ssh server (recommended) then
+		SH[13]="If you want to run a ssh server (recommended) then
 you must once create unique keys for this system. These
 keys are the identification of your system and make it
 recognizeable across the network."
-        SH[14]="Select the local timezone of your computer
+		SH[14]="Select the local timezone of your computer
 to make sure that applications running are using the correct
 time zone information and adjust daylight savings."
-        SH[15]="You are done! you should remove the ISO from the
+		SH[15]="You are done! you should remove the ISO from the
 cd-rom tray and reboot. See you at the login prompt!"
-    
-        B_LABEL="One step back"
-        B_HELP="Go back one step in the installation procedure"
-        F_LABEL="One step forward"
-        F_HELP="Go forward one step in the installation procedure"
+	
+		B_LABEL="One step back"
+		B_HELP="Go back one step in the installation procedure"
+		F_LABEL="One step forward"
+		F_HELP="Go forward one step in the installation procedure"
 
-        I_LABEL="Introduction into lunar-linux"
-        I_HELP="Read about the advantages of using Lunar Linux"
+		I_LABEL="Introduction into lunar-linux"
+		I_HELP="Read about the advantages of using Lunar Linux"
 
-	C_LABEL="Select a keyboard map"
-        C_HELP="Select keyboard map"
-        D_LABEL="Select a console font"
-        D_HELP="Select a console font"
-        E_LABEL="Set global language"
-        E_HELP="Set global language"
-        J_LABEL="Select a default editor"
-        J_HELP="Select a default editor"
+		C_LABEL="Select a keyboard map"
+		C_HELP="Select keyboard map"
+		D_LABEL="Select a console font"
+		D_HELP="Select a console font"
+		E_LABEL="Set global language"
+		E_HELP="Set global language"
+		J_LABEL="Select a default editor"
+		J_HELP="Select a default editor"
 
-        P_LABEL="Partition discs"
-        P_HELP="Use fdisk or cfdisk to prepare hard drive partitions"
-        M_LABEL="Select target partitions"
-        M_HELP="Select target partitions for installation"
-        S_LABEL="Select a swapfile"
-        S_HELP="You don't need to setup a separate swap partition but can use a swapfile"
-        S_OK="\\Z1"
-        T_LABEL="Install lunar"
-        T_HELP="Create filesystems, swapfile and install all packages onto the target system NOW"
-        T_OK="\\Z1"
-        O_LABEL="Configure compiler optimizations"
-        O_HELP="Select architecture and optimizations"
-        O_OK="\\Z1"
-        L_LABEL="Install boot loader"
-        L_HELP="Install a boot loader to boot into Lunar"
-        L_OK="\\Z1"
-        K_LABEL="Install kernel(s)"
-        K_HELP="Install kernel(s) on the new installation"
-        K_OK="\\Z1"
-    
-        R_LABEL="Set root password"
-        R_HELP="Set the default root password needed to access this system (the default password is empty)"
-        R_OK="\\Z1"
-	U_LABEL="Setup user accounts"
-	U_HELP="Create, edit, delete users and group accounts on the system"
-	U_OK="\\Z1"
-        H_LABEL="Setup hostname and networking"
-        H_HELP="Configure your network devices and hostname settings"
-        H_OK="\\Z1"
-        V_LABEL="Administrate services"
-        V_HELP="Configure services to start automatically at boot time"
-        V_OK="\\Z1"
-        G_LABEL="Create SSH server keys"
-        G_HELP="Generate the SSH server keys"
-        G_OK="\\Z1"
-        A_LABEL="Select a timezone"
-        A_HELP="Select a timezone"
-        A_OK="\\Z1"
+		P_LABEL="Partition discs"
+		P_HELP="Use fdisk or cfdisk to prepare hard drive partitions"
+		M_LABEL="Select target partitions"
+		M_HELP="Select target partitions for installation"
+		S_LABEL="Select a swapfile"
+		S_HELP="You don't need to setup a separate swap partition but can use a swapfile"
+		S_OK="\\Z1"
+		T_LABEL="Install lunar"
+		T_HELP="Create filesystems, swapfile and install all packages onto the target system NOW"
+		T_OK="\\Z1"
+		O_LABEL="Configure compiler optimizations"
+		O_HELP="Select architecture and optimizations"
+		O_OK="\\Z1"
+		L_LABEL="Install boot loader"
+		L_HELP="Install a boot loader to boot into Lunar"
+		L_OK="\\Z1"
+		K_LABEL="Install kernel(s)"
+		K_HELP="Install kernel(s) on the new installation"
+		K_OK="\\Z1"
+	
+		R_LABEL="Set root password"
+		R_HELP="Set the default root password needed to access this system (the default password is empty)"
+		R_OK="\\Z1"
+		U_LABEL="Setup user accounts"
+		U_HELP="Create, edit, delete users and group accounts on the system"
+		U_OK="\\Z1"
+		H_LABEL="Setup hostname and networking"
+		H_HELP="Configure your network devices and hostname settings"
+		H_OK="\\Z1"
+		V_LABEL="Administrate services"
+		V_HELP="Configure services to start automatically at boot time"
+		V_OK="\\Z1"
+		G_LABEL="Create SSH server keys"
+		G_HELP="Generate the SSH server keys"
+		G_OK="\\Z1"
+		A_LABEL="Select a timezone"
+		A_HELP="Select a timezone"
+		A_OK="\\Z1"
 
-	X_LABEL="Exit into rescue shell or reboot"
-	X_HELP="This launches a a rescue shell or reboots your system"
-        Z_LABEL="Finished installing!"
-        Z_HELP="You're done! Now go reboot and use lunar-linux!"
-        Z_OK="\\Z0"
+		X_LABEL="Exit into rescue shell or reboot"
+		X_HELP="This launches a a rescue shell or reboots your system"
+		Z_LABEL="Finished installing!"
+		Z_HELP="You're done! Now go reboot and use lunar-linux!"
+		Z_OK="\\Z0"
 
-        STEP=1
-    fi
+		STEP=1
+	fi
 
-    choices()
-    {
-      (
-        unset IFS
-        for CHOICE in $(echo $@); do
-	    echo $CHOICE
-	    eval echo \$${CHOICE}_OK\$${CHOICE}_LABEL\\\\Z0
-	    eval echo \$${CHOICE}_HELP
-	done
-      )
-    }
+	choices()
+	{
+	  (
+		unset IFS
+		for CHOICE in $(echo $@); do
+			echo $CHOICE
+			eval echo \$${CHOICE}_OK\$${CHOICE}_LABEL\\\\Z0
+			eval echo \$${CHOICE}_HELP
+		done
+	  )
+	}
    
-    if [ "$GUIDE" == "off" ]; then
-        CHOICES="X I C D E J P M S T O L K R U H V G A Z"
-	STEPHELP="Step $STEP of $STEPS:"
-    else
-        case $STEP in
-            1)  DEFAULT=I ; CHOICES="X I F" ;;
-	    2)              CHOICES="B C D E J F" ;;
-	    3)  DEFAULT=P ; CHOICES="B P M F" ;;
-	    4)  DEFAULT=M ; CHOICES="B P M F" ;;
-	    5)  DEFAULT=S ; CHOICES="B P M S F" ;;
-	    6)  DEFAULT=T ; CHOICES="B P M S T F" ;;
-	    7)  DEFAULT=L ; CHOICES="B O L F" ;;
-	    8)  DEFAULT=K ; CHOICES="B O L K F" ;;
-	    9)  DEFAULT=R ; CHOICES="B R U F" ;;
-	    10) DEFAULT=U ; CHOICES="B R U F" ;;
-	    11) DEFAULT=H ; CHOICES="B H F" ;;
-	    12) DEFAULT=V ; CHOICES="B H V F" ;;
-	    13) DEFAULT=G ; CHOICES="B H V G F" ;;
-	    14) DEFAULT=A ; CHOICES="B H V G A F" ;;
-	    15) DEFAULT=Z ; CHOICES="B Z"
-        esac
-    fi
-    COMMAND=`$DIALOG --title "$TITLE" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)` 
+	if [ "$GUIDE" == "off" ]; then
+		CHOICES="X I C D E J P M S T O L K R U H V G A Z"
+		STEPHELP="Step $STEP of $STEPS:"
+	else
+		case $STEP in
+		1)  DEFAULT=I ; CHOICES="X I F" ;;
+		2)              CHOICES="B C D E J F" ;;
+		3)  DEFAULT=P ; CHOICES="B P M F" ;;
+		4)  DEFAULT=M ; CHOICES="B P M F" ;;
+		5)  DEFAULT=S ; CHOICES="B P M S F" ;;
+		6)  DEFAULT=T ; CHOICES="B P M S T F" ;;
+		7)  DEFAULT=L ; CHOICES="B O L F" ;;
+		8)  DEFAULT=K ; CHOICES="B O L K F" ;;
+		9)  DEFAULT=R ; CHOICES="B R U F" ;;
+		10) DEFAULT=U ; CHOICES="B R U F" ;;
+		11) DEFAULT=H ; CHOICES="B H F" ;;
+		12) DEFAULT=V ; CHOICES="B H V F" ;;
+		13) DEFAULT=G ; CHOICES="B H V G F" ;;
+		14) DEFAULT=A ; CHOICES="B H V G A F" ;;
+		15) DEFAULT=Z ; CHOICES="B Z"
+		esac
+	fi
+	COMMAND=`$DIALOG --title "$TITLE" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)` 
 
-    case $? in 
-        3)
-	    while true; do
-	        COMMAND=`$DIALOG --title "$TITLE" --cancel-label "Exit" --menu "Installer settings and misc. options" 0 0 0 "G" "Toggle guided menus on/off (currently $GUIDE)" "C" "Toggle asking of confirmations on/off (currently $CONFIRM)" "D" "Toggle disabling the ability to perform steps (currently $DISABLE)" "M" "Load more kernel modules" "S" "Temporarily run a shell" "Q" "Quit the installer"`
-	        if [ $? != 0 ]; then
-	            return
-                fi
-                case $COMMAND in
-                    G) toggle GUIDE ;;
-                    C) toggle CONFIRM ;;
-		    D) toggle DISABLE ;;
-		    S) shell ;;
-		    M) load_module ;;
-		    Q) goodbye ;;
-	        esac
-	    done
-	    ;;
-    esac
+	case $? in 
+		3)
+			COMMAND=S
+			while true; do
+				DEFAULT=$COMMAND
+				COMMAND=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --cancel-label "Exit" --menu "Installer settings and misc. options" 0 0 0 "G" "Toggle guided menus on/off (currently $GUIDE)" "C" "Toggle asking of confirmations on/off (currently $CONFIRM)" "D" "Toggle disabling the ability to perform steps (currently $DISABLE)" "M" "Load more kernel modules" "S" "Temporarily run a shell" "Q" "Quit the installer"`
+				if [ $? != 0 ]; then
+					return
+				fi
+				case $COMMAND in
+					G) toggle GUIDE ;;
+					C) toggle CONFIRM ;;
+					D) toggle DISABLE ;;
+					S) shell ;;
+					M) load_module ;;
+					Q) goodbye ;;
+				esac
+			done
+		;;
+	esac
 
-    TEST="TEST=\$${COMMAND}_OK"
-    eval $TEST
-    if [ "$DISABLE" == "on" -a "$TEST" == "\\Z1" ]; then
-        $DIALOG --title "Cannot perform this step yet" --colors --msgbox "This action cannot be performed yet. You need to complete one of the earlier steps succesfully first before you can try this action. Please go a step back and perform all the necessary actions before trying this item again. As a guide, the actions that you have performed are \Z2colored green\Z0. The ones that you cannot perform yet are \Z1colored red\Z0." 15 65
-	return
-    fi
+	TEST="TEST=\$${COMMAND}_OK"
+	eval $TEST
+	if [ "$DISABLE" == "on" -a "$TEST" == "\\Z1" ]; then
+		$DIALOG --title "Cannot perform this step yet" --colors --msgbox "This action cannot be performed yet. You need to complete one of the earlier steps succesfully first before you can try this action. Please go a step back and perform all the necessary actions before trying this item again. As a guide, the actions that you have performed are \Z2colored green\Z0. The ones that you cannot perform yet are \Z1colored red\Z0." 15 65
+		return
+	fi
 
-    case $COMMAND in
-      F)  if (( STEP < 14 )); then
-              (( STEP++ ))
-	  fi ;;
-      B)  if (( STEP > 0 )); then
-              (( STEP-- ))
-	  fi ;;
+	case $COMMAND in
+	  F)  if (( STEP < 14 )); then (( STEP++ )) ; fi ;;
+	  B)  if (( STEP > 0 )); then (( STEP-- )) ; fi ;;
 
-      X)  goodbye                ;;
-      I)  introduction           ;;
+	  X)  goodbye                ;;
+	  I)  introduction           ;;
 
-      C)  keymap_menu            ;;
-      D)  font_menu              ;;
-      E)  lang_menu              ;;
-      J)  editor_menu            ;;
+	  C)  keymap_menu            ;;
+	  D)  font_menu              ;;
+	  E)  lang_menu              ;;
+	  J)  editor_menu            ;;
 
-      P)  fdisc                  ;;
-      M)  select_partitions      ;;
-      S)  select_swap_file       ;;
-      T)  transfer               ;;
+	  P)  fdisc                  ;;
+	  M)  select_partitions      ;;
+	  S)  select_swap_file       ;;
+	  T)  transfer               ;;
 
-      O)  chroot_run lunar optimize ;;
-      L)  install_bootloader     ;;
-      K)  install_kernels        ;;
+	  O)  chroot_run lunar optimize ;;
+	  L)  install_bootloader     ;;
+	  K)  install_kernels        ;;
 
-      R)  chroot_run passwd    ; if (( STEP ==  9 )) ; then (( STEP++ )); fi ; R_OK=\\Z2 ;;
-      U)  chroot_run luser     ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; U_OK=\\Z2 ;;
-      H)  chroot_run lnet      ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
-      V)  chroot_run lservices ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
-      G)  make_server_keys     ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; G_OK=\\Z2 ;;
-      A)  timezone             ; if (( STEP == 14 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
+	  R)  chroot_run passwd    ; if (( STEP ==  9 )) ; then (( STEP++ )); fi ; R_OK=\\Z2 ;;
+	  U)  chroot_run luser     ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; U_OK=\\Z2 ;;
+	  H)  chroot_run lnet      ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
+	  V)  chroot_run lservices ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
+	  G)  make_server_keys     ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; G_OK=\\Z2 ;;
+	  A)  timezone             ; if (( STEP == 14 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
 
-      Z)  goodbye                ;;
-    esac
+	  Z)  goodbye                ;;
+	esac
 }
 
 
 main()
 {
-    export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin"
-    # setting this var is supposed to prevent the enviro_check code now!
-    export LUNAR_INSTALL=1
+	export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin"
+	# setting this var is supposed to prevent the enviro_check code now!
+	export LUNAR_INSTALL=1
 
-    TARGET="/mnt"
-    CONFIRM=on
-    GUIDE=on
-    DISABLE=on
-    PREFIX="root@Lunar:/#"
+	TARGET="/mnt"
+	CONFIRM=on
+	GUIDE=on
+	DISABLE=on
+	PREFIX="root@Lunar:/#"
 
-    while true; do
-        install_menu
-    done
+	while true; do
+		install_menu
+	done
 }  
 
 
@@ -1318,8 +1316,8 @@ cd /
 # start shells on vt's
 for i in 2 3 4; do
   (
-    export PS1="[vt$i] \033[0;32m\]\u@\h \w $ \[\033[0m\]"
-    /sbin/agetty -n -l /bin/bash 38400 tty$i &
+	export PS1="[vt$i] \033[0;32m\]\u@\h \w $ \[\033[0m\]"
+	/sbin/agetty -n -l /bin/bash 38400 tty$i &
   )
 done
 export PS1="[vt1] \033[0;36m\]\u@\h \w $ \[\033[0m\]"
@@ -1338,17 +1336,17 @@ trap ":" INT QUIT
 
 # allow custom startup scripts to run instead of the installer
 if [ -x /run.sh ]; then
-    echo ""
-    echo "  /--------------------------------------------------\\"
-    echo "  |                                                  |"
-    echo "  |  Executing /run/sh instead of the lunar-linux    |"
-    echo "  |  installer! If something goes wrong then you're  |"
-    echo "  |  on your own, sorry...                           |"
-    echo "  |                                                  |"
-    echo "  \\--------------------------------------------------/"
-    /run.sh
+	echo ""
+	echo "  /--------------------------------------------------\\"
+	echo "  |                                                  |"
+	echo "  |  Executing /run/sh instead of the lunar-linux    |"
+	echo "  |  installer! If something goes wrong then you're  |"
+	echo "  |  on your own, sorry...                           |"
+	echo "  |                                                  |"
+	echo "  \\--------------------------------------------------/"
+	/run.sh
 else
-    main
+	main
 fi
 
 # clean up vt's
