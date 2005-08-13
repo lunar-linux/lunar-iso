@@ -1079,7 +1079,7 @@ install_menu()
 {
     if [ -z "$STEPS" ]; then
         # the total number of steps in the installer:
-        STEPS=14
+        STEPS=15
 
         SH[1]="Please read the introduction if you are new to lunar-linux.
 If you want to know more about the installation procedure
@@ -1110,19 +1110,20 @@ several factory kernels or compile one yourself."
 the root user. Everyone who knows this password can
 destroy your system. By default the root password is
 epmty so you should really change it"
-        SH[10]="You can now set the name and domain of the machine
+	SH[10]="Add normal user accounts to this system. Normal users do not have special privileges and you should not work as root all the time if not needed."
+        SH[11]="You can now set the name and domain of the machine
 and configure it's networking connections."
-        SH[11]="By default there are no services installed and
+        SH[12]="By default there are no services installed and
 running. With this tool you can add or remove them to
 the list of startup services and enable or disable them."
-        SH[12]="If you want to run a ssh server (recommended) then
+        SH[13]="If you want to run a ssh server (recommended) then
 you must once create unique keys for this system. These
 keys are the identification of your system and make it
 recognizeable across the network."
-        SH[13]="Select the local timezone of your computer
+        SH[14]="Select the local timezone of your computer
 to make sure that applications running are using the correct
 time zone information and adjust daylight savings."
-        SH[14]="You are done! you should remove the ISO from the
+        SH[15]="You are done! you should remove the ISO from the
 cd-rom tray and reboot. See you at the login prompt!"
     
         B_LABEL="One step back"
@@ -1165,6 +1166,9 @@ cd-rom tray and reboot. See you at the login prompt!"
         R_LABEL="Set root password"
         R_HELP="Set the default root password needed to access this system (the default password is empty)"
         R_OK="\\Z1"
+	U_LABEL="Setup user accounts"
+	U_HELP="Create, edit, delete users and group accounts on the system"
+	U_OK="\\Z1"
         H_LABEL="Setup hostname and networking"
         H_HELP="Configure your network devices and hostname settings"
         H_OK="\\Z1"
@@ -1200,7 +1204,7 @@ cd-rom tray and reboot. See you at the login prompt!"
     }
    
     if [ "$GUIDE" == "off" ]; then
-        CHOICES="X I C D E J P M S T O L K R H V G A Z"
+        CHOICES="X I C D E J P M S T O L K R U H V G A Z"
 	STEPHELP="Step $STEP of $STEPS:"
     else
         case $STEP in
@@ -1212,12 +1216,13 @@ cd-rom tray and reboot. See you at the login prompt!"
 	    6)  DEFAULT=T ; CHOICES="B P M S T F" ;;
 	    7)  DEFAULT=L ; CHOICES="B O L F" ;;
 	    8)  DEFAULT=K ; CHOICES="B O L K F" ;;
-	    9)  DEFAULT=R ; CHOICES="B R F" ;;
-	    10) DEFAULT=H ; CHOICES="B H F" ;;
-	    11) DEFAULT=V ; CHOICES="B H V F" ;;
-	    12) DEFAULT=G ; CHOICES="B H V G F" ;;
-	    13) DEFAULT=A ; CHOICES="B H V G A F" ;;
-	    14) DEFAULT=Z ; CHOICES="B Z"
+	    9)  DEFAULT=R ; CHOICES="B R U F" ;;
+	    10) DEFAULT=U ; CHOICES="B R U F" ;;
+	    11) DEFAULT=H ; CHOICES="B H F" ;;
+	    12) DEFAULT=V ; CHOICES="B H V F" ;;
+	    13) DEFAULT=G ; CHOICES="B H V G F" ;;
+	    14) DEFAULT=A ; CHOICES="B H V G A F" ;;
+	    15) DEFAULT=Z ; CHOICES="B Z"
         esac
     fi
     COMMAND=`$DIALOG --title "$TITLE" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)` 
@@ -1274,10 +1279,11 @@ cd-rom tray and reboot. See you at the login prompt!"
       K)  install_kernels        ;;
 
       R)  chroot_run passwd    ; if (( STEP ==  9 )) ; then (( STEP++ )); fi ; R_OK=\\Z2 ;;
-      H)  chroot_run lnet      ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
-      V)  chroot_run lservices ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
-      G)  make_server_keys     ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; G_OK=\\Z2 ;;
-      A)  timezone             ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
+      U)  chroot_run luser     ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; U_OK=\\Z2 ;;
+      H)  chroot_run lnet      ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
+      V)  chroot_run lservices ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
+      G)  make_server_keys     ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; G_OK=\\Z2 ;;
+      A)  timezone             ; if (( STEP == 14 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
 
       Z)  goodbye                ;;
     esac
