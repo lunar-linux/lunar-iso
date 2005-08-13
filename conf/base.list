@@ -54,3 +54,5 @@ console-tools
 popt
 rsync
 zile
+ntfsprogs
+dosfstools
