@@ -56,3 +56,5 @@ rsync
 zile
 ntfsprogs
 dosfstools
+tnftp
+dhcpcd

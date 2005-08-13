@@ -14,10 +14,8 @@ portmap
 lunar-tools
 rpmunpack
 ppp
-tnftp
 pppconfig
 nfs-utils
-dhcpcd
 iputils
 wireless_tools
 wget
