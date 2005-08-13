@@ -1,11 +1,14 @@
 #!/bin/bash
 
+[ ! -f $ISO_TARGET/var/lib/lunar/moonbase.tar.bz2 ] && echo "FAIL: missing moonbase" && exit 1
+[ ! -f $ISO_TARGET/var/cache/lunar/$ISO_LUNAR_MODULE-$ISO_DATE-$ISO_BUILD.tar.bz2 ] && echo "FAIL: missing $ISO_LUNAR_MODULE" && exit 1
+grep -q "^$ISO_LUNAR_MODULE:$ISO_DATE:" $ISO_TARGET/.packages || ( echo "FAIL: missing $ISO_LUNAR_MODULE in package list" && exit 1)
+
 if [ -f $ISO_TARGET/.rebuild ]; then
 	# first define the tests:
 	TESTS=(
 		"bash --version"
 		"sh --version"
-		"perl --version"
 		"echo 1234"
 		"date -u +%Y%m%d-%T"
 		"awk -F: {print} /dev/null"
@@ -36,7 +39,6 @@ if [ -f $ISO_TARGET/.rebuild ]; then
 			RESULT=1
 		fi
 	done
-	set -x
 	exit ${RESULT:-0}
 else
 	echo "Can't run tests now!"
