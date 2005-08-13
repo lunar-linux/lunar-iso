@@ -84,8 +84,8 @@ for KERNEL in linux safe ; do
     cd TMP
     tar xjf $ISO_SOURCE/kernels/TAR/$KVER.tar.bz2
     mkdir -p $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
-    echo "+ cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{ide,scsi} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/"
-    cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{ide,scsi} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
+    echo "+ cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{ide,scsi} lib/modules/$KVER/kernel/drivers/usb/{host,storage} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/"
+    cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{ide,scsi} lib/modules/$KVER/kernel/drivers/usb/{host,storage} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
     echo "+ cp lib/modules/$KVER/modules.* $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/"
     cp lib/modules/$KVER/* $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/
     echo "+ depmod -b $ISO_SOURCE/initrd/BUILD -a -F $ISO_SOURCE/kernels/$KERNEL.map $KVER"
