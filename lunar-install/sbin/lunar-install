@@ -150,6 +150,7 @@ nice_size()
 
 list_discs()
 {
+	local LIST LINE
 	LIST=$(ls /dev/discs)
 	for LINE in $LIST; do
 		echo "$(lsh unmap_device "/dev/discs/$LINE/disc")"
@@ -160,33 +161,34 @@ list_discs()
 
 list_parts()
 {
-	for PART in $(ls -L /dev/discs/*/part* | sort -t t -k 2 -n) $SPECIAL_DEVICES ; do
-		PART=$(lsh unmap_device $PART)
-		if [ -e $PART ]; then
-		PTYPE=$(file -Ls $PART 2>&1 | cat)
-		case $PTYPE in
-			*ext3*) PTYPE="(ext3)" ;;
-			*ext2*) PTYPE="(ext2)" ;;
-			*XFS*) PTYPE="(XFS)" ;;
-			*Minix*) PTYPE="(minix)" ;;
-			*) PTYPE="(unknown)" ;;
-		esac
+	local DEVICE PTYPE FSIZE FSTYPE MNTPNT
+	for DEVICE in $SYSTEM_DEVICES ${SPECIAL_DEVICES[@]} ; do
+		if [ -e $DEVICE ]; then
+			# this prevents listing EXTENDED partitions
+			FSIZE=$(nice_size `fdisk -l $DEVICE 2>&1 | grep ^Disk | grep bytes | awk '{print $5}'`)
+			if [ "$FSIZE" == "" ]; then
+				continue
+			fi
+			echo $DEVICE
+
+			PTYPE=$(file -Ls $DEVICE 2>&1 | cat)
+			case $PTYPE in
+				*ext3*) PTYPE="(ext3)" ;;
+				*ext2*) PTYPE="(ext2)" ;;
+				*XFS*) PTYPE="(XFS)" ;;
+				*Minix*) PTYPE="(minix)" ;;
+				*) PTYPE="(unknown)" ;;
+			esac
 		
-		FSIZE=$(nice_size `fdisk -l $PART 2>&1 | grep ^Disk | grep bytes | awk '{print $5}'`)
-		# this prevents listing EXTENDED partitions
-		if [ "$FSIZE" == "" ]; then
-			continue
-		fi
-		echo $PART
-		for (( N=0 ; N < NUM_PARTITIONS ; N++ )); do
-			if echo ${PARTITIONS[$N]} | grep -q "^$PART:"; then
-				FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
-				MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
-				FSTYPE=${FSTYPE/none/swap}
-				echo "$FSTYPE partition, size $FSIZE"
-				continue 2
-			fi		
-		done
+			for (( N=0 ; N < NUM_PARTITIONS ; N++ )); do
+				if echo ${PARTITIONS[$N]} | grep -q "^$DEVICE:"; then
+					FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
+					MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
+					FSTYPE=${FSTYPE/none/swap}
+					echo "$FSTYPE partition, size $FSIZE"
+					continue 2
+				fi		
+			done
 			echo "unassigned, size $FSIZE, $PTYPE"
 		fi
 	done
@@ -195,15 +197,16 @@ list_parts()
 
 get_part()
 {
+	local TITLE HELP PART
 	TITLE="Partition Selection Menu"
 	HELP="Please select a partition"
 	PART=$($DIALOG --title "$TITLE" --extra-button --extra-label "Add..." --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_parts`)
 	if [ $? == 3 ]; then
 		PART=$(inputbox "Enter special device node" "/dev/")
-		if [ ! -c $(readlink -f $PART) -a ! -b $(readlink -f $PART)  ]; then
+		if [ ! -b $(readlink -f $PART) ]; then
 			$DIALOG --msgbox "Device $PART does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?" 0 0
 			unset PART
-		elif echo $SPECIAL_DEVICES | grep -qw $PART ; then
+		elif echo ${SPECIAL_DEVICES[@]} | grep -qw $PART ; then
 			$DIALOG --msgbox "Device $PART was already added!" 0 0
 			unset PART
 		fi
@@ -307,9 +310,9 @@ fdisc()
 	if confirm "$PROMPT"; then
 		unset PARTITIONS
 		$PROG $DISC
-	if (( STEP == 3 )); then
-		(( STEP++ ))
-	fi
+		if (( STEP == 3 )); then
+			(( STEP++ ))
+		fi
 		P_OK=\\Z2
 	fi
 }
@@ -390,7 +393,9 @@ get_mount_point()
 
 select_partition()
 {
+	SYSTEM_DEVICES=$(for DEV in $(ls -L /dev/discs/*/part*) ; do lsh unmap_device $DEV ; done)
 	while true; do
+		sleep 2
 		PART=$(get_part)
 		if [ -z "$PART" ]; then
 			return 
@@ -400,13 +405,12 @@ select_partition()
 			if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$PART" ]; then
 				$DIALOG --msgbox "Unassigned partition $PART. You can now change the parameters for this partition if you wish." 0 0
 				unset PARTITIONS[$N]
-			continue 2
+				continue 2
 			fi
 		done
 		# add special device nodes to the secondary list
-		SYSTEM_DEVICES=$(for DEV in $(ls -L /dev/discs/*/part*) ; do lsh unmap_device $DEV ; done)
-		if ! echo $SYSTEM_DEVICES | grep -wq "$PART" ; then
-			export SPECIAL_DEVICES="$SPECIAL_DEVICES $PART"
+		if ! echo ${SYSTEM_DEVICES[@]} | grep -wq "$PART" ; then
+			SPECIAL_DEVICES=( ${SPECIAL_DEVICES[@]} $PART )
 		fi &&
 		FSYS=$(get_filesystem) 
 		if [ -z "$FSYS" ]; then
