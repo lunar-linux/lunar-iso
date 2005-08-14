@@ -1024,6 +1024,7 @@ install_kernels()
 		fi
 		K_OK=\\Z2
 		R_OK=
+		U_OK=
 		H_OK=
 		V_OK=
 		G_OK=
