@@ -1,5 +1,8 @@
 
+20050813 1.5.1-i686 sofar
+	* development and bugfix release
 
+	- cleaned up the install menus
 	- added dosfstools and ntfsprogs
 	- moved tnftp and dhcpcd to the ISO stage
 	- added 'make test' target
