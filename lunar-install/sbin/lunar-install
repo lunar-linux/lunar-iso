@@ -1261,7 +1261,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 	fi
 
 	case $COMMAND in
-	  F)  if (( STEP < 14 )); then (( STEP++ )) ; fi ;;
+	  F)  if (( STEP < $STEPS )); then (( STEP++ )) ; fi ;;
 	  B)  if (( STEP > 0 )); then (( STEP-- )) ; fi ;;
 
 	  X)  goodbye                ;;
