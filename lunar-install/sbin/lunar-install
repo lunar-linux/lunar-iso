@@ -9,20 +9,23 @@
 # This file in released under the GPL                       #
 #############################################################
 
-introduction()
-{
-	$DIALOG --textbox /README 0 0
-	I_OK="\\Z2"
-	if (( STEP == 1 )); then
-		(( STEP++ ))
-	fi
-	DEFAULT=C
-}
-
-
 inputbox()
 {
 	$DIALOG --nocancel --inputbox "$1" 0 0 "$2"
+}
+
+
+confirm()
+{
+	if [ "$CONFIRM" == "off" ]; then
+		if [ -n "$2" ]; then
+			false
+		else
+			true
+		fi
+	else
+		$DIALOG $2 --yesno "$1" 8 50
+	fi
 }
 
 
@@ -32,10 +35,14 @@ chroot_run()
 	mount -t proc proc $TARGET/proc
 	mount -t devfs devfs $TARGET/dev
 	mount -t tmpfs tmpfs $TARGET/tmp
-	chroot $TARGET swapon -a
+	if [ -n "$USE_SWAP" ]; then
+		chroot $TARGET swapon -a
+	fi
 	chroot $TARGET $1 $2 $3 $4 $5 $6 $7 $8 $9
 	RESULT=$?
-	chroot $TARGET swapoff -a
+	if [ -n "$USE_SWAP" ]; then
+		chroot $TARGET swapoff -a
+	fi
 	umount $TARGET/tmp
 	umount $TARGET/dev
 	umount $TARGET/proc
@@ -59,20 +66,6 @@ chroot_run()
 }
 
 
-confirm()
-{
-	if [ "$CONFIRM" == "off" ]; then
-		if [ -n "$2" ]; then
-			false
-		else
-			true
-		fi
-	else
-		$DIALOG $2 --yesno "$1" 8 50
-	fi
-}
-
-
 goodbye()
 {
 	# lets make the initscripts executable
@@ -84,6 +77,17 @@ goodbye()
 	else
 		exit 0
 	fi
+}
+
+
+introduction()
+{
+	$DIALOG --textbox /README 0 0
+	I_OK="\\Z2"
+	if (( STEP == 1 )); then
+		(( STEP++ ))
+	fi
+	DEFAULT=C
 }
 
 
@@ -595,6 +599,7 @@ transfer()
 					if [ "$FSYS" == "swap" ]; then
 						if swapon $PART; then
 							FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+							swapoff $PART
 						else
 							sleep 3
 							$DIALOG --msgbox "Problem mounting swap on $PART. Installation will continue." 8 50
@@ -611,6 +616,9 @@ transfer()
 						fi
 						if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
 							FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
+							if [ "$FSYS" == "swap" ]; then
+								umount -n $PART
+							fi
 						else
 							sleep 3
 							$DIALOG --msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue." 8 50
@@ -1005,7 +1013,7 @@ install_kernels()
 			C)
 				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 $(list_kernel_modules)`
 				if grep -q "^$CCOMMAND:" /kernels/kernel-modules ; then
-					chroot_run lin -r $(grep "^$CCOMMAND:" /kernels/kernel-modules | cut -d: -f2)
+					USE_SWAP=1 chroot_run lin -r $(grep "^$CCOMMAND:" /kernels/kernel-modules | cut -d: -f2)
 				fi
 			;;
 			P)
