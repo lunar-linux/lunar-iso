@@ -9,6 +9,14 @@
 # This file in released under the GPL                       #
 #############################################################
 
+
+notify()
+{
+	clear
+	echo $@
+}
+
+
 inputbox()
 {
 	$DIALOG --nocancel --inputbox "$1" 0 0 "$2"
@@ -584,12 +592,14 @@ transfer()
 					FORMAT=$(echo ${PARTITIONS[$N]} | cut -d: -f8)
 					# handle swap
 					if [ "$FSYS" == "swap" ]; then
+						notify "Setting up swap on $PART..."
 						if ! mkswap $PART ; then
 							sleep 3
 							$DIALOG --msgbox "Problem creating swap on $PART. Installation will continue." 8 50
 						fi
 					# create the filesystems if needed for every partition
 					elif [ "$FORMAT" == "yes" ]; then
+						notify "Formatting $PART as $FSYS..."
 						if ! mkfs.$FSYS $FORCE $PART $CHECK ; then
 							sleep 3
 							$DIALOG --msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue." 8 50
@@ -614,6 +624,7 @@ transfer()
 						else
 							MNTOPTARGS=""
 						fi
+						notify "Mounting $PART as $FSYS"
 						if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
 							FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
 							if [ "$FSYS" == "swap" ]; then
@@ -644,7 +655,7 @@ transfer()
 		
 		cd $TARGET
 
-		echo "Creating base LSB directories..."
+		notify "Creating base LSB directories..."
 		mkdir -p bin boot dev etc home lib mnt media
 		mkdir -p proc root sbin srv tmp usr var opt
 		mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
@@ -718,6 +729,8 @@ transfer()
 			# done
 		) | $DIALOG --title " Installing $NUM packages " --gauge "" 10 70 0 
 	
+		notify "Finishing up installation..."
+
 		# setup list of installed packages etc.
 		echo "moonbase:%DATE%:installed:%DATE%:37M" >> $TARGET/var/state/lunar/packages
 		cp /var/state/lunar/depends        $TARGET/var/state/lunar/
@@ -765,7 +778,7 @@ transfer()
 		chmod 0600 $TARGET/var/log/btmp
 	
 		DONE_COPIED="YES"
-		echo "Done transferring."
+		echo "Done!"
 
 		if (( STEP == 6 )); then
 			(( STEP++ ))
@@ -1081,6 +1094,7 @@ install_bootloader() {
 }
 
 make_server_keys()  {
+	notify "Generating SSH server keys..."
 	chroot $TARGET make -C /etc/ssh server-keys
 	echo ""
 	echo "SSH server keys were created."
