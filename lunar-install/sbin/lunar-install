@@ -955,15 +955,15 @@ timezone()
 	DEFAULT=${ZONE:-GMT}
 
 	while
-	  TIMEZONES=`show_timezones $ZONE`  &&
-	  ZONE=`$DIALOG  --title  "$TITLE"  \
-			         --default-item "$DEFAULT" \
-			         --menu             \
-			         "$HELP"            \
-			         0 0 0              \
-			         $TIMEZONES`        &&
-	  [ -d $LOCALTIME/$ZONE ]
-	  do
+		TIMEZONES=`show_timezones $ZONE`  &&
+		ZONE=`$DIALOG  --title  "$TITLE"  \
+		               --default-item "$DEFAULT" \
+		               --menu             \
+			       "$HELP"            \
+			       0 0 0              \
+			       $TIMEZONES`        &&
+		[ -d $LOCALTIME/$ZONE ]
+	do
 		true
 	done
 
@@ -974,21 +974,22 @@ timezone()
 		HELP="Does the hardware clock store time in GMT or local?"
 
 		DEFAULT=${CLOCK:-Local}
-		CLOCK=`$DIALOG --title "$TITLE"   \
-			           --menu "$HELP"     \
+		CLOCK=`$DIALOG --title "$TITLE"       \
 			           --default-item "$DEFAULT" \
+			           --menu "$HELP"     \
 			           0 0 0              \
-			           "GMT"    ""        \
-			           "Local"  ""`       &&
+			           "GMT" ""           \
+			           "Local" ""`       &&
 		case $CLOCK in
-			GMT) true ;;
-			Local) HWCLOCK="/sbin/hwclock --hctosys --localtime"
-				echo "#!/bin/sh" > $TARGET/etc/init.d/localtime
-				echo "$HWCLOCK" >> $TARGET/etc/init.d/localtime
-				chmod a+x $TARGET/etc/init.d/localtime
-				ln -s ../init.d/localtime $TARGET/etc/rcS.d/S15localtime
-			;;
+			GMT) HWCLOCK="--utc" ;;
+			Local) HWCLOCK="--localtim" ;;
 		esac
+		(
+			echo "#!/bin/sh"
+			echo "/sbin/hwclock --hctosys $HWCLOCK"
+		) > $TARGET/etc/init.d/localtime
+		chmod a+x $TARGET/etc/init.d/localtime
+		ln -s ../init.d/localtime $TARGET/etc/rcS.d/S15localtime
 	fi
 }
 
