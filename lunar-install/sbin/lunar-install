@@ -1026,8 +1026,8 @@ install_kernels()
 		case $KCOMMAND in
 			C)
 				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 $(list_kernel_modules)`
-				if grep -q "^$CCOMMAND:" /kernels/kernel-modules ; then
-					USE_SWAP=1 chroot_run lin -r $(grep "^$CCOMMAND:" /kernels/kernel-modules | cut -d: -f2)
+				if grep -q "^$CCOMMAND:" /kernels/.kernel-modules ; then
+					USE_SWAP=1 chroot_run lin -r $(grep "^$CCOMMAND:" /kernels/.kernel-modules | cut -d: -f2)
 				fi
 			;;
 			P)
