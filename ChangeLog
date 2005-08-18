@@ -1,5 +1,6 @@
 
-20050813 1.5.1-i686 sofar
+
+20050818 1.5.1-i686 1.5.1-i386 sofar
 	* development and bugfix release
 
 	- cleaned up the install menus
@@ -10,6 +11,7 @@
 	- add 'luser' back to the installer
 	- cleaned up navigation in the settings menu
 	- fixed a partition list bug
+	- enable swap only when compiling kernels
 
 
 20050802 1.5.1-i386-rc1 sofar
