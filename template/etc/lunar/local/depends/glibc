@@ -1,2 +1,3 @@
 OPTS="$OPTS  --disable-profile"
+INITDSCRIPTS=""
 CONFIGURED=y
