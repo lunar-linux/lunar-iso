@@ -22,9 +22,9 @@ Index:
 1. About lunar-linux
 2. General tips and hints
 3. Installer procedure
-4. Where to get more help
-5. What more to do with this ISO
-6. After installation
+4. After installation
+5. Where to get more help
+6. What more to do with this ISO
 
 ========
 
@@ -57,9 +57,10 @@ such an approach!
 A little history about lunar: Lunar-Linux was born as a fork from Sorcerer
 GNU Linux (SGL). Nowadays SGL doesn't exist anymore because the original
 author (Kyle Sallee) retracted his GPL code and distributes it under a
-non-OSSI approved license, and renamed it "Sorcerer". Another group of
+non-OSI approved license, and renamed it "Sorcerer". Another group of
 people also forked SGL into SourceMage GNU Linux, and they work side by
-side Lunar-Linux, often sharing concepts and ideas.
+side Lunar-Linux, often sharing concepts and ideas. Lunar exists since
+early 2002.
 
 Lunar will provide you with an excellent platform for the following tasks:
 
@@ -112,8 +113,8 @@ know how you solved your problem.
 I hope you realize with these tips that you can help yourself much more
 than we can help you.
 
-
 ========
+
 
 3. Installer procedure
 
@@ -143,10 +144,83 @@ you can configure certain parts before actualy booting the system. This
 includes setting a root password, administrating your network already
 and a few more settings can be set.
 
+========
+
+
+4. After installation
+
+* Kernel headers/includes
+
+After installation, you should perform the usual routines to make your
+system healthy and ready for your tasks. One of the most vital items to
+do to be able to compile happily is install a kernel source and kernel
+headers. This may sound contradictionary now, since we already have
+precompiled kernels, but it pays off later as many packages require
+either /usr/include/linux and /usr/include/asm to be present or even
+sometimes /usr/src/linux. That counts especially for packages that
+install kernel modules.
+
+You should pick your favorite kernel module and `lin` it. Make sure
+that the kernel headers in /usr/include reflect your kernel, so if
+you switch to a different kernel (even from or to grsecurity or any
+other kernel patchset) they reflect the current kernel features.
+
+* Update lunar toolset
+
+Update your core tools (lunar or theedge) before you update your
+moonbase, this way new features in the moonbase will be recognized
+and you can use them. Then update your moonbase.
+
+* Update moonbase
+
+You might want to start doing an update first, before you start working
+on installing new modules. Even the ISO can be outdated within a week
+after it is released - this is how fast lunar packages change sometimes.
+Run a 'lunar update' and let it finish. Make sure you check that any
+broken compiles get recompiled by repeating this, letting the AUTOFIX
+feature clean them up.
+
+* Optionally rebuild your system or parts
+
+If you're paranoid or want to re-optimize your system to a different
+level, higher or lower, for more speed or more stability, then do
+it now and do a 'lunar rebuild' - this will recompile all installed
+modules. A rebuild is actually quite scary and might break on your
+system. Often I myself skip this step and only recompile the most
+important packages manually - such as the kernel, glibc, gcc and
+binutils. This is a highly personal choice.
+
+
+This is the end of the general install procedure. After this you are
+on your own and should customize, configure and tweak your own box
+to your wishes. Here are some general hints and tips:
+
+
+* read 'man lfirsttime'. This manual page should provide you with the
+things that you really should know and do first after you installed
+lunar on your system.
+
+* setup users and permissions. Run 'luser' and start working as a normal
+user as fast as possible. If you don't have to be root, don't.
+
+* install services and support libraries. Nothing is worse then a blank
+box that doesn't provide basic programs. Look through the module list
+and sections, and figure out what features you wish to have installed.
+
+* keep your system up2date. As soon as you are done installing, your
+system most likely will need some updates already. Keep your system
+up2date! This will prevent people from breaking into your box, or from
+serious defects to cause harm to your system.
+
+* keep your system clean. Run 'lunar prune' to minimize old sources lying
+around. Remove packages that you don't really need anymore. A clean box
+is a safe box, and nothing can be so dangerous as tons of old programs
+luring around.
 
 ========
 
-4. Where to get more help
+
+5. Where to get more help
 
 If you need more help and the provided information is not sufficient,
 you can get more help the following way:
@@ -188,10 +262,10 @@ If all else fails, and you have no way of contacting use
 through the mentioned methods above, you can send an e-mail to
 maintainer@lunar-linux.org
 
-
 ========
 
-5. What more to do with this ISO
+
+6. What more to do with this ISO
 
 Next to installing Lunar on your system, the ISO also provides you with
 a well-filled live-ISO image with many installation and rescue system
@@ -208,42 +282,9 @@ configurations, and correct them.
 This is just a short summary of possibilities. Many more things are
 possible!
 
-
 ========
 
-6. After installation
 
-As always, the fun just starts when you are done installing. Then it is
-up to you to really "finish" your system. Here's a few pointers:
-
-* read 'man lfirsttime'. This manual page should provide you with the
-things that you really should know and do first after you installed
-lunar on your system.
-
-* setup users and permissions. Run 'luser' and start working as a normal
-user as fast as possible. If you don't have to be root, don't.
-
-* install services and support libraries. Nothing is worse then a blank
-box that doesn't provide basic programs. Look through the module list
-and sections, and figure out what features you wish to have installed.
-
-* tweak the optimizations. Perhaps the default (and safe, but fast)
-optimizations are not enough for you. Optionally you might want to
-rebuild your entire system after installing, to make sure all components
-are build with the preferences you want.
-
-* keep your system up2date. As soon as you are done installing, your
-system most likely will need some updates already. Keep your system
-up2date! This will prevent people from breaking into your box, or from
-serious defects to cause harm to your system.
-
-* keep your system clean. Run 'lunar prune' to minimize old sources lying
-around. Remove packages that you don't really need anymore. A clean box
-is a safe box, and nothing can be so dangerous as tons of old programs
-luring around.
-
-
-========
 
 Lunar-Linux - hope you enjoy using it as much as we enjoy making it!
 
