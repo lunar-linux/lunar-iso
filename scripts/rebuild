@@ -38,6 +38,7 @@ echo "+          STARTING KERNEL COMPILE                     +"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo ""
 
+cp kernels/baseconfig-${ISO_KSUFFIX} $ISO_TARGET/etc/lunar/local/.config
 yes '' | chroot $ISO_TARGET lin linux-${ISO_KSUFFIX}
 chroot $ISO_TARGET lin kernel-headers-${ISO_KSUFFIX}
 
