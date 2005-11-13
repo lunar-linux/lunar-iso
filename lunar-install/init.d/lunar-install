@@ -1,9 +1,8 @@
 #!/bin/bash
 
-if touch / 2> /dev/null ; then
+rm -f /etc/rc3.d/S99lunar-install /etc/init.d/lunar-install &> /dev/null
 
-  # clean up if successfull!
-  rm -f /etc/rc3.d/S99lunar-install /etc/init.d/lunar-install
+if [ -e /etc/init.d/lunar-install ] ; then
 
 B=`echo -en '\e[1m'`
 G=`echo -en '\e[32m'`

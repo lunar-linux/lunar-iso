@@ -1037,6 +1037,7 @@ install_kernels()
 					cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
 					# let the plugin code handle the hard work
 					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
+					$DIALOG --msgbox "The precompiled kernel \"$CCOMMAND\" has been installed to your system." 12 60
 				fi
 			;;
 		esac
@@ -1367,7 +1368,7 @@ if [ -x /run.sh ]; then
 	echo ""
 	echo "  /--------------------------------------------------\\"
 	echo "  |                                                  |"
-	echo "  |  Executing /run/sh instead of the lunar-linux    |"
+	echo "  |  Executing /run.sh instead of the lunar-linux    |"
 	echo "  |  installer! If something goes wrong then you're  |"
 	echo "  |  on your own, sorry...                           |"
 	echo "  |                                                  |"
