@@ -7,6 +7,10 @@ umount $ISO_TARGET/dev &> /dev/null
 unset VERBOSE
 optimize
 
+# backup core tools
+echo "+ backing up \"$ISO_LUNAR_MODULE-*-$ISO_BUILD.tar.bz2\""
+cp $ISO_TARGET/var/cache/lunar/$ISO_LUNAR_MODULE-*-$ISO_BUILD.tar.bz2 aaa_base/$ISO_LUNAR_MODULE-$ISO_DATE-$ISO_BUILD.tar.bz2
+
 echo "+ cleaning up (some) file structure items"
 rm -rf $ISO_TARGET/var/cache/ccache/*
 rmdir /usr/lib/locale/*
@@ -56,6 +60,7 @@ find $ISO_TARGET/usr/include/{linux,asm} | sed "s:^$ISO_TARGET::g" >> $ISO_TARGE
 cat $ISO_TARGET/var/log/lunar/install/* | sort | uniq > $ISO_TARGET/.tracked
 diff -U0 $ISO_TARGET/.tracked $ISO_TARGET/.present | grep '^\+[^+]' | sed 's/^+//g' > $ISO_TARGET/.aaa_base.list
 echo "/etc/lunar/local/optimizations" >> $ISO_TARGET/.aaa_base.list
+
 
 # make the tarball
 chroot $ISO_TARGET tar cjf /var/cache/lunar/aaa_base.tar.bz2 -T .aaa_base.list --no-recursion

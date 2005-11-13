@@ -15,11 +15,14 @@ echo "+ adding kernel module lists"
 cp $ISO_SOURCE/kernels/.kernels $ISO_TARGET/kernels/.kernels
 cp $ISO_SOURCE/kernels/kernel-modules-$ISO_KSUFFIX $ISO_TARGET/kernels/.kernel-modules
 
+echo "+ adding core toolset \"$ISO_LUNAR_MODULE\""
+cp $ISO_SOURCE/aaa_base/$ISO_LUNAR_MODULE-$ISO_DATE-$ISO_BUILD.tar.bz2 $ISO_TARGET/var/cache/lunar/
+
 # copy the installed code over:
 echo "+ copying installer program"
 cp lunar-install/init.d/lunar-install $ISO_TARGET/etc/init.d/
 cp lunar-install/sbin/lunar-install $ISO_TARGET/sbin/
-ln -s /etc/init.d/lunar-install $ISO_TARGET/etc/rc2.d/S20lunar-install
+ln -sf /etc/init.d/lunar-install $ISO_TARGET/etc/rc2.d/S20lunar-install
 cp $ISO_SOURCE/lunar-install/etc/inittab $ISO_TARGET/etc/
 
 echo "+ adding isolinux code"
@@ -62,6 +65,8 @@ mkisofs -o ../lunar-${ISO_VERSION}.iso -R \
         -b isolinux/isolinux.bin \
         -c isolinux/boot.cat \
         -A "Lunar-${ISO_VERSION}" .
+
+ln -sf lunar-${ISO_VERSION}.iso ../lunar.iso
 
 touch .cachefill .dirs .etcf .init .proper .rebuild .unpack
 rm -f .lunar.cd
