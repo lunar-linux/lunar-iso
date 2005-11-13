@@ -2,7 +2,7 @@
 
 rm -f /etc/rc3.d/S99lunar-install /etc/init.d/lunar-install &> /dev/null
 
-if [ -e /etc/init.d/lunar-install ] ; then
+if [ ! -e /etc/init.d/lunar-install ] ; then
 
 B=`echo -en '\e[1m'`
 G=`echo -en '\e[32m'`
