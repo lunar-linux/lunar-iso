@@ -19,6 +19,8 @@ bin/uname
 etc/fstab
 etc/ld.so.conf
 etc/mtab
+lib/ld-2.3.6.so
+lib/ld-linux.so.2
 sbin/halt
 sbin/ldconfig
 sbin/pivot_root
