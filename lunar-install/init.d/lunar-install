@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm -f /etc/rc3.d/S99lunar-install /etc/init.d/lunar-install &> /dev/null
+rm -f /etc/rc2.d/S20lunar-install /etc/init.d/lunar-install &> /dev/null
 
 if [ ! -e /etc/init.d/lunar-install ] ; then
 
