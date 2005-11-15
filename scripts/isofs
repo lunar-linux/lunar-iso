@@ -13,7 +13,7 @@ tar xj -C $ISO_TARGET -f $ISO_SOURCE/kernels/linux-modules.tar.bz2
 
 echo "+ adding kernel module lists"
 cp $ISO_SOURCE/kernels/.kernels $ISO_TARGET/kernels/.kernels
-cp $ISO_SOURCE/kernels/kernel-modules-$ISO_KSUFFIX $ISO_TARGET/kernels/.kernel-modules
+cp $ISO_SOURCE/kernels/conf/$ISO_KSUFFIX/modules $ISO_TARGET/kernels/.kernel-modules
 
 echo "+ adding core toolset \"$ISO_LUNAR_MODULE\""
 cp $ISO_SOURCE/aaa_base/$ISO_LUNAR_MODULE-$ISO_DATE-$ISO_BUILD.tar.bz2 $ISO_TARGET/var/cache/lunar/
