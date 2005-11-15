@@ -10,12 +10,18 @@ prepare()
     echo "unpacking..."
     cd $ISO_SOURCE/kernels
     rm -rf linux-$ISO_KVER
-    tar jxf /var/spool/lunar/linux-$ISO_KVER.tar.bz2
+    tar jxf $ISO_SOURCE/spool/linux-$ISO_KVER.tar.bz2
     cd linux-$ISO_KVER
-    mkdir patches
-    cd patches
-    if [ -f /var/spool/lunar/ll-$ISO_PVER.tar.bz2 ]; then
-		tar jxf /var/spool/lunar/ll-$ISO_PVER.tar.bz2
+    if [ "$ISO_KSUFFIX" == "2.4" ]; then
+        mkdir patches
+        cd patches
+        if [ -f $ISO_SOURCE/spool/ll-$ISO_PVER.tar.bz2 ]; then
+		    tar jxf $ISO_SOURCE/spool/lunar/ll-$ISO_PVER.tar.bz2
+        fi
+    else
+        if [ -f $ISO_SOURCE/spool/patch-$ISO_PVER.bz2 ]; then
+		    bzcat $ISO_SOURCE/spool/patch-$ISO_PVER.bz2 | patch -p1
+        fi
 	fi
 }
 
@@ -25,25 +31,25 @@ prepare_patch()
     for P in $@; do
         for PP in patches/$P/*; do
             patch_it $PP 1
-	done
+        done
     done
 }
 
 prepare_options()
 {
-    cp $ISO_SOURCE/kernels/baseconfig-${ISO_KSUFFIX} $ISO_SOURCE/kernels/linux-$ISO_KVER/.config 
+    cp $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/base $ISO_SOURCE/kernels/linux-$ISO_KVER/.config 
     for OPT in $@; do
-        cat $ISO_SOURCE/kernels/config_$OPT-${ISO_KSUFFIX} | while read O; do 
+        cat $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/$OPT | while read O; do 
             OPT=$(echo $O|cut -d= -f1)
             VAL=$(echo $O|cut -d= -f2)
             sedit "/$OPT=/d" $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
-	    sedit "/$OPT is not set/d" $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
-	    if [ "$VAL" == "n" ]; then
-	        echo "# $OPT is not set" >> $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
-	    else
-	        echo "$OPT=$VAL" >> $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
-	    fi
-	done
+            sedit "/$OPT is not set/d" $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
+            if [ "$VAL" == "n" ]; then
+                echo "# $OPT is not set" >> $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
+            else
+                echo "$OPT=$VAL" >> $ISO_SOURCE/kernels/linux-$ISO_KVER/.config
+            fi
+        done
     done
 }
 
@@ -97,7 +103,11 @@ build()
     prepare
     prepare_patch $(echo $3)
     prepare_options $(echo $2)
-    prepare_version $1
+	if [ "${ISO_KSUFFIX}" = "2.4" ]; then
+        prepare_version "$1"
+    else
+        prepare_version "$(echo $ISO_PVER | sed "s:$ISO_KVER::")$1"
+    fi
     build_kernel $1 $5
     echo "$ISO_KVER$1:$4" >> $ISO_SOURCE/kernels/.kernels
 	if [ -n "$5" ]; then
