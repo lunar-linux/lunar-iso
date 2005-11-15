@@ -76,8 +76,6 @@ chroot_run()
 
 goodbye()
 {
-	# lets make the initscripts executable
-	chroot $TARGET chmod +x /etc/init.d/*
 	PROMPT="Reboot now?"
 	if confirm "$PROMPT" "--defaultno"; then
 		shutdown -r now
