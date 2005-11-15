@@ -129,10 +129,9 @@ build()
 
 VERBSOSE=on
 
-rm -f $ISO_SOURCE/kernels/.kernels
-rm -f $ISO_SOURCE/kernels/.kernels-tmp
-rm -f $ISO_SOURCE/kernels/.initrd_kernels
-rm -f $ISO_SOURCE/kernels/.initrd_kernels-tmp
+rm -f $ISO_SOURCE/kernels/{{.,.initrd_}kernels{,-tmp}}
+rm -f $ISO_SOURCE/kernels/{{safe,linux}{,.map,-modules.tar.bz2}}
+rm -rf $ISO_SOURCE/kernels/TAR
 
 
 if [ "${ISO_KSUFFIX}" = "2.4" ]; then
