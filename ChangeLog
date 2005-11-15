@@ -1,3 +1,10 @@
+20051115 1.5.2-i686-rc1 sofar
+	* update release
+
+	- reworked the kerneel configuration code
+	- fixed a minor warnign message in the installer
+	- updated all modules to gcc-3.4.4, glibc-2.3.6
+	- updated README to better reflect what a user should do
 
 
 20050818 1.5.1-i686 1.5.1-i386 sofar
