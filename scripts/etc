@@ -8,6 +8,12 @@ chmod 0600 $ISO_TARGET/etc/lilo.conf
 rm -f $ISO_TARGET/etc/mtab
 ln -s /proc/mounts $ISO_TARGET/etc/mtab
 
+# some 2.6 stuff to make sure
+if [ "$ISO_KSUFFIX" == 2.6 ]; then
+  mkdir -p $ISO_TARGET/sys
+  sed -i 's:usbdevfs:usbfs:g' $ISO_TARGET/etc/fstab
+fi
+
 # module related stuff
 cp $ISO_TARGET/etc/skel/.bash* $ISO_TARGET/root/
 cp $ISO_TARGET/etc/skel/.vimrc $ISO_TARGET/root/
