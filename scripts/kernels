@@ -107,7 +107,7 @@ build_kernel()
 	rm -f lib/modules/$VERSION$1/{build,source}
 	ln -sf /usr/src/linux-$VERSION lib/modules/$VERSION$1/build
 	ln -sf /usr/src/linux-$VERSION lib/modules/$VERSION$1/source
-    tar cjf $ISO_SOURCE/kernels/TAR/$VERSION$1.tar.bz2 boot/ lib/ usr/
+    tar cjf $ISO_SOURCE/kernels/TAR/$VERSION$1.tar.bz2 boot/ lib/
     cd $ISO_SOURCE/kernels
     rm -rf $ISO_SOURCE/kernels/BUILD
     rm -rf $ISO_SOURCE/kernels/linux-$VERSION
