@@ -3,10 +3,17 @@
 #
 # Parts (C) K. Sallee 2002
 # Parts (C) K. Kongar 2002,2003
-# Parts (c) Lunar-Linux 2002,2003,2004
+# Parts (C) Lunar-Linux 2002-2005
 #
 # This document is licensed under the GPL
 #
+
+is_26() {
+    case `uname -r` in
+        2.6*) return 0 ;;
+           *) return 1 ;;
+    esac
+}
 
 
 shell()
@@ -187,15 +194,16 @@ main()
     fi
 
     if mount -n -t $VFSTYPE -o $OPTIONS $ROOT /mnt && [ -x /mnt/sbin/init ]; then
-	pkill devfsd
-	sleep 1
+        is_26 && pkill udevd || pkill devfsd
+        sleep 1
         umount -n /proc
-	umount -n /dev
+        umount -n /dev
+	is_26 && umount -n /sys
         pivot_root /mnt /mnt
         exec /sbin/init  $*
     else
         $DIALOG --msgbox "Unable to locate /sbin/init on $ROOT." 0 0
-	umount -n /mnt
+        umount -n /mnt
         main $*
     fi
 }
@@ -219,11 +227,19 @@ Lunar Linux Install/Rescue CDROM
 --stdout"
 
 mount -n -t proc proc /proc
-mount -n -t devfs devfs /dev
-devfsd /dev &
 
 KERNEL=`uname -r`
 DEVICE="/dev/cdroms/cdrom"
+
+is_26 && (
+    mount -n -t sysfs sysfs /sys
+    mount -n -t ramfs none /dev
+    echo /sbin/udevsend > /proc/sys/kernel/hotplug
+    /sbin/udevstart
+) || (
+    mount -n -t devfs devfs /dev
+    devfsd /dev &
+)
 
 # short timeout, we really need to be able to see debug info
 sleep 2
