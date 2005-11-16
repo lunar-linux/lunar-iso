@@ -756,7 +756,7 @@ transfer()
 	
 		# post-first-boot message:
 		cp /etc/init.d/lunar-install $TARGET/etc/init.d/
-		ln -s /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
+		ln -sf /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
 		cp /etc/motd $TARGET/etc/motd
 		cp /README $TARGET/root/README
 		
