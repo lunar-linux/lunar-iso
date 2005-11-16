@@ -1107,7 +1107,7 @@ install_bootloader() {
 
 make_server_keys()  {
 	notify "Generating SSH server keys..."
-	chroot $TARGET make -C /etc/ssh server-keys
+	chroot_run make -C /etc/ssh server-keys
 	echo ""
 	echo "SSH server keys were created."
 	sleep 2
