@@ -10,6 +10,15 @@
 #############################################################
 
 
+is_26()
+{
+	case `uname -r` in
+		2.6*)	return 0 ;;
+		   *)	return 1 ;;
+	esac
+}
+
+
 notify()
 {
 	clear
@@ -40,9 +49,10 @@ confirm()
 chroot_run()
 {
 	local RESULT
-	mount -t proc proc $TARGET/proc
-	mount -t devfs devfs $TARGET/dev
-	mount -t tmpfs tmpfs $TARGET/tmp
+	mount --bind /proc $TARGET/proc
+	mount --bind /dev $TARGET/dev
+	mount --bind /tmp $TARGET/tmp
+	is_26 && mount --bind /sys $TARGET/sys
 	if [ -n "$USE_SWAP" ]; then
 		chroot $TARGET swapon -a
 	fi
@@ -51,6 +61,7 @@ chroot_run()
 	if [ -n "$USE_SWAP" ]; then
 		chroot $TARGET swapoff -a
 	fi
+	is_26 && umount $TARGET/sys
 	umount $TARGET/tmp
 	umount $TARGET/dev
 	umount $TARGET/proc
@@ -503,7 +514,7 @@ make_lilo_conf()
 		echo "delay=100"
 		echo "timeout=100"
 		echo "install=menu"
-		echo "append=\"devfs=nomount\""
+		is_26 || echo "append=\"devfs=nomount\""
 		echo "read-only"
 		echo ""
 		echo "boot=$DISC"
@@ -656,6 +667,7 @@ transfer()
 		notify "Creating base LSB directories..."
 		mkdir -p bin boot dev etc home lib mnt media
 		mkdir -p proc root sbin srv tmp usr var opt
+		is_26 && mkdir sys
 		mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
 		mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
 		mkdir -p usr/share/man/man{1,2,3,4,5,6,7,8}
