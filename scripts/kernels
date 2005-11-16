@@ -85,7 +85,6 @@ build_kernel()
     mkdir -p $ISO_SOURCE/kernels/TAR
     mkdir -p $ISO_SOURCE/kernels/BUILD
     mkdir -p $ISO_SOURCE/kernels/BUILD/boot
-    mkdir -p $ISO_SOURCE/kernels/BUILD/usr/include/linux-$VERSION$1
     make INSTALL_MOD_PATH=$ISO_SOURCE/kernels/BUILD modules_install
     if [ -n "$2" ]; then
         # we need them on the iso later too
