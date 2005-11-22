@@ -992,7 +992,7 @@ timezone()
 			           "Local" ""`       &&
 		case $CLOCK in
 			GMT) HWCLOCK="--utc" ;;
-			Local) HWCLOCK="--localtim" ;;
+			Local) HWCLOCK="--localtime" ;;
 		esac
 		(
 			echo "#!/bin/sh"
