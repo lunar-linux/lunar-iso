@@ -1,4 +1,5 @@
 makedev
+setserial
 iptables
 pcmcia-cs
 hostap-driver

@@ -44,7 +44,6 @@ shadow
 jfsutils
 bash_static
 raidtools
-setserial
 findutils
 pciutils
 hdparm
