@@ -171,17 +171,32 @@ nice_size()
 
 list_discs()
 {
-	local LIST LINE
-	LIST=$(ls /dev/discs)
-	for LINE in $LIST; do
-		echo "$(lsh unmap_device "/dev/discs/$LINE/disc")"
-		echo "disk"
+	local MAJOR MINOR BLOCKS NAME JUNK
+	cat /proc/partitions | tail +3 | \
+			while read MAJOR MINOR BLOCKS NAME JUNK; do
+		if [ "$MINOR" == "0" ]; then
+			echo "$(lsh unmap_device /dev/$NAME)"
+		fi
 	done
 }
 
 
-list_parts()
+list_partitions()
 {
+	local MAJOR MINOR BLOCKS NAME JUNK
+	cat /proc/partitions | tail +3 | \
+			while read MAJOR MINOR BLOCKS NAME JUNK; do
+		if [ "$MINOR" != "0" ]; then
+			echo "$(lsh unmap_device /dev/$NAME)"
+		fi
+	done
+}
+
+
+list_devices()
+{
+	# list_devices is the list of possible target devices where the
+	# system can be installed to
 	local DEVICE PTYPE FSIZE FSTYPE MNTPNT
 	for DEVICE in $SYSTEM_DEVICES ${SPECIAL_DEVICES[@]} ; do
 		if [ -e $DEVICE ]; then
@@ -221,7 +236,7 @@ get_part()
 	local TITLE HELP PART
 	TITLE="Partition Selection Menu"
 	HELP="Please select a partition"
-	PART=$($DIALOG --title "$TITLE" --extra-button --extra-label "Add..." --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_parts`)
+	PART=$($DIALOG --title "$TITLE" --extra-button --extra-label "Add..." --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_devices`)
 	if [ $? == 3 ]; then
 		PART=$(inputbox "Enter special device node" "/dev/")
 		if [ ! -b $(readlink -f $PART) ]; then
@@ -414,7 +429,7 @@ get_mount_point()
 
 select_partition()
 {
-	SYSTEM_DEVICES=$(for DEV in $(ls -L /dev/discs/*/part*) ; do lsh unmap_device $DEV ; done)
+	SYSTEM_DEVICES=$(list_partitions)
 	while true; do
 		sleep 2
 		PART=$(get_part)
