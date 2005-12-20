@@ -40,10 +40,10 @@ echo ""
 
 case ${ISO_KSUFFIX} in
 	2.4)
-		cp kernels/baseconfig-${ISO_KSUFFIX} $ISO_TARGET/etc/lunar/local/.config
+		cp kernels/conf/${ISO_KSUFFIX}/base $ISO_TARGET/etc/lunar/local/.config
 		;;
 	2.6)
-		cp kernels/baseconfig-${ISO_KSUFFIX} $ISO_TARGET/etc/lunar/local/.config.2.6.stable
+		cp kernels/conf/${ISO_KSUFFIX}/base $ISO_TARGET/etc/lunar/local/.config.2.6.stable
 		;;
 esac
 yes '' | chroot $ISO_TARGET lin linux-${ISO_KSUFFIX}
