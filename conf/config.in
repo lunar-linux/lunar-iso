@@ -20,11 +20,20 @@ ISO_BUILD = i686-pc-linux-gnu
 # this copncatenates the full name
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
+## for 2.4 kernels - read this:
 # the kernel version used on the ISO
-ISO_KVER = 2.4.28
+# ISO_KVER = 2.4.32
+# the patch name (should refer to the *lunar* patch tarball used)
+# ISO_PVER = r12.0
+# leave ISO_GRSVER unset
 
-# the patch name (should refer to the patch tarball used)
-ISO_PVER = r8.0
+## for 2.6 kernels - read this:
+# the kernel version used on the ISO
+ISO_KVER = 2.6.14
+# the patch LEVEL used (from kernel.org)
+ISO_PVER = 2.6.14.4
+# and for grsecurity
+ISO_GRSVER = 2.1.7-2.6.14.3-200512111706
 
 # which lunar core tools do we want on the ISO
 ISO_LUNAR_MODULE = lunar
