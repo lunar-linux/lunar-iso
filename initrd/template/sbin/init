@@ -101,12 +101,12 @@ load_modules()
 scan_cdroms()
 {
     if [ -z "$LUNAR_CD" ]; then
-        COUNT=0
-        while [ -e "$DEVICE$COUNT" ]; do
-            mount -n -r -t iso9660 $DEVICE$COUNT /mnt 2>/dev/null
+        DEVICES=$(for DEV in {hd,sd,ub}{a,b,c,d,e,f,g,h}{,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} ; do if [ -e /dev/$DEV ]; then echo /dev/$DEV ; fi ; done)
+	for DEVICE in $DEVICES; do
+            mount -n -r $DEVICE /mnt -t iso9660 2>/dev/null
             if [ -e "/mnt/.lunar-cd" ]; then
                 umount -n /mnt 2>/dev/null
-                LUNAR_CD=$DEVICE$COUNT
+                LUNAR_CD=$DEVICE
                 break
             else
                 (( COUNT++ ))
@@ -178,9 +178,10 @@ main_menu()
 
 main()
 {
+  while true ; do
     if [ -z "$ROOT" ] && [ -z "$LUNAR_CD" ]; then
         $DIALOG --msgbox "Unable to boot without a root." 0 0
-        main $*
+	main_menu $*
     fi
 
     if [ -z "$ROOT" ]; then
@@ -200,12 +201,13 @@ main()
         umount -n /dev
 	is_26 && umount -n /sys
         pivot_root /mnt /mnt
-        exec /sbin/init  $*
+        exec /sbin/init
     else
         $DIALOG --msgbox "Unable to locate /sbin/init on $ROOT." 0 0
         umount -n /mnt
-        main $*
+        main_menu $*
     fi
+  done
 }
 
 
@@ -229,7 +231,6 @@ Lunar Linux Install/Rescue CDROM
 mount -n -t proc proc /proc
 
 KERNEL=`uname -r`
-DEVICE="/dev/cdroms/cdrom"
 
 is_26 && (
     mount -n -t sysfs sysfs /sys
