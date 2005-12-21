@@ -7,123 +7,127 @@ optimize
 
 prepare()
 {
-    echo "unpacking..."
-    cd $ISO_SOURCE/kernels
-    rm -rf linux-$ISO_KVER
-    tar jxf $ISO_SOURCE/spool/linux-$ISO_KVER.tar.bz2
-	export VERSION=$ISO_KVER
+	echo "unpacking..."
+	cd $ISO_SOURCE/kernels &&
+	rm -rf linux-$ISO_KVER &&
+	tar jxf $ISO_SOURCE/spool/linux-$ISO_KVER.tar.bz2 &&
+	export VERSION=$ISO_KVER &&
 	if [ "$ISO_KSUFFIX" == "2.6" ]; then
-	    if [ "$ISO_KVER" != "$ISO_PVER" ]; then
+		if [ "$ISO_KVER" != "$ISO_PVER" ]; then
 			if [ -f $ISO_SOURCE/spool/patch-$ISO_PVER.bz2 ]; then
-			    cd linux-$ISO_KVER
-				bzcat $ISO_SOURCE/spool/patch-$ISO_PVER.bz2 | patch -p1
-				cd ..
-				mv linux-$ISO_KVER linux-$ISO_PVER
+				cd linux-$ISO_KVER &&
+				bzcat $ISO_SOURCE/spool/patch-$ISO_PVER.bz2 | patch -p1 &&
+				cd .. &&
+				mv linux-$ISO_KVER linux-$ISO_PVER &&
 				# assume KVER is now PVER !
 				export VERSION=$ISO_PVER
 			fi
 		fi
 	fi
-    if [ -f $ISO_SOURCE/spool/ll-$ISO_PVER.tar.bz2 ]; then
-		mkdir -p $ISO_SOURCE/kernels/patches
-		cd $ISO_SOURCE/kernels/patches
-	    tar jxf $ISO_SOURCE/spool/lunar/ll-$ISO_PVER.tar.bz2
+	if [ -f $ISO_SOURCE/spool/ll-$ISO_PVER.tar.bz2 ]; then
+		mkdir -p $ISO_SOURCE/kernels/patches &&
+		cd $ISO_SOURCE/kernels/patches &&
+		tar jxf $ISO_SOURCE/spool/lunar/ll-$ISO_PVER.tar.bz2 &&
 		cd $ISO_SOURCE/kernels
-    fi
+	fi
 	cd $ISO_SOURCE/kernels/linux-$VERSION
 }
 
 prepare_patch()
 {
-    cd $ISO_SOURCE/kernels/linux-$VERSION
-    for P in $@; do
-        for PP in patches/$P/*; do
-            patch_it $PP 1
-        done
-    done
+	cd $ISO_SOURCE/kernels/linux-$VERSION
+	if [ "$ISO_KSUFFIX" == "2.4" ]; then
+		for P in $@; do
+			for PP in patches/$P/*; do
+				patch_it $PP 1 || exit 1
+			done
+		done
+	elif [ "$ISO_KSUFFIX" == "2.6" ]; then
+		if [ "$3" == "grsec" ]; then
+			patch_it $ISO_SOURCE/spool/grsecurity-$ISO_GRSVER.patch.bz2 1 || exit 1
+		fi
+	fi
 }
 
 prepare_options()
 {
-    cp $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/base $ISO_SOURCE/kernels/linux-$VERSION/.config 
-    for OPT in $@; do
-        cat $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/$OPT | while read O; do 
-            OPT=$(echo $O|cut -d= -f1)
-            VAL=$(echo $O|cut -d= -f2)
-            sedit "/$OPT=/d" $ISO_SOURCE/kernels/linux-$VERSION/.config
-            sedit "/$OPT is not set/d" $ISO_SOURCE/kernels/linux-$VERSION/.config
-            if [ "$VAL" == "n" ]; then
-                echo "# $OPT is not set" >> $ISO_SOURCE/kernels/linux-$VERSION/.config
-            else
-                echo "$OPT=$VAL" >> $ISO_SOURCE/kernels/linux-$VERSION/.config
-            fi
-        done
-    done
+	cp $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/base $ISO_SOURCE/kernels/linux-$VERSION/.config 
+	for OPT in $@; do
+		cat $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/$OPT | while read O; do 
+			OPT=$(echo $O|cut -d= -f1)
+			VAL=$(echo $O|cut -d= -f2)
+			sedit "/$OPT=/d" $ISO_SOURCE/kernels/linux-$VERSION/.config
+			sedit "/$OPT is not set/d" $ISO_SOURCE/kernels/linux-$VERSION/.config
+			if [ "$VAL" == "n" ]; then
+				echo "# $OPT is not set" >> $ISO_SOURCE/kernels/linux-$VERSION/.config
+			else
+				echo "$OPT=$VAL" >> $ISO_SOURCE/kernels/linux-$VERSION/.config
+			fi
+		done
+	done
 }
 
 prepare_version()
 {
-    if [ "$ISO_KSUFFIX" == "2.4" ]; then
-	    EXTRAVERSION=$1
+	if [ "$ISO_KSUFFIX" == "2.4" ]; then
+		EXTRAVERSION=$1
 	else #2.6
 		EXTRAVERSION=$(echo $ISO_PVER | sed "s:$ISO_KVER::")$1
 	fi
-    sedit "s:^EXTRAVERSION =.*:EXTRAVERSION = $EXTRAVERSION:" $ISO_SOURCE/kernels/linux-$VERSION/Makefile
+	sedit "s:^EXTRAVERSION =.*:EXTRAVERSION = $EXTRAVERSION:" $ISO_SOURCE/kernels/linux-$VERSION/Makefile
 } 
 
 
 build_kernel()
 {
-    echo "+ building $VERSION$1"
-    cd $ISO_SOURCE/kernels/linux-$VERSION
-    yes n | make oldconfig &&
+	echo "+ building $VERSION$1"
+	cd $ISO_SOURCE/kernels/linux-$VERSION
+	yes n | make oldconfig &&
 	if [ "${ISO_KSUFFIX}" = "2.4" ]; then
-               make dep
+		make dep
 	fi &&
-    make ${ISO_MAKES:+-j$ISO_MAKES} bzImage &&
-    make ${ISO_MAKES:+-j$ISO_MAKES} modules &&
-    mkdir -p $ISO_SOURCE/kernels/TAR
-    mkdir -p $ISO_SOURCE/kernels/BUILD
-    mkdir -p $ISO_SOURCE/kernels/BUILD/boot
-    make INSTALL_MOD_PATH=$ISO_SOURCE/kernels/BUILD modules_install
-    if [ -n "$2" ]; then
-        # we need them on the iso later too
-	tar cjf $ISO_SOURCE/kernels/$2-modules.tar.bz2 -C $ISO_SOURCE/kernels/BUILD lib/modules 
-        tar xj -C $ISO_TARGET -f $ISO_SOURCE/kernels/$2-modules.tar.bz2
-    fi
-    cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/BUILD/boot/$VERSION$1
-    if [ -n "$2" ]; then
-      cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/$2
-    fi
-    cp System.map $ISO_SOURCE/kernels/BUILD/boot/System.map-$VERSION$1
-    if [ -n "$2" ]; then
-      cp System.map $ISO_SOURCE/kernels/$2.map
-    fi
-    cp .config $ISO_SOURCE/kernels/BUILD/boot/config-$VERSION$1
-    gzip $ISO_SOURCE/kernels/BUILD/boot/config-$VERSION$1
-    # cp -aL $ISO_SOURCE/kernels/linux-$VERSION/include/asm $ISO_SOURCE/kernels/BUILD/usr/include/linux-$VERSION$1/asm
-    # cp -aL $ISO_SOURCE/kernels/linux-$VERSION/include/linux $ISO_SOURCE/kernels/BUILD/usr/include/linux-$VERSION$1/linux
-    cd $ISO_SOURCE/kernels/BUILD
-	rm -f lib/modules/$VERSION$1/{build,source}
-	ln -sf /usr/src/linux-$VERSION lib/modules/$VERSION$1/build
-	ln -sf /usr/src/linux-$VERSION lib/modules/$VERSION$1/source
-    tar cjf $ISO_SOURCE/kernels/TAR/$VERSION$1.tar.bz2 boot/ lib/
-    cd $ISO_SOURCE/kernels
-    rm -rf $ISO_SOURCE/kernels/BUILD
-    rm -rf $ISO_SOURCE/kernels/linux-$VERSION
+	make ${ISO_MAKES:+-j$ISO_MAKES} bzImage &&
+	make ${ISO_MAKES:+-j$ISO_MAKES} modules &&
+	mkdir -p $ISO_SOURCE/kernels/{TAR,BUILD,BUILD/boot} &&
+	make INSTALL_MOD_PATH=$ISO_SOURCE/kernels/BUILD modules_install &&
+	if [ -n "$2" ]; then
+		# we need them on the iso later too
+		tar cjf $ISO_SOURCE/kernels/$2-modules.tar.bz2 -C $ISO_SOURCE/kernels/BUILD lib/modules &&
+		tar xj -C $ISO_TARGET -f $ISO_SOURCE/kernels/$2-modules.tar.bz2
+	fi
+	cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/BUILD/boot/$VERSION$1 &&
+	if [ -n "$2" ]; then
+	  cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/$2
+	fi
+	cp System.map $ISO_SOURCE/kernels/BUILD/boot/System.map-$VERSION$1 &&
+	if [ -n "$2" ]; then
+	  cp System.map $ISO_SOURCE/kernels/$2.map
+	fi
+	cp .config $ISO_SOURCE/kernels/BUILD/boot/config-$VERSION$1 &&
+	gzip $ISO_SOURCE/kernels/BUILD/boot/config-$VERSION$1 &&
+	# cp -aL $ISO_SOURCE/kernels/linux-$VERSION/include/asm $ISO_SOURCE/kernels/BUILD/usr/include/linux-$VERSION$1/asm
+	# cp -aL $ISO_SOURCE/kernels/linux-$VERSION/include/linux $ISO_SOURCE/kernels/BUILD/usr/include/linux-$VERSION$1/linux
+	cd $ISO_SOURCE/kernels/BUILD &&
+	rm -f lib/modules/$VERSION$1/{build,source} &&
+	ln -sf /usr/src/linux-$VERSION lib/modules/$VERSION$1/build &&
+	ln -sf /usr/src/linux-$VERSION lib/modules/$VERSION$1/source &&
+	tar cjf $ISO_SOURCE/kernels/TAR/$VERSION$1.tar.bz2 boot/ lib/ &&
+	cd $ISO_SOURCE/kernels &&
+	rm -rf $ISO_SOURCE/kernels/BUILD &&
+	rm -rf $ISO_SOURCE/kernels/linux-$VERSION
 }
 
 build()
 {
-    prepare
-    prepare_patch $(echo $3)
-    prepare_options $(echo $2)
-    prepare_version "$1"
-    build_kernel $1 $5
-    echo "$VERSION$1:$4" >> $ISO_SOURCE/kernels/.kernels-tmp
-    if [ -n "$5" ]; then
-        echo "$5 $VERSION$1" >> $ISO_SOURCE/kernels/.initrd_kernels-tmp
-    fi
+	prepare
+	prepare_patch $(echo $3)
+	prepare_options $(echo $2)
+	prepare_version "$1"
+	build_kernel $1 $5
+	echo "$VERSION$1:$4" >> $ISO_SOURCE/kernels/.kernels-tmp
+	if [ -n "$5" ]; then
+		echo "$5 $VERSION$1" >> $ISO_SOURCE/kernels/.initrd_kernels-tmp
+	fi
 }
 
 VERBSOSE=on
@@ -172,10 +176,10 @@ else # [ "${ISO_KSUFFIX}" = "2.6" ]; then
 		"Normal kernel (no SMP) (RECOMMENDED)" "linux"
 	build -smp-4gb "smp mem" "" \
 		"Normal SMP kernel with large memory (4GB)"
-	#build -grs "nosmp lowmem grsec" "grsec" \
-	#	"Grsecurity patch"
-	#build -grs-smp-4gb "smp mem grsec" "grsec" \
-	#	"Grsecurity patch, SMP, 4GB"
+	build -grs "nosmp lowmem grsec" "grsec" \
+		"Grsecurity patch" ""
+	build -grs-smp-4gb "smp mem grsec" "grsec" \
+		"Grsecurity patch, SMP, 4GB" ""
 
 fi
 
