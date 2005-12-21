@@ -170,27 +170,29 @@ nice_size()
 
 
 list_discs()
-{
+{(
+	export IFS=$' \t\n'
 	local MAJOR MINOR BLOCKS NAME JUNK
-	cat /proc/partitions | tail +3 | \
+	tail +3 /proc/partitions | \
 			while read MAJOR MINOR BLOCKS NAME JUNK; do
 		if [ "$MINOR" == "0" ]; then
 			echo "$(lsh unmap_device /dev/$NAME)"
 		fi
 	done
-}
+)}
 
 
 list_partitions()
-{
+{(
+	export IFS=$' \t\n'
 	local MAJOR MINOR BLOCKS NAME JUNK
-	cat /proc/partitions | tail +3 | \
+	tail +3 /proc/partitions | \
 			while read MAJOR MINOR BLOCKS NAME JUNK; do
 		if [ "$MINOR" != "0" ]; then
 			echo "$(lsh unmap_device /dev/$NAME)"
 		fi
 	done
-}
+)}
 
 
 list_devices()
@@ -255,7 +257,7 @@ get_disc()
 {
 	TITLE="Disk Selection Menu"
 	HELP="Please select a disk"
-	$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 `list_discs`
+	$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 `for n in $(list_discs); do echo $n; echo disc; done`
 }
 
 
@@ -1352,7 +1354,6 @@ main()
 	CONFIRM=on
 	GUIDE=on
 	DISABLE=on
-	PREFIX="root@Lunar:/#"
 
 	while true; do
 		install_menu
@@ -1362,31 +1363,35 @@ main()
 
 . /etc/lunar/config
 
-# no screen blanking
-/usr/bin/setterm -blank 0
-
-cd /
-
-# start shells on vt's
-for i in 2 3 4; do
-  (
-	export PS1="[vt$i] \033[0;32m\]\u@\h \w $ \[\033[0m\]"
-	/sbin/agetty -n -l /bin/bash 38400 tty$i &
-  )
-done
-export PS1="[vt1] \033[0;36m\]\u@\h \w $ \[\033[0m\]"
-
-export IFS="	
-"
-
 DIALOG="dialog
 --backtitle
 Lunar Linux Installer %VERSION% - %CODENAME% (%DATE%)
 --stdout"
 
+export IFS=$'\t\n'
 ARCH=`arch`
 
 trap ":" INT QUIT
+
+# don't do all this when we are fully booted
+if [ $(runlevel | awk '{print $2}') == "N" ]; then
+	# no screen blanking
+	/usr/bin/setterm -blank 0
+
+	cd /
+
+	# start shells on vt's
+	for i in 2 3 4; do
+	  (
+		export PS1="[vt$i] \033[0;32m\]\u@\h \w $ \[\033[0m\]"
+		/sbin/agetty -n -l /bin/bash 38400 tty$i &
+	  )
+	done
+	export PS1="[vt1] \033[0;36m\]\u@\h \w $ \[\033[0m\]"
+
+fi
+
+
 
 # allow custom startup scripts to run instead of the installer
 if [ -x /run.sh ]; then
