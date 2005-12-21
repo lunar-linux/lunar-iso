@@ -15,6 +15,9 @@ rm -rf BUILD
 cp -a --no-dereference template BUILD
 find BUILD -type d -name '.svn' -exec rm -rf {} \; >/dev/null 2>&1
 mkdir -p BUILD/{mnt,proc,var/lib/discover}
+if [ "$ISO_KSUFFIX" == "2.6" ]; then
+	mkdir BUILD/sys
+fi
 
 echo "+ copying binaries and required files"
 # next up are the required stuff from the BUILD
