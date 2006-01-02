@@ -1288,7 +1288,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 			COMMAND=S
 			while true; do
 				DEFAULT=$COMMAND
-				COMMAND=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --cancel-label "Exit" --menu "Installer settings and misc. options" 0 0 0 "G" "Toggle guided menus on/off (currently $GUIDE)" "C" "Toggle asking of confirmations on/off (currently $CONFIRM)" "D" "Toggle disabling the ability to perform steps (currently $DISABLE)" "M" "Load more kernel modules" "S" "Temporarily run a shell" "Q" "Quit the installer"`
+				COMMAND=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --cancel-label "Exit" --menu "Installer settings and misc. options" 0 0 0 "G" "Toggle guided menus on/off \(currently $GUIDE\)" "C" "Toggle asking of confirmations on/off \(currently $CONFIRM\)" "D" "Toggle disabling the ability to perform steps \(currently $DISABLE\)" "M" "Load more kernel modules" "S" "Temporarily run a shell" "Q" "Quit the installer"`
 				if [ $? != 0 ]; then
 					return
 				fi
