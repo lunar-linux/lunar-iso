@@ -1,3 +1,9 @@
+20051121 1.6.0-i686-alpha1 sofar
+	* tentative 2.6-based release (very alpha)
+
+	- fixed 2.6-kernel compilation
+	- integrated udev, sysfstools, hotplug properly
+
 20051115 1.5.2-i686-rc1 sofar
 	* update release
 
