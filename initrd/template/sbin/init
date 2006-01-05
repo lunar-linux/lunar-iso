@@ -101,7 +101,7 @@ load_modules()
 scan_cdroms()
 {
     if [ -z "$LUNAR_CD" ]; then
-        DEVICES=$(for DEV in {hd,sd,ub}{a,b,c,d,e,f,g,h}{,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} ; do if [ -e /dev/$DEV ]; then echo /dev/$DEV ; fi ; done)
+        DEVICES=$(for DEV in cdrom dvd {{hd,sd,ub}{a,b,c,d,e,f,g,h},s{r,g},cdroms/cdrom}{,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} ; do if [ -e /dev/$DEV ]; then echo /dev/$DEV ; fi ; done)
 	for DEVICE in $DEVICES; do
             mount -n -r $DEVICE /mnt -t iso9660 2>/dev/null
             if [ -e "/mnt/.lunar-cd" ]; then
