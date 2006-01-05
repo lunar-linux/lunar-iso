@@ -1,0 +1,116 @@
+20060105 1.6.0-i686-rc1 sofar
+	* development release
+
+	- fixed SATA and SCSI disc detection
+	- added "wipe" utility, moved setserial to source-only
+	- enabled nptl threads in glibc
+	- added auto-boot after 1 minute timeout
+	- enabled nfs as root device for netbooting
+	- fixed root device detect code loop
+	- added grsecurity kernels
+	- downgraded dialog to 20050306 due to menu bug
+	
+
+20051121 1.6.0-i686-alpha1 sofar
+	* tentative 2.6-based release (very alpha)
+
+	- fixed 2.6-kernel compilation
+	- integrated udev, sysfstools, hotplug properly
+
+
+20051115 1.5.2-i686-rc1 sofar
+	* update release
+
+	- reworked the kerneel configuration code
+	- fixed a minor warnign message in the installer
+	- updated all modules to gcc-3.4.4, glibc-2.3.6
+	- updated README to better reflect what a user should do
+
+
+20050818 1.5.1-i686 1.5.1-i386 sofar
+	* development and bugfix release
+
+	- cleaned up the install menus
+	- added dosfstools and ntfsprogs
+	- moved tnftp and dhcpcd to the ISO stage
+	- added 'make test' target
+	- added USB and mass storage drivers to the initrd
+	- add 'luser' back to the installer
+	- cleaned up navigation in the settings menu
+	- fixed a partition list bug
+	- enable swap only when compiling kernels
+
+
+20050802 1.5.1-i386-rc1 sofar
+	* development release: new arch (i386)
+
+	- fixed aaa_base tarball generation
+	- added some portability code
+
+
+20050731 1.5.1-686-rc1 sofar
+	* Development and bugfix release
+
+	- replaced firstboot screen by striker
+	- added lard as replacement of sysklogd
+	- removed separate discover build code
+	- fix mkfs.xfs run
+	- added exit/reboot option at the beginning of the installer
+	- rewrote device naming completely so you can use normal device
+	  names everywhere
+	- allow extra device nodes to be added manually (raid, loop)
+	- removed some debug kernel items
+	- deleted operator account
+	- adding default selector to all locale menus
+	- fix swap type display (was 'none')
+	- replaced lynx with links2
+	- replaced BitchX with irssi
+	- enable serial console for the default kernels
+
+
+20050523 1.5.0-i686-final sofar
+	* Final release of 1.5.0-i686
+
+	- rewrote menu-order so language and keymap are first now
+	- backported some of nestu's portable 2.6 changes
+	- adding SMP building and new targets, reorganised the
+	  build routine heavily.
+	- cleaned up editor selection menu
+	- added a long README which serves as introduction
+	- removed db
+
+
+20050517 1.5.0-i686-pre3 sofar
+	* major bugfix release:
+
+	- fix modprobe failing on stripped modules, wrappers
+	- bigger initrd size
+	- fix missing devfsd on initrd
+	- reverse order of bootloader and kernel install
+	- added testing grub code
+	- added several modem/wifi driver sources
+
+
+20050508 1.5.0-i686-pre2 sofar
+	* major bugfix release:
+
+	- fix version numbers and release tags
+	- fix mount problems
+	- added package install progress bar
+	- install default kernel headers through aaa_base
+	- lilo installer fixes
+	- don't set vga=5 by default	
+
+
+20050408 1.5.0-i686-pre1 sofar
+	* first release of the new build code:
+	
+	- integrated memtest
+	- added 'discover' hardware detection in the initrd and on
+	  the installed system
+	- Makefile structure to guide build process
+	- dependency templates, kernel base configs
+	- introduced precompiled kernels
+	- new init stage module loader with nestu's code
+	- completely new installer code with logical menu structure
+	  and guidance colors, extensive help
