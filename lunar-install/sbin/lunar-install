@@ -89,9 +89,11 @@ goodbye()
 {
 	PROMPT="Reboot now?"
 	if confirm "$PROMPT" "--defaultno"; then
+		kill `jobs -p`
 		shutdown -r now
 		exit 0
 	else
+		kill `jobs -p`
 		exit 0
 	fi
 }
@@ -684,7 +686,7 @@ transfer()
 		notify "Creating base LSB directories..."
 		mkdir -p bin boot dev etc home lib mnt media
 		mkdir -p proc root sbin srv tmp usr var opt
-		is_26 && mkdir sys
+		is_26 && mkdir -p sys
 		mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
 		mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
 		mkdir -p usr/share/man/man{1,2,3,4,5,6,7,8}
@@ -794,7 +796,7 @@ transfer()
 		# some more missing files:
 		cp /etc/lunar.release $TARGET/etc/
 		echo "GCCVER=3" > $TARGET/etc/lunar/local/config
-		cp /etc/lunar/local/.config $TARGET/etc/lunar/local/
+		cp /etc/lunar/local/.config* $TARGET/etc/lunar/local/
 	
 		# moo, more more more!
 		chroot_run lsh update_plugins
@@ -1369,12 +1371,12 @@ Lunar Linux Installer %VERSION% - %CODENAME% (%DATE%)
 --stdout"
 
 export IFS=$'\t\n'
-ARCH=`arch`
+ARCH=$(arch)
 
 trap ":" INT QUIT
 
 # don't do all this when we are fully booted
-if [ $(runlevel | awk '{print $2}') == "N" ]; then
+if [ "$(runlevel)" == "unknown" ]; then
 	# no screen blanking
 	/usr/bin/setterm -blank 0
 
@@ -1384,8 +1386,10 @@ if [ $(runlevel | awk '{print $2}') == "N" ]; then
 	for i in 2 3 4; do
 	  (
 		export PS1="[vt$i] \033[0;32m\]\u@\h \w $ \[\033[0m\]"
-		/sbin/agetty -n -l /bin/bash 38400 tty$i &
-	  )
+		while true; do
+			/sbin/agetty -n -l /bin/bash 38400 tty$i linux
+		done
+	  ) &
 	done
 	export PS1="[vt1] \033[0;36m\]\u@\h \w $ \[\033[0m\]"
 
@@ -1408,5 +1412,3 @@ else
 	main
 fi
 
-# clean up vt's
-kill `jobs -p`
