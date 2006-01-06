@@ -1,0 +1,2 @@
+* grsecurity kernels are not grsec enabled
+* test + debug grub mistake (find a box with multiple sata discs and preferably also pata and pata-cdrom)
