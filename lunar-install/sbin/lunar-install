@@ -177,7 +177,7 @@ list_discs()
 	local MAJOR MINOR BLOCKS NAME JUNK
 	tail +3 /proc/partitions | \
 			while read MAJOR MINOR BLOCKS NAME JUNK; do
-		if [ "$MINOR" == "0" ]; then
+		if [ $((MINOR % 16)) == "0" ]; then
 			echo "$(lsh unmap_device /dev/$NAME)"
 		fi
 	done
@@ -190,7 +190,7 @@ list_partitions()
 	local MAJOR MINOR BLOCKS NAME JUNK
 	tail +3 /proc/partitions | \
 			while read MAJOR MINOR BLOCKS NAME JUNK; do
-		if [ "$MINOR" != "0" ]; then
+		if [ $((MINOR % 16)) != "0" ]; then
 			echo "$(lsh unmap_device /dev/$NAME)"
 		fi
 	done
