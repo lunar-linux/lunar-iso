@@ -1028,19 +1028,19 @@ install_kernels()
 	list_precompiled_kernels()
 	{
 		while read LINE; do
-		echo $LINE | cut -d: -f1
-		echo $LINE | cut -d: -f2-
-		echo $LINE | cut -d: -f2-
-	done < /kernels/.kernels
+			echo $LINE | cut -d: -f1
+			echo $LINE | cut -d: -f2
+			echo $LINE | cut -d: -f3-
+		done < /kernels/.kernels
 	}
 
 	list_kernel_modules()
 	{
 		while read LINE; do
-		echo $LINE | cut -d: -f1
-		echo $LINE | cut -d: -f2
-		echo $LINE | cut -d: -f3
-	done < /kernels/.kernel-modules
+			echo $LINE | cut -d: -f1
+			echo $LINE | cut -d: -f2
+			echo $LINE | cut -d: -f3-
+		done < /kernels/.kernel-modules
 	}
 
 	while true ; do
