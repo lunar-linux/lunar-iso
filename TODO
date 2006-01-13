@@ -1,3 +1,2 @@
 * grsecurity kernels are not grsec enabled
 * post-install bug: lin linux-2.6* doesn't adjust lilo.conf
-* add dmidecode
