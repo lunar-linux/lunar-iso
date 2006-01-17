@@ -3,3 +3,4 @@
 * add edvanced options:
 	- extract && make oldconfig a full kernel source on target
 	- copy cache tarballs to /var/cache/lunar
+* lilo boot code is BROKEN
