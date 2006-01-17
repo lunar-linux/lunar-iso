@@ -58,3 +58,4 @@ dosfstools
 tnftp
 dhcpcd
 wipe
+ethtool
