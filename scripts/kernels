@@ -43,9 +43,11 @@ prepare_patch()
 			done
 		done
 	elif [ "$ISO_KSUFFIX" == "2.6" ]; then
-		if [ "$3" == "grsec" ]; then
-			patch_it $ISO_SOURCE/spool/grsecurity-$ISO_GRSVER.patch.bz2 1 || exit 1
-		fi
+		for P in $@; do
+			if [ "$P" == "grsec" ]; then
+				patch_it $ISO_SOURCE/spool/grsecurity-$ISO_GRSVER.patch.bz2 1 || exit 1
+			fi
+		done
 	fi
 }
 
@@ -173,13 +175,13 @@ else # [ "${ISO_KSUFFIX}" = "2.6" ]; then
 	build -safe-i386 "i386 nosmp lowmem safe" "" \
 		"Very safe i386 (default is i686) minimal kernel (no ACPI, DMA, SMP)" "safe"
 	build -normal "nosmp lowmem" "" \
-		"Normal kernel (no SMP) (RECOMMENDED)" "linux"
-	build -smp-4gb "smp mem" "" \
-		"Normal SMP kernel with large memory (4GB)"
+		"Normal kernel (no SMP, 1GB memory max) (RECOMMENDED)" "linux"
+	build -smp-4gb "server smp mem" "" \
+		"Server-optimized SMP kernel with large memory (4GB)"
 	build -grs "nosmp lowmem grsec" "grsec" \
 		"Grsecurity patch" ""
-	build -grs-smp-4gb "smp mem grsec" "grsec" \
-		"Grsecurity patch, SMP, 4GB" ""
+	build -grs-smp-4gb "server smp mem grsec" "grsec" \
+		"Grsecurity, server optimized patch, SMP, 4GB" ""
 
 fi
 
