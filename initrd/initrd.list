@@ -37,8 +37,8 @@ usr/lib/libdiscover.so
 usr/lib/libdiscover.so.2
 usr/lib/libdiscover.so.2.0.0
 usr/lib/libexpat.so
-usr/lib/libexpat.so.0
-usr/lib/libexpat.so.0.5.0
+usr/lib/libexpat.so.1
+usr/lib/libexpat.so.1.5.0
 usr/share/discover/ata-busclass.xml
 usr/share/discover/ata-device.xml
 usr/share/discover/ata-vendor.xml
