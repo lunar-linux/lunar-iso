@@ -274,7 +274,9 @@ installed system.
 
 The ISO provides cache tarballs for the most critical components too,
 in /var/cache/lunar. These can help you recover from serious problems
-with your system instantly.
+with your system instantly. These tarballs will also get copied to the
+installed system, allowing you to resurrect any single one of them
+quickly (read "man lin" about resurrecting modules).
 
 You can also use the ISO to boot a system that has problematic bootloader
 configurations, and correct them.
