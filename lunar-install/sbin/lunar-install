@@ -598,7 +598,8 @@ transfer_package()
 	MOD=$(echo $LINE | cut -d: -f1)
 	VER=$(echo $LINE | cut -d: -f4)
 	SIZ=$(echo $LINE | cut -d: -f5)
-	tar xjf /var/cache/lunar/$MOD-$VER-*.tar.bz2 2> /dev/null
+	cp /var/cache/lunar/$MOD-$VER-*.tar.bz2 $TARGET/var/cache/lunar/
+	tar xjf $TARGET/var/cache/lunar/$MOD-$VER-*.tar.bz2 2> /dev/null
 	echo $LINE >> $TARGET/var/state/lunar/packages
 	cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
 }
