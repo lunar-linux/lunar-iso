@@ -173,7 +173,7 @@ nice_size()
 
 list_discs()
 {(
-	IFS=$' \t\n'
+	export IFS=$' \t\n'
 	local MAJOR MINOR BLOCKS NAME JUNK
 	tail +3 /proc/partitions | \
 			while read MAJOR MINOR BLOCKS NAME JUNK; do
@@ -181,12 +181,13 @@ list_discs()
 			echo "$(lsh unmap_device /dev/$NAME)"
 		fi
 	done
+	export IFS=$'\t\n'
 )}
 
 
 list_partitions()
 {(
-	IFS=$' \t\n'
+	export IFS=$' \t\n'
 	local MAJOR MINOR BLOCKS NAME JUNK
 	tail +3 /proc/partitions | \
 			while read MAJOR MINOR BLOCKS NAME JUNK; do
@@ -194,6 +195,7 @@ list_partitions()
 			echo "$(lsh unmap_device /dev/$NAME)"
 		fi
 	done
+	export IFS=$'\t\n'
 )}
 
 
@@ -460,7 +462,7 @@ select_partition()
 		MNTPNT=$(get_mount_point $FSYS) &&
 
 		PROMPT="$PART might already be formatted with the $FSYS filesystem and may contain data. Formatting it again will destroy all present data on this partition. Do you wish to format it?"
-		if $DIALOG --defaultno --yesno "$PROMPT" 0 0 ; then
+		if confirm "$PROMPT" ; then
 			FORMAT=yes
 			CHECK=$(check_partition $FSYS)
 		else
@@ -473,6 +475,8 @@ select_partition()
 		FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
 		if [ "$FSYS" == "xfs" ]; then
 			FORCE="-f"
+		elif [ "$FSYS" == "reiserfs" ]; then
+			FORCE="-f -f"
 		else
 			unset FORCE
 		fi
@@ -603,7 +607,7 @@ transfer_package()
 transfer()
 {
 	$DIALOG --msgbox "You should now be ready to install lunar to your system. Lunar will now create filesystems if needed, make a swapfile if it was selected, and install all lunar packages to the newly setup system. Make sure you are done with partitioning and filesystem selection." 12 60
-	if confirm "Are you ready to install?" ;  then
+	if confirm "Are you ready to install lunar?" ;  then
 	
 		ORDER=$(for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do echo ${PARTITIONS[$N]} | cut -d: -f2 ; done | sort)
 
@@ -670,6 +674,7 @@ transfer()
 		# last we create the swapfile on the target
 		if [ -n "$SWAPFILE" ]; then
 			mkdir -p $TARGET$(dirname $SWAPFILE) &&
+			echo "Creating a swapfile of $SWAPSIZE MB at \"$SWAPFILE\"..." &&
 			if dd if=/dev/zero of=$TARGET$SWAPFILE bs=1M count=$SWAPSIZE &&
 				    mkswap $TARGET$SWAPFILE &&
 				    chmod 000 $TARGET$SWAPFILE
@@ -1027,15 +1032,18 @@ install_kernels()
 {
 	list_precompiled_kernels()
 	{
+		local LINE
 		while read LINE; do
 			echo $LINE | cut -d: -f1
-			echo $LINE | cut -d: -f2
-			echo $LINE | cut -d: -f3-
+			echo $LINE | cut -d: -f2-
+			# same text below - more space for longer description
+			echo $LINE | cut -d: -f2-
 		done < /kernels/.kernels
 	}
 
 	list_kernel_modules()
 	{
+		local LINE
 		while read LINE; do
 			echo $LINE | cut -d: -f1
 			echo $LINE | cut -d: -f2
@@ -1252,12 +1260,13 @@ cd-rom tray and reboot. See you at the login prompt!"
 	choices()
 	{
 	  (
-		IFS=$' \t\n'
+		export IFS=$' \t\n'
 		for CHOICE in $(echo $@); do
 			echo $CHOICE
 			eval echo \$${CHOICE}_OK\$${CHOICE}_LABEL\\\\Z0
 			eval echo \$${CHOICE}_HELP
 		done
+		export IFS=$'\t\n'
 	  )
 	}
    
