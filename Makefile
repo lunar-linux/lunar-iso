@@ -103,8 +103,8 @@ clean:
 
 dist: lunar-$(ISO_VERSION).iso
 	bzip2 < lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.bz2
-	md5sum < lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.md5
-	md5sum < lunar-$(ISO_VERSION).iso.bz2 > lunar-$(ISO_VERSION).iso.bz2.md5
+	md5sum lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.md5
+	md5sum lunar-$(ISO_VERSION).iso.bz2 > lunar-$(ISO_VERSION).iso.bz2.md5
 
 blank:
 	@scripts/blank
