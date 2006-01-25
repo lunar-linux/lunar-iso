@@ -1046,9 +1046,20 @@ install_kernels()
 	{
 		local LINE
 		while read LINE; do
-			echo $LINE | cut -d: -f1
-			echo $LINE | cut -d: -f2
-			echo $LINE | cut -d: -f3-
+		    (
+		    	unset MISSING
+		    	MODULE=$(echo $LINE | cut -d: -f2)
+			for SOURCE in $(chroot_run lvu sources $MODULE) ; do
+				if [ ! -e /var/spool/lunar/$SOURCE ]; then
+					MISSING=yes
+				fi
+			done				
+			if [ -z "$MISSING" ]; then
+				echo $LINE | cut -d: -f1
+				echo $MODULE
+				echo $LINE | cut -d: -f3-
+			fi
+		    )
 		done < /kernels/.kernel-modules
 	}
 
