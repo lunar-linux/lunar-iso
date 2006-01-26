@@ -1,3 +1,17 @@
+20060126 1.6.0-i686-rc2 sofar
+	* development/bugfix release
+
+	- implemented copying of cache tarballs to installed system
+	- added dmidecode (hints for hw detection)
+	- added ethtool (NIC link type debugging)
+	- kept dialog at downgraded 20050306
+	- fixed fdisc/partition miscount only seeing 1 disc
+	- added LSI/Megaraid drivers as module
+	- fixed grsec kernels not being built
+	- added 'server' type kernel config for performance to bigmem
+	  kernels and tweaked IO performance
+	
+
 20060105 1.6.0-i686-rc1 sofar
 	* development release
 
