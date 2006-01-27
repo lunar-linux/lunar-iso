@@ -547,8 +547,8 @@ make_lilo_conf()
 
 make_grub_conf()
 {
+	mkdir -p $TARGET/boot/grub
 	(
-		mkdir -p $TARGET/boot/grub
 		echo "timeout 30"
 		echo "default 0"
 		echo "fallback 1"
@@ -1075,7 +1075,12 @@ install_kernels()
 			C)
 				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 $(list_kernel_modules)`
 				if grep -q "^$CCOMMAND:" /kernels/.kernel-modules ; then
-					USE_SWAP=1 chroot_run lin -r $(grep "^$CCOMMAND:" /kernels/.kernel-modules | cut -d: -f2)
+					if ! USE_SWAP=1 chroot_run lin -r $(grep "^$CCOMMAND:" /kernels/.kernel-modules | cut -d: -f2); then
+						echo "Press ENTER to go back to the menu"
+						read
+					else
+						sleep 2
+					fi
 				fi
 			;;
 			P)
