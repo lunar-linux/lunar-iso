@@ -1,5 +1,4 @@
 * make default kernel SMP/SMT aware, 4gb mem
-* grsecurity kernels are not grsec enabled -> TEST
 * lilo boot code is BROKEN -> FIX AGAIN
 * add edvanced options:
 	- extract && make oldconfig a full kernel source on target
