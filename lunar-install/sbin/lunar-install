@@ -567,7 +567,8 @@ install_grub()
 		echo "root ($GRUB_ROOT)"
 		echo "setup ($GRUB_DISC)"
 		echo "quit"
-	) | grub
+	) | grub --no-curses
+	sleep 2
 
 	# setup grub details
 	if [ "$BOOT" == "$ROOT" ]; then
