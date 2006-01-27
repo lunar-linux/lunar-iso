@@ -473,10 +473,8 @@ select_partition()
 			MNT_PNT=${MNT_PNT%%/}
 		fi
 		FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
-		if [ "$FSYS" == "xfs" ]; then
+		if [ "$FSYS" == "xfs" -o "$FSYS" == "reiserfs" ]; then
 			FORCE="-f"
-		elif [ "$FSYS" == "reiserfs" ]; then
-			FORCE="-f -f"
 		else
 			unset FORCE
 		fi
