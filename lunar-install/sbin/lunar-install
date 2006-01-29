@@ -475,6 +475,8 @@ select_partition()
 		FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
 		if [ "$FSYS" == "xfs" -o "$FSYS" == "reiserfs" ]; then
 			FORCE="-f"
+		elif [ "$FSYS" == "jfs" ]; then
+			FORCE="-q"
 		else
 			unset FORCE
 		fi
