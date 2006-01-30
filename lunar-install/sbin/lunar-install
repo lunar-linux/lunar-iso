@@ -41,7 +41,7 @@ confirm()
 			true
 		fi
 	else
-		$DIALOG $2 --yesno "$1" 8 50
+		$DIALOG $2 --yesno "$1" 9 60
 	fi
 }
 
@@ -242,8 +242,8 @@ get_part()
 	local TITLE HELP PART
 	TITLE="Partition Selection Menu"
 	HELP="Please select a partition"
-	PART=$($DIALOG --title "$TITLE" --extra-button --extra-label "Add..." --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_devices`)
-	if [ $? == 3 ]; then
+	PART=$($DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_devices` "New" "Add an unlisted device to this list...")
+	if [ $PART == "New" ]; then
 		PART=$(inputbox "Enter special device node" "/dev/")
 		if [ ! -b $(readlink -f $PART) ]; then
 			$DIALOG --msgbox "Device $PART does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?" 0 0
@@ -461,7 +461,7 @@ select_partition()
 
 		MNTPNT=$(get_mount_point $FSYS) &&
 
-		PROMPT="$PART might already be formatted with the $FSYS filesystem and may contain data. Formatting it again will destroy all present data on this partition. Do you wish to format it?"
+		PROMPT="$PART might already be formatted with the $FSYS filesystem and may contain data. Formatting it will destroy all the information on this partition. Are you sure you want to format it?"
 		if confirm "$PROMPT" ; then
 			FORMAT=yes
 			CHECK=$(check_partition $FSYS)
