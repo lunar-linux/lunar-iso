@@ -19,10 +19,10 @@ is_26()
 }
 
 
-notify()
+msgbox()
 {
-	clear
-	echo $@
+	LINES=$(( ${#1} / 55 + 5 ))
+	$DIALOG --cr-wrap --msgbox "$1" $LINES 60
 }
 
 
@@ -156,7 +156,7 @@ load_module()
 			MODULE=`/bin/basename $MODULE | /bin/sed -e "s/\.o$//" -e "s/\.ko$//"`
 			PARAMETERS=`input_module_parameters` &&
 			/sbin/modprobe $CHOICE $PARAMETERS
-			/bin/sleep 5
+			/bin/sleep 2
 		elif [ -d "$CHOICE" ]; then
 			cd "$CHOICE"
 		fi
@@ -177,7 +177,7 @@ list_discs()
 	local MAJOR MINOR BLOCKS NAME JUNK
 	tail +3 /proc/partitions | \
 			while read MAJOR MINOR BLOCKS NAME JUNK; do
-		if [ $((MINOR % 16)) == "0" ]; then
+		if [ "$MAJOR" != 3 -a "$MAJOR" != 8 ] || [ $((MINOR % 16)) != "0" ]; then
 			echo "$(lsh unmap_device /dev/$NAME)"
 		fi
 	done
@@ -191,7 +191,7 @@ list_partitions()
 	local MAJOR MINOR BLOCKS NAME JUNK
 	tail +3 /proc/partitions | \
 			while read MAJOR MINOR BLOCKS NAME JUNK; do
-		if [ $((MINOR % 16)) != "0" ]; then
+		if [ "$MAJOR" != 3 -a "$MAJOR" != 8 ] || [ $((MINOR % 16)) != "0" ]; then
 			echo "$(lsh unmap_device /dev/$NAME)"
 		fi
 	done
@@ -204,13 +204,14 @@ list_devices()
 	# list_devices is the list of possible target devices where the
 	# system can be installed to
 	local DEVICE PTYPE FSIZE FSTYPE MNTPNT
-	for DEVICE in $SYSTEM_DEVICES ${SPECIAL_DEVICES[@]} ; do
+	for DEVICE in $SYSTEM_DEVICES ${RAID_DEVICES[@]} ${SPECIAL_DEVICES[@]} ; do
 		if [ -e $DEVICE ]; then
-			# this prevents listing EXTENDED partitions
-			FSIZE=$(nice_size `fdisk -l $DEVICE 2>&1 | grep ^Disk | grep bytes | awk '{print $5}'`)
-			if [ "$FSIZE" == "" ]; then
+			FBLKS=$(sfdisk -s $DEVICE)
+			if (( FBLKS <= 10 )) ; then
+				# this prevents listing EXTENDED partitions
 				continue
 			fi
+			FSIZE=$(nice_size `fdisk -l $DEVICE 2>&1 | grep ^Disk | grep bytes | awk '{print $5}'`)
 			echo $DEVICE
 
 			PTYPE=$(file -Ls $DEVICE 2>&1 | cat)
@@ -246,10 +247,10 @@ get_part()
 	if [ $PART == "New" ]; then
 		PART=$(inputbox "Enter special device node" "/dev/")
 		if [ ! -b $(readlink -f $PART) ]; then
-			$DIALOG --msgbox "Device $PART does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?" 0 0
+			msgbox "Device $PART does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?"
 			unset PART
 		elif echo ${SPECIAL_DEVICES[@]} | grep -qw $PART ; then
-			$DIALOG --msgbox "Device $PART was already added!" 0 0
+			msgbox "Device $PART was already added!"
 			unset PART
 		fi
 	fi
@@ -335,11 +336,11 @@ fdisc()
 	case $ARCH in
 		"alpha")
 			PROG="fdisk"
-			$DIALOG --msgbox "$ALPHA"
+			msgbox "$ALPHA"
 			;;
 		"ppc")
 			PROG="parted"
-			$DIALOG --msgbox "$PPC"
+			msgbox "$PPC"
 			;;
 		*)
 			PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
@@ -433,11 +434,180 @@ get_mount_point()
 }
 
 
+get_raid_level()
+{
+	LEVEL=`$DIALOG --menu "Select a raid level" 0 0 0 \
+			"linear" "append discs to make one large device" \
+			"0" "Striping - increase performance" \
+			"1" "Mirrorring - 100% redundancy" \
+			"5" "Large and safe - high performance and redundancy" \
+			"6" "Extends 5 - adds more overhead but more redundancy too"`
+	echo $LEVEL
+}
+
+
+enum_discs()
+{
+	for DISC in $(echo $1 | sed 's/,/\t/g') ; do
+		echo $DISC
+		echo $2
+	done
+}
+
+
+make_raidtab()
+{
+	NAME=$(echo $1 | cut -d: -f1)
+	LEVEL=$(echo $1 | cut -d: -f2)
+	DISCS=$(echo $1 | cut -d: -f3)
+	SPARE=$(echo $1 | cut -d: -f4)
+	CHUNK=$(echo $1 | cut -d: -f5)
+	DISCS_A=( $(for DISC in $(echo $DISCS | sed 's/,/\t/g') ; do echo $DISC ; done) )
+	SPARE_A=( $(for DISC in $(echo $SPARE | sed 's/,/\t/g') ; do echo $DISC ; done) )
+	echo "raiddev /dev/$NAME"
+	echo "	raid-level		$LEVEL"
+	if [ "$LEVEL" == "5" ]; then
+		echo "	parity-algorithm	left-symmetric"
+	fi
+	echo "	nr-raid-disks		${#DISCS_A[@]}"
+	echo "	nr-spare-disks		${#SPARE_A[@]}"
+	echo "	chunk-size		$CHUNK"
+	echo "	persistent-superblock	1"
+	echo ""
+	for (( N=0 ; N<${#DISCS_A[@]} ; N++ )); do
+		echo "	device			${DISCS_A[$N]}"
+		echo "	raid-disk		$N"
+	done
+	for (( N=0 ; N<${#SPARE_A[@]} ; N++ )); do
+		echo "	device			${SPARE_A[$N]}"
+		echo "	spare-disk		$N"
+	done
+	echo ""
+}
+
+list_raid_arrays()
+{
+	for RAIDARRAY in ${RAIDARRAYS[@]}; do
+		echo $RAIDARRAY | cut -d: -f1
+		echo "level $(echo $RAIDARRAY | cut -d: -f2) raid array"
+	done
+
+}
+
+
+raid_setup()
+{
+	# raid array record looks like:
+	# device:level:device,device,device:sparedevice,sparedevice,chunksize
+	# device = { md0 md1 md2 ... }
+	# level = { lineair 0 1 4 5 }
+	# device = { hda1, hdb, loop/0 md0 ... }
+	# sparedevice = { ^^device^^ }
+	# chunksize = n (kb)
+	# attempt to setup raid arrays
+	SYSTEM_DEVICES=$(list_partitions)
+	while true; do
+		RCHOICE=`$DIALOG --cancel-label "Exit" --menu "Select an option" 0 0 0 \
+			$(list_raid_arrays) \
+			"Create" "Create a new RAID array"`
+		if [ $? != 0 ] ; then
+			break
+		fi
+		case $RCHOICE in
+			md*)
+				if grep -qw $RCHOICE /proc/mdstat; then
+					msgbox "RAID Array $RCHOICE is already started. You cannot edit the array anymore after starting it."
+					continue
+				fi
+				while true ;do
+					for (( N=0 ; N< ${#RAIDARRAYS[@]} ; N++ )); do
+						RAIDARRAY=${RAIDARRAYS[$N]}
+						ARRAYNAME=$(echo $RAIDARRAY | cut -d: -f1)
+						if [ "$ARRAYNAME" == "$RCHOICE" ] ; then
+							break
+						fi
+					done
+					LEVEL=$(echo $RAIDARRAY | cut -d: -f2)
+					DISCS=$(echo $RAIDARRAY | cut -d: -f3)
+					SPARE=$(echo $RAIDARRAY | cut -d: -f4)
+					CHUNK=$(echo $RAIDARRAY | cut -d: -f5)
+					RRCHOICE=`$DIALOG --cancel-label "Exit" --menu "Select an option\n$RAIDARRAY" 0 0 0 \
+						$([ -n "$DISCS" ] && enum_discs $DISCS "RAID array member") \
+						$([ -n "$SPARE" ] && enum_discs $SPARE "Spare disc") \
+						"Add disc" "Add a disk to the array" \
+						"Add spare" "Add a spare disk to the array" \
+						"chunksize" "Change chunk size ( $CHUNK kB )" \
+						"start" "Initialize and start the array" \
+						`
+					if [ $? != 0 ]; then
+						break
+					fi
+					if [ "$RRCHOICE" == "Add disc" ] ; then
+						NEW=$(get_part)
+						DISCS=$(echo "$DISCS,$NEW" | sed -e 's/^,//')
+					elif [ "$RRCHOICE" == "Add spare" ] ; then
+						NEW=$(get_part)
+						SPARE=$(echo "$SPARE,$NEW" | sed -e 's/^,//')
+					elif [ "$RRCHOICE" == "chunksize" ] ; then
+						CHUNK=`inputbox "Enter chunksize in kB" "$CHUNK"`
+					elif [ "$RRCHOICE" == "start" ] ; then
+						# initialize and start this array
+						RAIDTAB=/tmp/raidtab.$ARRAYNAME
+						make_raidtab ${RAIDARRAYS[$N]} > $RAIDTAB
+						# udev fails to create these devices
+						if [ ! -b /dev/md/${ARRAYNAME/md/} ]; then
+							mkdir -p /dev/md
+							mknod -m 660 /dev/md/${ARRAYNAME/md/} b 9 ${$ARRAYNAME/md/}
+							chgrp disc /dev/md/${ARRAYNAME/md/}
+							ln -s md/${ARRAYNAME/md/} /dev/$ARRAYNAME
+						fi
+						# note we do not pass -f to force creation here
+						mkraid -c $RAIDTAB /dev/$ARRAYNAME
+						sleep 1
+						if ! grep -qw "^$ARRAYNAME" /proc/mdstat ; then
+						
+							sleep 5
+							msgbox "Initialization and starting of the RAID array failed. You should inspect $RAIDTAB for errors and try manually to start the array before using it."
+						else
+							msgbox "Initialization of $ARRAYNAME succeeded. You can now use this device as a normal, unformatted partition."
+							break
+						fi						
+					else
+						# hammer, hit:
+						DISCS=$(echo $DISCS | sed -e "s:\\(^\\|,\\)$RRCHOICE\\(,\\|$\\):,:;s:^,::;s:,$::")
+						SPARE=$(echo $SPARE | sed -e "s:\\(^\\|,\\)$RRCHOICE\\(,\\|$\\):,:;s:^,::;s:,$::")
+						msgbox "Deleted $RRCHOICE from this RAID array."
+					fi
+					# recombine the array options
+					RAIDARRAYS[$N]="$ARRAYNAME:$LEVEL:$DISCS:$SPARE:$CHUNK"
+				done
+				;;
+			Create)
+				ARRAY="md${#RAIDARRAYS[@]}"
+				LEVEL=$(get_raid_level)
+				if [ -n "$LEVEL" ]; then
+					case $LEVEL in
+						5)
+							CHUNKSIZE=128
+							;;
+						*)
+							CHUNKSIZE=32
+							;;
+					esac
+					RAIDARRAYS=( ${RAIDARRAYS[@]} "$ARRAY:$LEVEL:::$CHUNKSIZE" )
+				fi
+				;;
+		esac
+	done
+	# set this so that the partition selection target knows these
+	RAID_DEVICES=( $(for DEVICE in ${RAIDARRAYS[@]}; do echo "/dev/$DEVICE" | cut -d: -f1) )
+}
+
+
 select_partition()
 {
 	SYSTEM_DEVICES=$(list_partitions)
 	while true; do
-		sleep 2
 		PART=$(get_part)
 		if [ -z "$PART" ]; then
 			return 
@@ -445,7 +615,7 @@ select_partition()
 		# scan if we are re-assigning a partition
 		for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do
 			if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$PART" ]; then
-				$DIALOG --msgbox "Unassigned partition $PART. You can now change the parameters for this partition if you wish." 0 0
+				msgbox "Unassigned partition $PART. You can now change the parameters for this partition if you wish."
 				unset PARTITIONS[$N]
 				continue 2
 			fi
@@ -505,10 +675,10 @@ select_partitions()
 		if confirm "Are you done making partitions?"; then
 			case $ARCH in
 			    "alpha")
-	  	            $DIALOG --cr-wrap --msgbox \
+	  	            msgbox \
 "The partition on which the kernel is located must
 be formatted with the ext2 filesystem. Normally this
-means that your root or boot filesystem should be ext2." 20 60
+means that your root or boot filesystem should be ext2."
 			    ;;
 			esac
 			select_partition
@@ -606,10 +776,21 @@ transfer_package()
 }
 
 
+percent_msg()
+{
+	echo XXX
+	echo $(( CNT * 100 / NUM ))
+	echo "\n$((CNT+1)): $1\n"
+	echo XXX
+	(( CNT++ ))
+}
+
+
 transfer()
 {
-	$DIALOG --msgbox "You should now be ready to install lunar to your system. Lunar will now create filesystems if needed, make a swapfile if it was selected, and install all lunar packages to the newly setup system. Make sure you are done with partitioning and filesystem selection." 12 60
+	msgbox "You should now be ready to install lunar to your system. Lunar will now create filesystems if needed, make a swapfile if it was selected, and install all lunar packages to the newly setup system. Make sure you are done with partitioning and filesystem selection."
 	if confirm "Are you ready to install lunar?" ;  then
+		clear
 	
 		ORDER=$(for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do echo ${PARTITIONS[$N]} | cut -d: -f2 ; done | sort)
 
@@ -626,17 +807,17 @@ transfer()
 					FORMAT=$(echo ${PARTITIONS[$N]} | cut -d: -f8)
 					# handle swap
 					if [ "$FSYS" == "swap" ]; then
-						notify "Setting up swap on $PART..."
+						echo "Setting up swap on $PART..."
 						if ! mkswap $PART ; then
 							sleep 3
-							$DIALOG --msgbox "Problem creating swap on $PART. Installation will continue." 8 50
+							msgbox "Problem creating swap on $PART. Installation will continue."
 						fi
 					# create the filesystems if needed for every partition
 					elif [ "$FORMAT" == "yes" ]; then
-						notify "Formatting $PART as $FSYS..."
+						echo "Formatting $PART as $FSYS..."
 						if ! mkfs.$FSYS $FORCE $PART $CHECK ; then
 							sleep 3
-							$DIALOG --msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue." 8 50
+							msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue."
 						fi
 					fi
 					# again, weed out swap first
@@ -646,7 +827,7 @@ transfer()
 							swapoff $PART
 						else
 							sleep 3
-							$DIALOG --msgbox "Problem mounting swap on $PART. Installation will continue." 8 50
+							msgbox "Problem mounting swap on $PART. Installation will continue."
 						fi
 					# then try to mount normal FS's
 					else
@@ -658,7 +839,7 @@ transfer()
 						else
 							MNTOPTARGS=""
 						fi
-						notify "Mounting $PART as $FSYS"
+						echo "Mounting $PART as $FSYS"
 						if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
 							FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
 							if [ "$FSYS" == "swap" ]; then
@@ -666,7 +847,7 @@ transfer()
 							fi
 						else
 							sleep 3
-							$DIALOG --msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue." 8 50
+							msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue."
 						fi
 					fi
 				fi
@@ -684,138 +865,128 @@ transfer()
 				FSTAB="$FSTAB\n$SWAPFILE\tnone\tswap\tsw\t\t0 0"
 			else
 				sleep 3
-				$DIALOG --msgbox "Problem creating swapfile. Installation will continue." 8 50
+				msgbox "Problem creating swapfile. Installation will continue."
 			fi
 		fi
 		
-		cd $TARGET
-
-		notify "Creating base LSB directories..."
-		mkdir -p bin boot dev etc home lib mnt media
-		mkdir -p proc root sbin srv tmp usr var opt
-		is_26 && mkdir -p sys
-		mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
-		mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
-		mkdir -p usr/share/man/man{1,2,3,4,5,6,7,8}
-		ln -sf share/doc usr/doc
-		ln -sf share/man usr/man
-		ln -sf share/info usr/info
-		mkdir -p etc/lunar/local/depends
-		ln -s . etc/rc.d
-		mkdir -p etc/init.d etc/rc{0,1,2,3,4,5,6,S}.d 
-		mkdir -p var/log/lunar/{install,md5sum,compile}
-		mkdir -p var/{cache,empty,lib,lock,log,run,spool,state,tmp}
-		mkdir -p var/{cache,lib,log,spool,state}/lunar
-		mkdir -p var/state/discover
-		mkdir -p var/spool/mail
-		mkdir -p media/{cdrom0,cdrom1,floppy0,floppy1,mem0,mem1}
-		chmod 0700 root
-		chmod 1777 tmp var/tmp
-	
 		# calculate the total so we can display progress
 		NUM=$(wc -l /.packages | awk '{print $1}')
-		(( NUM = NUM + 4 - 2))
+		# add the number of times we call percent_msg, subtract 2 for lilo/grub
+		(( NUM = NUM + 9 - 2 ))
+
+		cd $TARGET
+
 		(
+			percent_msg "Creating base LSB directories"
+			mkdir -p bin boot dev etc home lib mnt media
+			mkdir -p proc root sbin srv tmp usr var opt
+			is_26 && mkdir -p sys
+			mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
+			mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
+			mkdir -p usr/share/man/man{1,2,3,4,5,6,7,8}
+			ln -sf share/doc usr/doc
+			ln -sf share/man usr/man
+			ln -sf share/info usr/info
+			mkdir -p etc/lunar/local/depends
+			ln -s . etc/rc.d
+			mkdir -p etc/init.d etc/rc{0,1,2,3,4,5,6,S}.d 
+			mkdir -p var/log/lunar/{install,md5sum,compile}
+			mkdir -p var/{cache,empty,lib,lock,log,run,spool,state,tmp}
+			mkdir -p var/{cache,lib,log,spool,state}/lunar
+			mkdir -p var/state/discover
+			mkdir -p var/spool/mail
+			mkdir -p media/{cdrom0,cdrom1,floppy0,floppy1,mem0,mem1}
+			chmod 0700 root
+			chmod 1777 tmp var/tmp
+	
 			if [ -f /var/cache/lunar/aaa_base.tar.bz2 ]; then
-				echo XXX
-				echo $(( CNT * 100 / NUM ))
-				echo "\n$((CNT+1)): Installing aaa_base: base directories and files\n"
-				echo XXX
+				percent_msg "Installing aaa_base: base directories and files"
 				tar xjf /var/cache/lunar/aaa_base.tar.bz2 2> /dev/null
-				(( CNT++ ))
 			fi
 			if [ -f /var/cache/lunar/aaa_dev.tar.bz2 ]; then
-				echo XXX
-				echo $(( CNT * 100 / NUM ))
-				echo "\n$((CNT+1)): Installing aaa_dev: device nodes\n"
-				echo XXX
+				percent_msg "Installing aaa_dev: device nodes"
 				tar xjf /var/cache/lunar/aaa_dev.tar.bz2 2> /dev/null
-				(( CNT++ ))
 			fi
+			
 			for LINE in $(cat /.packages | grep -v -e '^lilo:' -e '^grub:') ; do
 				MOD=$(echo $LINE | cut -d: -f1)
 				VER=$(echo $LINE | cut -d: -f4)
 				SIZ=$(echo $LINE | cut -d: -f5)
-				echo XXX
-				echo $(( CNT * 100 / NUM ))
-				echo "\n$((CNT+1)): Installing $MOD-$VER ($SIZ)\n\n($(basename /var/cache/lunar/$MOD-$VER-*.tar.bz2))\n"
-				echo XXX
+				percent_msg "Installing $MOD-$VER ($SIZ)\n\n($(basename /var/cache/lunar/$MOD-$VER-*.tar.bz2))"
 				transfer_package $MOD
-				(( CNT++ ))
 			done
+
 			if [ -f /var/lib/lunar/moonbase.tar.bz2 ] ; then
-				echo XXX
-				echo $(( CNT * 100 / NUM ))
-				echo "\n$((CNT+1)): Installing moonbase"
-				echo XXX
+				percent_msg "Installing moonbase"
 				(
 					cd $TARGET/var/lib/lunar
 					tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
 					tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
 				)
-				(( CNT++ ))
 			fi
+
 			# transfer sources
-			echo XXX
-			echo $(( CNT * 100 / NUM ))
-			echo "\n$((CNT+1)): Copying sources"
-			echo "XXX"
+			percent_msg "Copying sources"
 			cp /var/spool/lunar/* $TARGET/var/spool/lunar/
-			(( CNT++ ))
-			# done
-		) | $DIALOG --title " Installing $NUM packages " --gauge "" 10 70 0 
 	
-		notify "Finishing up installation..."
-
-		# setup list of installed packages etc.
-		echo "moonbase:%DATE%:installed:%DATE%:37M" >> $TARGET/var/state/lunar/packages
-		cp /var/state/lunar/depends        $TARGET/var/state/lunar/
-		cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
-		cp /var/state/lunar/depends.cache  $TARGET/var/state/lunar/
-		cp /var/state/lunar/module.index   $TARGET/var/state/lunar/
+			# setup list of installed packages etc.
+			percent_msg "Updating administrative files"
+			echo "moonbase:%DATE%:installed:%DATE%:37M" >> $TARGET/var/state/lunar/packages
+			cp /var/state/lunar/depends        $TARGET/var/state/lunar/
+			cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
+			cp /var/state/lunar/depends.cache  $TARGET/var/state/lunar/
+			cp /var/state/lunar/module.index   $TARGET/var/state/lunar/
 	
-		# pass through some of the configuration at this point:
-		[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
-		[ -z "$CONSOLEFONT" ] || echo "$CONSOLEFONT" > $TARGET/etc/consolefont
-		[ -z "$LANG" ] || echo -e "# you can add declarations for LC_ALL etc in here\n\nexport LANG=\"$LANG\"\n" > $TARGET/etc/LOCALE
-		[ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
+			# more moonbase related stuff
+			percent_msg "Updating moonbase plugins"
+			chroot_run lsh update_plugins
 	
-		# post-first-boot message:
-		cp /etc/init.d/lunar-install $TARGET/etc/init.d/
-		ln -sf /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
-		cp /etc/motd $TARGET/etc/motd
-		cp /README $TARGET/root/README
+			# pass through some of the configuration at this point:
+			percent_msg "Finishing up installation"
+			[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
+			[ -z "$CONSOLEFONT" ] || echo "$CONSOLEFONT" > $TARGET/etc/consolefont
+			[ -z "$LANG" ] || echo -e "# you can add declarations for LC_ALL etc in here\n\nexport LANG=\"$LANG\"\n" > $TARGET/etc/LOCALE
+			[ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
+	
+			# post-first-boot message:
+			cp /etc/init.d/lunar-install $TARGET/etc/init.d/
+			ln -sf /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
+			cp /etc/motd $TARGET/etc/motd
+			cp /README $TARGET/root/README
 		
-		# save proxies
-		if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
-		(
-			echo "# these proxy settings apply to wget only"
-			[ -z "$HPROXY" ] || echo "export http_proxy=\"$HPROXY\""
-			[ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\""
-			[ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\""
-		) > $TARGET/etc/profile.d/proxy.rc
-		fi
+			# save proxies
+			if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
+			(
+				echo "# these proxy settings apply to wget only"
+				[ -z "$HPROXY" ] || echo "export http_proxy=\"$HPROXY\""
+				[ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\""
+				[ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\""
+			) > $TARGET/etc/profile.d/proxy.rc
+			fi
 
-		echo -e "$FSTAB" >> etc/fstab
-		make_lilo_conf
-		make_grub_conf
+			echo -e "$FSTAB" >> etc/fstab
+			make_lilo_conf
+			make_grub_conf
+			if [ -n "${RAIDARRAYS[@]}" ]; then
+				echo "Creating /etc/raidtab"
+				for (( N=0 ; N < ${#RAIDARRAYS[@]} ; N++ )) ; do
+					make_raidtab ${RAIDARRAYS[$N]} >> $TARGET/etc/raidtab
+				done
+			fi
 
-		# some more missing files:
-		cp /etc/lunar.release $TARGET/etc/
-		echo "GCCVER=3" > $TARGET/etc/lunar/local/config
-		cp /etc/lunar/local/.config* $TARGET/etc/lunar/local/
+			# some more missing files:
+			cp /etc/lunar.release $TARGET/etc/
+			echo "GCCVER=3" > $TARGET/etc/lunar/local/config
+			cp /etc/lunar/local/.config* $TARGET/etc/lunar/local/
 	
-		# moo, more more more!
-		chroot_run lsh update_plugins
+			# initialize the new machine:
+			touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
+			chmod 0644 $TARGET/var/log/{utmp,wtmp,lastlog}
+			chmod 0600 $TARGET/var/log/btmp
 	
-		# initialize the new machine:
-		touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
-		chmod 0644 $TARGET/var/log/{utmp,wtmp,lastlog}
-		chmod 0600 $TARGET/var/log/btmp
-	
-		DONE_COPIED="YES"
-		echo "Done!"
-
+		# really we are done now ;^)
+		) | $DIALOG --title " Installing Lunar-Linux " --gauge "" 10 70 0 
+		
 		if (( STEP == 6 )); then
 			(( STEP++ ))
 		fi
@@ -865,14 +1036,14 @@ confirm_proxy_settings()
 
 proxy_exit_message()
 {
-	$DIALOG --cr-wrap --title "Lunar Proxy Settings Complete" --msgbox \
+	msgbox \
 		"Your proxy configuration has been saved. 
 
 Please note that these proxy settings will only be used
 by Lunar (wget) and possibly some other command-line utilities.
 
 You will still have to configure proxy settings in your favorite
-web browser, etc..." 12 65
+web browser, etc..."
 
 }
 
@@ -1092,7 +1263,7 @@ install_kernels()
 					cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
 					# let the plugin code handle the hard work
 					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
-					$DIALOG --msgbox "The precompiled kernel \"$CCOMMAND\" has been installed to your system." 12 60
+					msgbox "The precompiled kernel \"$CCOMMAND\" has been installed to your system."
 				fi
 			;;
 		esac
@@ -1127,17 +1298,17 @@ install_bootloader() {
 			BOOTLOADER=lilo
 			transfer_package $BOOTLOADER
 			chroot_run lsh update_plugin $BOOTLOADER "install"
-			$DIALOG --cr-wrap --msgbox "The lilo boot loader package was installed. From now on, when you add a kernel, lilo will be run after the /etc/lilo.conf configuration file has been updated. " 10 65
+			msgbox "The lilo boot loader package was installed. From now on, when you add a kernel, lilo will be run after the /etc/lilo.conf configuration file has been updated. "
 		;;
 			G)
 			BOOTLOADER=grub
 			transfer_package $BOOTLOADER
 			chroot_run lsh update_plugin $BOOTLOADER "install"
 			install_grub
-			$DIALOG --cr-wrap --msgbox "The grub boot loader package was installed. From now on, when you add a kernel, it will be available through grub on boot." 10 65
+			msgbox "The grub boot loader package was installed. From now on, when you add a kernel, it will be available through grub on boot."
 		;;
 		N)
-			$DIALOG --cr-wrap --msgbox "Not installing a boot loader requires you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also does not install lilo or grub on the hard disc." 12 65
+			msgbox "Not installing a boot loader requires you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also does not install lilo or grub on the hard disc."
 			;;
 		esac
 
@@ -1151,7 +1322,8 @@ install_bootloader() {
 }
 
 make_server_keys()  {
-	notify "Generating SSH server keys..."
+	echo ""
+	echo "Generating SSH server keys..."
 	chroot_run make -C /etc/ssh server-keys
 	echo ""
 	echo "SSH server keys were created."
@@ -1229,6 +1401,8 @@ cd-rom tray and reboot. See you at the login prompt!"
 
 		P_LABEL="Partition discs"
 		P_HELP="Use fdisk or cfdisk to prepare hard drive partitions"
+		W_LABEL="Setup Linux Software RAID"
+		W_HELP="Linux software RAID can increase redundancy or speed of hard discs"
 		M_LABEL="Select target partitions"
 		M_HELP="Select target partitions for installation"
 		S_LABEL="Select a swapfile"
@@ -1289,16 +1463,16 @@ cd-rom tray and reboot. See you at the login prompt!"
 	}
    
 	if [ "$GUIDE" == "off" ]; then
-		CHOICES="X I C D E J P M S T O L K R U H V G A Z"
+		CHOICES="X I C D E J P W M S T O L K R U H V G A Z"
 		STEPHELP="Step $STEP of $STEPS:"
 	else
 		case $STEP in
 		1)  DEFAULT=I ; CHOICES="X I F" ;;
 		2)              CHOICES="B C D E J F" ;;
-		3)  DEFAULT=P ; CHOICES="B P M F" ;;
-		4)  DEFAULT=M ; CHOICES="B P M F" ;;
-		5)  DEFAULT=S ; CHOICES="B P M S F" ;;
-		6)  DEFAULT=T ; CHOICES="B P M S T F" ;;
+		3)  DEFAULT=P ; CHOICES="B P W M F" ;;
+		4)  DEFAULT=M ; CHOICES="B P W M F" ;;
+		5)  DEFAULT=S ; CHOICES="B P W M S F" ;;
+		6)  DEFAULT=T ; CHOICES="B P W M S T F" ;;
 		7)  DEFAULT=L ; CHOICES="B O L F" ;;
 		8)  DEFAULT=K ; CHOICES="B O L K F" ;;
 		9)  DEFAULT=R ; CHOICES="B R U F" ;;
@@ -1362,6 +1536,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 	  J)  editor_menu            ;;
 
 	  P)  fdisc                  ;;
+	  W)  raid_setup             ;;
 	  M)  select_partitions      ;;
 	  S)  select_swap_file       ;;
 	  T)  transfer               ;;
