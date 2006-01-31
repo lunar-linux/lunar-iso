@@ -1,3 +1,8 @@
+	- Added software RAID creation tool, fixed some md-device
+	  recognition problems
+	- Incorporated more progress into the progress bar display
+
+
 20060126 1.6.0-i686-rc2 sofar
 	* development/bugfix release
 
