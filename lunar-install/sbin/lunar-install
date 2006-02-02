@@ -171,40 +171,121 @@ nice_size()
 }
 
 
-list_discs()
+block_devices()
+{
+	local N DEVICE
+	# superfunction to maintain, list, edit partitions and discs
+	case $1 in
+		init)
+			# fill the list with devices
+			for DEVICE in $(list_discs); do
+				block_devices add "$DEVICE:disc"
+			done
+			for DEVICE in $(list_partitions); do
+				block_devices add "$DEVICE:part"
+			done
+			for DEVICE in $(list_other_block_devices); do
+				block_devices add "$DEVICE:other"
+			done
+			;;
+		add)
+			DEVICES=( ${DEVICES[@]} $2 )
+			# add a device to the list
+			;;
+		use)
+			# tag a device as used
+			for (( N=0; N<${#DEVICES[@]} ; N++ )); do
+				if [ "$2" == "$(echo ${DEVICES[$N]} | cut -d: -f1)" ]; then
+					DEVICES[$N]="$(echo ${DEVICES[$N]} | cut -d: -f1,2):used"
+				fi
+			done
+			;;
+		free)
+			# untag a previously used device as used
+			for (( N=0; N<${#DEVICES[@]} ; N++ )); do
+				if [ "$2" == "$(echo ${DEVICES[$N]} | cut -d: -f1)" ]; then
+					DEVICES[$N]="$(echo ${DEVICES[$N]} | cut -d: -f1,2)"
+				fi
+			done
+			;;
+		list)
+			# list all unused devices of type $2
+			for (( N=0; N<${#DEVICES[@]} ; N++ )); do
+				if [ "$2" == "$(echo ${DEVICES[$N]} | cut -d: -f2)" ] &&
+						[ -z "$(echo ${DEVICES[$N]} | cut -d: -f3)" ]; then
+					echo ${DEVICES[$N]} | cut -d: -f1
+				fi
+			done
+			;;
+		listall)
+			# list all devices of type $2
+			for (( N=0; N<${#DEVICES[@]} ; N++ )); do
+				if [ "$2" == "$(echo ${DEVICES[$N]} | cut -d: -f2)" ]; then
+					echo ${DEVICES[$N]} | cut -d: -f1
+				fi
+			done
+			;;
+	esac
+}
+
+
+fetch_system_block_devices()
 {(
 	export IFS=$' \t\n'
 	local MAJOR MINOR BLOCKS NAME JUNK
-	tail +3 /proc/partitions | \
-			while read MAJOR MINOR BLOCKS NAME JUNK; do
-		if [ "$MAJOR" != 3 -a "$MAJOR" != 8 ] || [ $((MINOR % 16)) != "0" ]; then
-			echo "$(lsh unmap_device /dev/$NAME)"
+	tail +3 /proc/partitions | while read MAJOR MINOR BLOCKS NAME JUNK; do
+		echo -e "$(lsh unmap_device /dev/$NAME)\t$MAJOR\t$MINOR"
+	done			
+	export IFS=$'\t\n'
+)}
+
+
+list_discs()
+{(
+	local NAME MAJOR MINOR
+	fetch_system_block_devices | while read NAME MAJOR MINOR ; do
+		if [ "$MAJOR" == 3 -o "$MAJOR" == 8 ] && [ $((MINOR % 16)) == "0" ]; then
+			echo $NAME
 		fi
 	done
-	export IFS=$'\t\n'
 )}
 
 
 list_partitions()
 {(
-	export IFS=$' \t\n'
-	local MAJOR MINOR BLOCKS NAME JUNK
-	tail +3 /proc/partitions | \
-			while read MAJOR MINOR BLOCKS NAME JUNK; do
-		if [ "$MAJOR" != 3 -a "$MAJOR" != 8 ] || [ $((MINOR % 16)) != "0" ]; then
-			echo "$(lsh unmap_device /dev/$NAME)"
+	local NAME MAJOR MINOR
+	fetch_system_block_devices | while read NAME MAJOR MINOR ; do
+		if [ "$MAJOR" == 3 -o "$MAJOR" == 8 ] && [ $((MINOR % 16)) != "0" ]; then
+			echo $NAME
 		fi
 	done
-	export IFS=$'\t\n'
 )}
 
 
-list_devices()
+list_other_block_devices()
+{(
+	local NAME MAJOR MINOR
+	fetch_system_block_devices | while read NAME MAJOR MINOR ; do
+		if [ "$MAJOR" != 3 -a "$MAJOR" != 8 ] ; then
+			echo $NAME
+		fi
+	done
+)}
+
+
+menu_list_devices()
 {
-	# list_devices is the list of possible target devices where the
-	# system can be installed to
-	local DEVICE PTYPE FSIZE FSTYPE MNTPNT
-	for DEVICE in $SYSTEM_DEVICES ${RAID_DEVICES[@]} ${SPECIAL_DEVICES[@]} ; do
+	local DEVICE
+	for DEVICE in $(block_devices list part; block_devices list disc ; block_devices list other); do
+		echo $DEVICE
+		echo "Block device"
+	done
+}
+
+menu_list_targets()
+{
+	local DEVICE FBLKS FSIZE PTYPE FSTYPE MNTPNT N
+	for DEVICE in $(block_devices listall part; block_devices listall other); do
 		if [ -e $DEVICE ]; then
 			FBLKS=$(sfdisk -s $DEVICE)
 			if (( FBLKS <= 10 )) ; then
@@ -222,9 +303,9 @@ list_devices()
 				*Minix*) PTYPE="(minix)" ;;
 				*) PTYPE="(unknown)" ;;
 			esac
-		
-			for (( N=0 ; N < NUM_PARTITIONS ; N++ )); do
-				if echo ${PARTITIONS[$N]} | grep -q "^$DEVICE:"; then
+	
+			for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do
+				if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$DEVICE" ]; then
 					FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
 					MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
 					FSTYPE=${FSTYPE/none/swap}
@@ -238,13 +319,37 @@ list_devices()
 }
 
 
-get_part()
+menu_select_device()
+{
+	local TITLE HELP DEVICE
+	TITLE="Device Selection Menu"
+	HELP="Please select a block device"
+	DEVICE=$($DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 `menu_list_devices` "New" "Add an unlisted device to this list...")
+	if [ "$DEVICE" == "New" ]; then
+		DEVICE=$(inputbox "Enter special device node" "/dev/")
+		if [ ! -b $(readlink -f $DEVICE) ]; then
+			msgbox "Device $DEVICE does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?"
+			unset DEVICE
+		elif echo ${SPECIAL_DEVICES[@]} | grep -qw $DEVICE ; then
+			msgbox "Device $DEVICE was already added!"
+			unset DEVICE
+		else
+			block_devices add "$DEVICE:other"
+		fi
+	fi
+	echo $DEVICE
+}
+
+menu_get_partition()
 {
 	local TITLE HELP PART
 	TITLE="Partition Selection Menu"
 	HELP="Please select a partition"
-	PART=$($DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 `list_devices` "New" "Add an unlisted device to this list...")
-	if [ $PART == "New" ]; then
+	PART=$($DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 `menu_list_targets` "New" "Add an unlisted device to this list...")
+	if [ $? != 0 ]; then
+		return 1
+	fi
+	if [ "$PART" == "New" ]; then
 		PART=$(inputbox "Enter special device node" "/dev/")
 		if [ ! -b $(readlink -f $PART) ]; then
 			msgbox "Device $PART does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?"
@@ -252,21 +357,33 @@ get_part()
 		elif echo ${SPECIAL_DEVICES[@]} | grep -qw $PART ; then
 			msgbox "Device $PART was already added!"
 			unset PART
+		else
+			block_devices add "$PART:other"
 		fi
 	fi
 	echo $PART
 }
 
 
-get_disc()
+menu_list_discs()
 {
-	TITLE="Disk Selection Menu"
-	HELP="Please select a disk"
-	$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 `for n in $(list_discs); do echo $n; echo disc; done`
+	for DISC in $(block_devices listall disc); do
+		echo $DISC
+		echo "disc"
+	done
+
 }
 
 
-get_filesystem()
+menu_get_disc()
+{
+	TITLE="Disk Selection Menu"
+	HELP="Please select a disc"
+	$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 $(menu_list_discs)
+}
+
+
+menu_get_filesystem()
 {
 	TITLE="Filesystem Selection Menu"
 	HELP="Please select a filesystem. A '*' means that this is a journalling filesystem, which provides better data security against system crashes etc."
@@ -322,25 +439,23 @@ keymap_menu()
 }
 
 
-fdisc()
+partition_discs()
 {
 	CFDISK="Curses based disk partition table manipulator"  
 	FDISK="Partition table manipulator"
 	PARTED="Create, destroy, resize, and copy partitions"
 	HELP="Please create a boot and root partition."
 	TITLE="Partitioning Menu"
-	ALPHA="Your drive must be partitioned with a BSD-style partition.  At the first prompt in fdisk, type 'b'."
-	PPC="Your drive must have an Apple partition scheme and have at least one HFS partition of at least 10MB for booting.  Do not mount this partition!"
 
-	DISC=$(get_disc) &&
+	DISC=$(menu_get_disc) &&
 	case $ARCH in
 		"alpha")
 			PROG="fdisk"
-			msgbox "$ALPHA"
+			msgbox "Your drive must be partitioned with a BSD-style partition.  At the first prompt in fdisk, type 'b'."
 			;;
 		"ppc")
 			PROG="parted"
-			msgbox "$PPC"
+			msgbox "Your drive must have an Apple partition scheme and have at least one HFS partition of at least 10MB for booting.  Do not mount this partition!"
 			;;
 		*)
 			PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
@@ -505,7 +620,6 @@ raid_setup()
 	# sparedevice = { ^^device^^ }
 	# chunksize = n (kb)
 	# attempt to setup raid arrays
-	SYSTEM_DEVICES=$(list_partitions)
 	while true; do
 		RCHOICE=`$DIALOG --cancel-label "Exit" --menu "Select an option" 0 0 0 \
 			$(list_raid_arrays) \
@@ -515,39 +629,47 @@ raid_setup()
 		fi
 		case $RCHOICE in
 			md*)
+				# don't edit started arrays anymore
 				if grep -qw $RCHOICE /proc/mdstat; then
 					msgbox "RAID Array $RCHOICE is already started. You cannot edit the array anymore after starting it."
 					continue
 				fi
+				# edit the array
 				while true ;do
-					for (( N=0 ; N< ${#RAIDARRAYS[@]} ; N++ )); do
-						RAIDARRAY=${RAIDARRAYS[$N]}
-						ARRAYNAME=$(echo $RAIDARRAY | cut -d: -f1)
-						if [ "$ARRAYNAME" == "$RCHOICE" ] ; then
+					for (( N=0 ; N<${#RAIDARRAYS[@]} ; N++ )); do
+						if [ "$RCHOICE" == "$(echo ${RAIDARRAYS[$N]} | cut -d: -f1)" ]; then
 							break
 						fi
 					done
+					RAIDARRAY=${RAIDARRAYS[$N]}
+					ARRAYNAME=$(echo $RAIDARRAY | cut -d: -f1)
 					LEVEL=$(echo $RAIDARRAY | cut -d: -f2)
 					DISCS=$(echo $RAIDARRAY | cut -d: -f3)
 					SPARE=$(echo $RAIDARRAY | cut -d: -f4)
 					CHUNK=$(echo $RAIDARRAY | cut -d: -f5)
-					RRCHOICE=`$DIALOG --cancel-label "Exit" --menu "Select an option\n$RAIDARRAY" 0 0 0 \
-						$([ -n "$DISCS" ] && enum_discs $DISCS "RAID array member") \
-						$([ -n "$SPARE" ] && enum_discs $SPARE "Spare disc") \
+					RRCHOICE=`$DIALOG --cancel-label "Exit" --menu "Select an option" 0 0 0 \
 						"Add disc" "Add a disk to the array" \
 						"Add spare" "Add a spare disk to the array" \
 						"chunksize" "Change chunk size ( $CHUNK kB )" \
+						$([ -n "$DISCS" ] && enum_discs $DISCS "RAID array member") \
+						$([ -n "$SPARE" ] && enum_discs $SPARE "Spare disc") \
 						"start" "Initialize and start the array" \
 						`
 					if [ $? != 0 ]; then
 						break
 					fi
 					if [ "$RRCHOICE" == "Add disc" ] ; then
-						NEW=$(get_part)
-						DISCS=$(echo "$DISCS,$NEW" | sed -e 's/^,//')
+						NEW=$(menu_select_device)
+						if [ -n "$NEW" ]; then
+							DISCS=$(echo "$DISCS,$NEW" | sed -e 's/^,//')
+							block_devices use $NEW
+						fi
 					elif [ "$RRCHOICE" == "Add spare" ] ; then
-						NEW=$(get_part)
-						SPARE=$(echo "$SPARE,$NEW" | sed -e 's/^,//')
+						NEW=$(menu_select_device)
+						if [ -n "$NEW" ]; then
+							SPARE=$(echo "$SPARE,$NEW" | sed -e 's/^,//')
+							block_devices use $NEW
+						fi
 					elif [ "$RRCHOICE" == "chunksize" ] ; then
 						CHUNK=`inputbox "Enter chunksize in kB" "$CHUNK"`
 					elif [ "$RRCHOICE" == "start" ] ; then
@@ -570,6 +692,7 @@ raid_setup()
 							msgbox "Initialization and starting of the RAID array failed. You should inspect $RAIDTAB for errors and try manually to start the array before using it."
 						else
 							msgbox "Initialization of $ARRAYNAME succeeded. You can now use this device as a normal, unformatted partition."
+							block_devices free $ARRAYNAME
 							break
 						fi						
 					else
@@ -577,6 +700,7 @@ raid_setup()
 						DISCS=$(echo $DISCS | sed -e "s:\\(^\\|,\\)$RRCHOICE\\(,\\|$\\):,:;s:^,::;s:,$::")
 						SPARE=$(echo $SPARE | sed -e "s:\\(^\\|,\\)$RRCHOICE\\(,\\|$\\):,:;s:^,::;s:,$::")
 						msgbox "Deleted $RRCHOICE from this RAID array."
+						block_devices free $RRCHOICE
 					fi
 					# recombine the array options
 					RAIDARRAYS[$N]="$ARRAYNAME:$LEVEL:$DISCS:$SPARE:$CHUNK"
@@ -594,39 +718,38 @@ raid_setup()
 							CHUNKSIZE=32
 							;;
 					esac
-					RAIDARRAYS=( ${RAIDARRAYS[@]} "$ARRAY:$LEVEL:::$CHUNKSIZE" )
+					RAIDARRAYS[${#RAIDARRAYS[@]}]="$ARRAY:$LEVEL:::$CHUNKSIZE"
+					block_devices add "/dev/$ARRAY:other:used"
 				fi
 				;;
 		esac
 	done
-	# set this so that the partition selection target knows these
-	RAID_DEVICES=( $(for DEVICE in ${RAIDARRAYS[@]}; do echo "/dev/$DEVICE" | cut -d: -f1) )
 }
 
 
-select_partition()
+menu_select_partitions()
 {
-	SYSTEM_DEVICES=$(list_partitions)
+	local PART N MNTPNT FSYS MNT_OPTS FSCK_PASS CHECK FORCE FORMAT
 	while true; do
-		PART=$(get_part)
-		if [ -z "$PART" ]; then
-			return 
-		fi &&
+		PART=$(menu_get_partition)
+		# Exit pressed - leave the menu and go back up a level
+		if [ $? != 0 ]; then
+			break
+		elif [ "$PART" == "" ]; then
+			continue
+		fi
 		# scan if we are re-assigning a partition
-		for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do
+		for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do
 			if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$PART" ]; then
 				msgbox "Unassigned partition $PART. You can now change the parameters for this partition if you wish."
+				block_devices free $PART
 				unset PARTITIONS[$N]
 				continue 2
 			fi
 		done
-		# add special device nodes to the secondary list
-		if ! echo ${SYSTEM_DEVICES[@]} | grep -wq "$PART" ; then
-			SPECIAL_DEVICES=( ${SPECIAL_DEVICES[@]} $PART )
-		fi &&
-		FSYS=$(get_filesystem) 
+		FSYS=$(menu_get_filesystem) 
 		if [ -z "$FSYS" ]; then
-			return; 
+			continue
 		fi &&
 
 		MNTPNT=$(get_mount_point $FSYS) &&
@@ -651,8 +774,7 @@ select_partition()
 			unset FORCE
 		fi
 
-		PARTITIONS=(${PARTITIONS[@]} "$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT" )
-		(( NUM_PARTITIONS++ ))
+		PARTITIONS[${#PARTITIONS[@]}]="$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT"
 
 		if [ "$MNTPNT" == "/" ]; then
 			ROOT=$PART
@@ -665,14 +787,16 @@ select_partition()
 			# ... -> except when this is a /boot partition
 			BOOT=$PART
 		fi
+		block_devices use $PART
 	done
 }
 
 
 select_partitions()
 {
-	if [ -z "$ROOT" ]; then
+	if [ -z "$DONE_PARTITIONING" ]; then
 		if confirm "Are you done making partitions?"; then
+			DONE_PARTITIONING=1
 			case $ARCH in
 			    "alpha")
 	  	            msgbox \
@@ -681,10 +805,10 @@ be formatted with the ext2 filesystem. Normally this
 means that your root or boot filesystem should be ext2."
 			    ;;
 			esac
-			select_partition
+			menu_select_partitions
 		fi
 	else
-		select_partition
+		menu_select_partitions
 	fi
 
 	if [ -n "$ROOT" ]; then
@@ -792,10 +916,10 @@ transfer()
 	if confirm "Are you ready to install lunar?" ;  then
 		clear
 	
-		ORDER=$(for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do echo ${PARTITIONS[$N]} | cut -d: -f2 ; done | sort)
+		ORDER=$(for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do echo ${PARTITIONS[$N]} | cut -d: -f2 ; done | sort)
 
 		for MOUNTPOINT in $ORDER; do
-			for (( N=0 ; N<NUM_PARTITIONS ; N++ )); do
+			for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do
 				M=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
 				if [ "$M" == "$MOUNTPOINT" ]; then
 					PART=$(echo ${PARTITIONS[$N]} | cut -d: -f1)
@@ -1535,7 +1659,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 	  E)  lang_menu              ;;
 	  J)  editor_menu            ;;
 
-	  P)  fdisc                  ;;
+	  P)  partition_discs        ;;
 	  W)  raid_setup             ;;
 	  M)  select_partitions      ;;
 	  S)  select_swap_file       ;;
@@ -1567,6 +1691,8 @@ main()
 	CONFIRM=on
 	GUIDE=on
 	DISABLE=on
+
+	block_devices init
 
 	while true; do
 		install_menu
