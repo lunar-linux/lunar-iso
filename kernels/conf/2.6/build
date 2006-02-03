@@ -1,12 +1,5 @@
-build -normal "smp mem" "" \ 
-	"Normal kernel (SMP, 4GB memory max) (RECOMMENDED)" \
-	"linux"
-build -safe-i386 "i386 nosmp lowmem safe" "" \
-	"Very safe i386 optimized minimal kernel (no ACPI, DMA, SMP, 1GB)" \
-	"safe"
-build -smp "server smp highmem" "" \
-	"Server optimized (SMP, 64GB, no preempt)" ""
-build -grs "smp mem grsec" "grsec" \
-	"Grsecurity patch (SMP, 4GB)" ""
-build -grs-smp "server smp highmem grsec" "grsec" \
-	"Grsecurity, server optimized (SMP, 64GB, no preempt)" ""
+build "" "smp mem" "" "Normal kernel (SMP, 4GB memory max) (RECOMMENDED)" "linux"
+build "-safe-i386" "i386 nosmp lowmem safe" "" "Very safe i386 optimized minimal kernel (no ACPI, DMA, SMP, 1GB)" "safe"
+build "-smp" "server smp highmem" "" "Server optimized (SMP, 64GB, no preempt)" ""
+build "-grs" "smp mem grsec" "grsec" "Grsecurity patch (SMP, 4GB)" ""
+build "-grs-smp" "server smp highmem grsec" "grsec" "Grsecurity, server optimized (SMP, 64GB, no preempt)" ""
