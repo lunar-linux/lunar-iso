@@ -20,7 +20,6 @@ cp $ISO_TARGET/etc/skel/.vimrc $ISO_TARGET/root/
 
 # random misc stuff
 mkdir -p $ISO_TARGET/var/lock/subsys
-echo "Lunar Linux ${ISO_CNAME}" > $ISO_TARGET/etc/lunar.release
 
 # rerun ldconfig to make sure we're not stale
 touch $ISO_TARGET/etc/ld.so.conf
