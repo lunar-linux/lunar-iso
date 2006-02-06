@@ -53,8 +53,17 @@ rm -f $ISO_TARGET/{lib,usr/lib}/lib*.a
 rm -f $ISO_TARGET/boot/${ISO_KVER}*
 rm -rf $ISO_TARGET/lib/modules/${ISO_KVER}*
 
+# delete the root password on the iso
+chroot $ISO_TARGET passwd -d root
+
 rm -f $ISO_TARGET/etc/mtab
 ln -s /proc/mounts $ISO_TARGET/etc/mtab
+
+# discover likes to write in /var/lib/discover/crash
+rm -rf $ISO_TARGET/var/lib/discover
+rmdir $ISO_TARGET/var/tmp
+ln -s /tmp $ISO_TARGET/var/tmp
+ln -s /var/tmp $ISO_TARGET/var/lib/discover
 
 # e3 symlinks
 ln -s /usr/bin/e3vi $ISO_TARGET/usr/bin/vi
