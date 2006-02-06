@@ -197,11 +197,11 @@ main()
     if mount -n -t $VFSTYPE -o $OPTIONS $ROOT /mnt && [ -x /mnt/sbin/init ]; then
         is_26 && pkill udevd || pkill devfsd
         sleep 1
-        umount -n /proc
         umount -n /dev
 	is_26 && umount -n /sys
+	umount -n /proc
         pivot_root /mnt /mnt
-        exec /sbin/init
+        exec chroot / /sbin/init
     else
         $DIALOG --msgbox "Unable to locate /sbin/init on $ROOT." 0 0
         umount -n /mnt
