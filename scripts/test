@@ -25,7 +25,7 @@ if [ -f $ISO_TARGET/.rebuild ]; then
 		"mkfs.xfs -V"
 		"mkswap -V"
 		"dd --version"
-		"lsmod"
+		"depmod"
 		"echo \"ABC\" | bzip2 -L -V > /dev/null"
 		"echo \"ABC\" | gzip -L -V > /dev/null"
 		"tar --version"
