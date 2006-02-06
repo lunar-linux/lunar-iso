@@ -70,14 +70,14 @@ ln -s /usr/bin/e3vi $ISO_TARGET/usr/bin/vi
 ln -s /usr/bin/zile $ISO_TARGET/usr/bin/emacs
 
 mkdir -p $ISO_TARGET/var/lib/discover
-rm -f $ISO_TARGET/etc/*/*modutils
-rm -f $ISO_TARGET/etc/*/*bootmisc
-rm -f $ISO_TARGET/etc/*/*sysctl
-rm -f $ISO_TARGET/etc/*/*nfslock
-rm -f $ISO_TARGET/etc/*/*nfs
-rm -f $ISO_TARGET/etc/*/*xinetd
-rm -f $ISO_TARGET/etc/*/*serial
-rm -f $ISO_TARGET/etc/*/*portmap
+rm -f $ISO_TARGET/etc/rc*/*modutils
+rm -f $ISO_TARGET/etc/rc*/*bootmisc
+rm -f $ISO_TARGET/etc/rc*/*sysctl
+rm -f $ISO_TARGET/etc/rc*/*nfslock
+rm -f $ISO_TARGET/etc/rc*/*nfs
+rm -f $ISO_TARGET/etc/rc*/*xinetd
+rm -f $ISO_TARGET/etc/rc*/*serial
+rm -f $ISO_TARGET/etc/rc*/*portmap
 
 # this is a space killer:
 echo "+ stripping binaries"
