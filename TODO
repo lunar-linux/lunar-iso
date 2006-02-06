@@ -1,5 +1,3 @@
-* make default kernel SMP/SMT aware, 4gb mem
-* lilo boot code is BROKEN -> FIX AGAIN
 * add edvanced options:
 	- extract && make oldconfig a full kernel source on target
-* add and incorporate irqbalance for SMP systems
+* add and incorporate irqbalance for SMP systems -> TEST
