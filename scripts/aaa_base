@@ -12,6 +12,11 @@ echo "+ backing up \"$ISO_LUNAR_MODULE-*-$ISO_BUILD.tar.bz2\""
 cp $ISO_TARGET/var/cache/lunar/$ISO_LUNAR_MODULE-*-$ISO_BUILD.tar.bz2 aaa_base/$ISO_LUNAR_MODULE-$ISO_DATE-$ISO_BUILD.tar.bz2
 
 echo "+ cleaning up (some) file structure items"
+rm -f $ISO_TARGET/etc/rc*/*nfslock
+rm -f $ISO_TARGET/etc/rc*/*nfs
+rm -f $ISO_TARGET/etc/rc*/*xinetd
+rm -f $ISO_TARGET/etc/rc*/*serial
+rm -f $ISO_TARGET/etc/rc*/*portmap
 rm -rf $ISO_TARGET/var/cache/ccache/*
 rmdir /usr/lib/locale/*
 chroot $ISO_TARGET ccache -C
