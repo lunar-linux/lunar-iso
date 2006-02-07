@@ -12,7 +12,9 @@ l6:6:wait:/etc/init.d/rc 6
 
 ca:12345:ctrlaltdel:/sbin/shutdown -t1 -a -r now
 
-c1:12345:respawn:/sbin/agetty 38400 tty1
+ci:2:respawn:/sbin/lunar-install
+
+c1:1345:respawn:/sbin/agetty 38400 tty1
 c2:2345:respawn:/sbin/agetty 38400 tty2
 c3:2345:respawn:/sbin/agetty 38400 tty3
 c4:234:respawn:/sbin/agetty 38400 tty4
