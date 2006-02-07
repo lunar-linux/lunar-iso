@@ -60,4 +60,4 @@ dhcpcd
 wipe
 dmidecode
 ethtool
-firemost
+foremost
