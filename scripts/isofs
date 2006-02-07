@@ -4,6 +4,7 @@
 
 echo "+ tagging release version"
 echo "Lunar Linux $ISO_CNAME" > $ISO_TARGET/etc/lunar.release
+echo "lunar" > $ISO_TARGET/etc/hostname
 
 echo "+ adding kernel modules"
 mkdir -p $ISO_TARGET/kernels
@@ -22,7 +23,6 @@ cp $ISO_SOURCE/aaa_base/$ISO_LUNAR_MODULE-$ISO_DATE-$ISO_BUILD.tar.bz2 $ISO_TARG
 echo "+ copying installer program"
 cp lunar-install/init.d/lunar-install $ISO_TARGET/etc/init.d/
 cp lunar-install/sbin/lunar-install $ISO_TARGET/sbin/
-ln -sf /etc/init.d/lunar-install $ISO_TARGET/etc/rc2.d/S20lunar-install
 cp $ISO_SOURCE/lunar-install/etc/inittab $ISO_TARGET/etc/
 
 echo "+ adding isolinux code"
