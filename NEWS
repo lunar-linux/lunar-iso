@@ -1,5 +1,12 @@
+20060206 1.6.0-i686-rc3 sofar
+	* bugfix/feature release
+
 	- Added software RAID creation tool, fixed some md-device
 	  recognition problems
+	- integrated normal vc shells
+	- Fixed all known grub installation issues
+	- rewrite block device code completely
+	- added irqbalance package
 	- Incorporated more progress into the progress bar display
 
 
