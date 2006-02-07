@@ -185,6 +185,8 @@ block_devices()
 	# superfunction to maintain, list, edit partitions and discs
 	case $1 in
 		init)
+			# remove all old disc/part devices
+			unset DEVICES
 			# fill the list with devices
 			for DEVICE in $(list_block_devices); do
 				block_devices add $DEVICE
@@ -459,6 +461,8 @@ partition_discs()
 	if confirm "$PROMPT"; then
 		unset PARTITIONS
 		$PROG $DISC
+		# regenerate list of block devices
+		block_devices init
 		if (( STEP == 3 )); then
 			(( STEP++ ))
 		fi
