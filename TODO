@@ -1,3 +1,4 @@
 * add edvanced options:
 	- extract && make oldconfig a full kernel source on target
 * add and incorporate irqbalance for SMP systems -> TEST
+* figure out why loading modules from the menu fails
