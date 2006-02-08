@@ -13,6 +13,7 @@ nano
 dialog
 glib-2
 ed
+cracklib
 Linux-PAM
 readline
 pcre

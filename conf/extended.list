@@ -4,7 +4,6 @@ rp-pppoe
 perl
 openssh
 xdelta
-cracklib
 chkconfig
 installwatch
 check
