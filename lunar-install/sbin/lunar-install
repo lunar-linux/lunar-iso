@@ -138,13 +138,6 @@ show_modules()
 }
 
 
-input_module_parameters()
-{
-	HELP="Optionally, enter module parameters"
-	$DIALOG --nocancel --inputbox "$HELP" 0 0
-}
-
-
 load_module()
 {
   (
@@ -155,16 +148,21 @@ load_module()
 	CHOICE=""
 
 	while true; do
-		MODULES=`show_modules $(pwd)`
-		CHOICE=`$DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 $MODULES`
+		MODULES=$(show_modules $(pwd))
+		CHOICE=$($DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 $MODULES)
 		if [ $? != 0 ]; then
 			return
 		fi
 		if [ -f "$CHOICE" ]; then
-			MODULE=`/bin/basename $MODULE | /bin/sed -e "s/\.o$//" -e "s/\.ko$//"`
-			PARAMETERS=`input_module_parameters` &&
-			modprobe $CHOICE $PARAMETERS
-			sleep 2
+			MODULE=$(basename $CHOICE | sed "s/\.o$//;s/\.ko$//")
+			PARAMETERS=$(inputbox "Enter module parameters (optional)") &&
+			modprobe $MODULE $PARAMETERS
+			sleep 1
+			if ! grep -qw $MODULE /proc/modules ; then
+				messagebox "The module failed to load!"
+			else
+				block_devices init
+			fi
 		elif [ -d "$CHOICE" ]; then
 			cd "$CHOICE"
 		fi
@@ -185,12 +183,17 @@ block_devices()
 	# superfunction to maintain, list, edit partitions and discs
 	case $1 in
 		init)
-			# remove all old disc/part devices
-			unset DEVICES
-			# fill the list with devices
-			for DEVICE in $(list_block_devices); do
-				block_devices add $DEVICE
-			done
+			# do we really need to re-do this? it's slow...
+			if [ "$(md5sum /proc/partitions)" != "$PROC_PARTITIONS_MD5" ]; then
+				# remove all old disc/part devices
+				unset DEVICES
+				# fill the list with devices
+				for DEVICE in $(list_block_devices); do
+					block_devices add $DEVICE
+				done
+				# and store the checsum for later
+				PROC_PARTITIONS_MD5="$(md5sum /proc/partitions)"
+			fi
 			;;
 		add)
 			DEVICES=( ${DEVICES[@]} $2 )
@@ -321,6 +324,7 @@ menu_select_device()
 	fi
 	echo $DEVICE
 }
+
 
 menu_get_partition()
 {
