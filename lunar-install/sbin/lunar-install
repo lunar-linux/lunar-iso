@@ -233,37 +233,26 @@ block_devices()
 }
 
 
-fetch_system_block_devices()
+list_block_devices()
 {(
 	export IFS=$' \t\n'
-	local MAJOR MINOR BLOCKS NAME JUNK
-	tail +3 /proc/partitions | while read MAJOR MINOR BLOCKS NAME JUNK; do
-		echo -e "$(lsh unmap_device /dev/$NAME)\t$MAJOR\t$MINOR"
-	done			
+	local DEVICE FDEVICE
+	for DEVICE in $(tail +3 /proc/partitions | awk '{print $4}') ; do
+		FDEVICE=$(lsh unmap_device /dev/$DEVICE)
+		# if the device node ends with [0-9] then it's never a disc
+		if [[ $DEVICE =~ '[0-9]$' ]]; then
+			# partitions always sit on a disc - which is also listed
+			if grep -qw "${DEVICE/[0-9]*/}" /proc/partitions ; then
+				echo $FDEVICE:part
+			else
+				echo $FDEVICE:other
+			fi
+		else
+			echo $FDEVICE:disc
+		fi
+	done
 	export IFS=$'\t\n'
 )}
-
-
-list_block_devices()
-{
-	local NAME MAJOR MINOR
-	fetch_system_block_devices | while read NAME MAJOR MINOR ; do
-		case $MAJOR in
-			3|8|104)
-				# ide/scsi/cciss devices
-				if [ $(($MINOR % 16)) == 0 ]; then
-					echo "$NAME:disc"
-				else
-					echo "$NAME:part"
-				fi
-				;;
-			*)
-				# anything else we tag as 'other' for now
-				echo "$NAME:other"
-				;;
-		esac
-	done
-}
 
 
 menu_list_devices()
