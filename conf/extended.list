@@ -52,3 +52,8 @@ lard
 links2
 irssi
 irqbalance
+libsepol
+libselinux
+checkpolicy
+libsemanage
+policycoreutils
