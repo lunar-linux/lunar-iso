@@ -1285,43 +1285,42 @@ timezone()
 	ZONE=""
 	DEFAULT=${ZONE:-GMT}
 
-	while
-		TIMEZONES=`show_timezones $ZONE`  &&
-		ZONE=`$DIALOG  --title  "$TITLE"  \
-		               --default-item "$DEFAULT" \
-		               --menu             \
-			       "$HELP"            \
-			       0 0 0              \
-			       $TIMEZONES`        &&
-		[ -d $LOCALTIME/$ZONE ]
-	do
-		true
-	done
+	while true; do
+		ZONE=`$DIALOG --title "$TITLE"           \
+		              --default-item "$DEFAULT"  \
+		              --menu                     \
+			      "$HELP"                    \
+			      0 0 0                      \
+			      $(show_timezones $ZONE)`
 
-	if [ -f "$LOCALTIME/$ZONE" ]; then
-		ln -sf $LOCALTIME/$ZONE $TARGET/etc/localtime
+		if [ $? != 0 ]; then
+			break
+		elif [ -f "$LOCALTIME/$ZONE" ]; then
+			ln -sf $LOCALTIME/$ZONE $TARGET/etc/localtime
 
-		TITLE="GMT or Local"
-		HELP="Does the hardware clock store time in GMT or local?"
+			TITLE="GMT or Local"
+			HELP="Does the hardware clock store time in GMT or local?"
 
-		DEFAULT=${CLOCK:-Local}
-		CLOCK=`$DIALOG --title "$TITLE"       \
+			DEFAULT=${CLOCK:-Local}
+			CLOCK=`$DIALOG --title "$TITLE"       \
 			           --default-item "$DEFAULT" \
 			           --menu "$HELP"     \
 			           0 0 0              \
 			           "GMT" ""           \
 			           "Local" ""`       &&
-		case $CLOCK in
-			GMT) HWCLOCK="--utc" ;;
-			Local) HWCLOCK="--localtime" ;;
-		esac
-		(
-			echo "#!/bin/sh"
-			echo "/sbin/hwclock --hctosys $HWCLOCK"
-		) > $TARGET/etc/init.d/localtime
-		chmod a+x $TARGET/etc/init.d/localtime
-		ln -s ../init.d/localtime $TARGET/etc/rcS.d/S15localtime
-	fi
+			case $CLOCK in
+				GMT) HWCLOCK="--utc" ;;
+				Local) HWCLOCK="--localtime" ;;
+			esac
+			(
+				echo "#!/bin/sh"
+				echo "/sbin/hwclock --hctosys $HWCLOCK"
+			) > $TARGET/etc/init.d/localtime
+			chmod a+x $TARGET/etc/init.d/localtime
+			ln -s ../init.d/localtime $TARGET/etc/rcS.d/S15localtime
+			break
+		fi
+	done
 }
 
 
@@ -1577,7 +1576,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 	{
 	  (
 		export IFS=$' \t\n'
-		for CHOICE in $(echo $@); do
+		for CHOICE in $@; do
 			echo $CHOICE
 			eval echo \$${CHOICE}_OK\$${CHOICE}_LABEL\\\\Z0
 			eval echo \$${CHOICE}_HELP
@@ -1608,14 +1607,14 @@ cd-rom tray and reboot. See you at the login prompt!"
 		15) DEFAULT=Z ; CHOICES="B Z"
 		esac
 	fi
-	COMMAND=`$DIALOG --title "$TITLE" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)` 
+	COMMAND=`$DIALOG --title "Lunar-Linux install menu" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)` 
 
 	case $? in 
 		3)
 			COMMAND=S
 			while true; do
 				DEFAULT=$COMMAND
-				COMMAND=`$DIALOG --title "$TITLE" \
+				COMMAND=`$DIALOG --title "Settings / Special actions" \
 					--default-item "$DEFAULT" \
 					--cancel-label "Exit" \
 					--menu "Installer settings and misc. options" 0 0 0 \
@@ -1640,8 +1639,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 		;;
 	esac
 
-	TEST="TEST=\$${COMMAND}_OK"
-	eval $TEST
+	eval "TEST=\$${COMMAND}_OK"
 	if [ "$DISABLE" == "on" -a "$TEST" == "\\Z1" ]; then
 		$DIALOG --title "Cannot perform this step yet" --colors --msgbox "This action cannot be performed yet. You need to complete one of the earlier steps succesfully first before you can try this action. Please go a step back and perform all the necessary actions before trying this item again. As a guide, the actions that you have performed are \Z2colored green\Z0. The ones that you cannot perform yet are \Z1colored red\Z0." 15 65
 		return
