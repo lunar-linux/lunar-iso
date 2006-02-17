@@ -25,8 +25,8 @@ for mods in ${ISO_LUNAR_MODULE} $(cat conf/base.list conf/base.list-$ISO_KSUFFIX
   resurrect $mods
 done
 
-rm -rf $ISO_TARGET/usr/include/{linux,asm}
-cp -a /usr/include/{linux,asm} $ISO_TARGET/usr/include/
+# we need kernel headers too
+resurrect kernel-headers-$ISO_KSUFFIX
 
 # fill var/spool/lunar dir
 for mod in $(cat conf/sources.list conf/sources.list-${ISO_KSUFFIX} conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list) ; do

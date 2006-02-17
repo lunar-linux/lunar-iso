@@ -33,11 +33,6 @@ mount -t proc proc $ISO_TARGET/proc
 chroot $ISO_TARGET /dev/install-devices.sh
 chroot $ISO_TARGET rm -rf /var/build/makedev-*
 
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "+          STARTING KERNEL COMPILE                     +"
-echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo ""
-
 case ${ISO_KSUFFIX} in
 	2.4)
 		cp kernels/conf/${ISO_KSUFFIX}/base $ISO_TARGET/etc/lunar/local/.config
@@ -46,8 +41,6 @@ case ${ISO_KSUFFIX} in
 		cp kernels/conf/${ISO_KSUFFIX}/base $ISO_TARGET/etc/lunar/local/.config.2.6.stable
 		;;
 esac
-yes '' | chroot $ISO_TARGET lin linux-${ISO_KSUFFIX}
-chroot $ISO_TARGET lin kernel-headers-${ISO_KSUFFIX}
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          STARTING COMPILE PHASE OF ALL MODULES       +"
