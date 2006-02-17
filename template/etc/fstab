@@ -4,9 +4,6 @@
 # proc is required pretty much on any linux system except embedded systems:
 proc	/proc		proc	defaults	0 0
 
-# devfs is the default for 2.4-based systems
-devfs   /dev            devfs   defaults        0 0
-
 # shmfs is surpassed and obsolete
 #shm	/dev/shm	shm	defaults	0 0
 
