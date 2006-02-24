@@ -42,6 +42,8 @@ case ${ISO_KSUFFIX} in
 		;;
 esac
 
+chroot $ISO_TARGET lin kernel-headers-${ISO_KSUFFIX}
+
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          STARTING COMPILE PHASE OF ALL MODULES       +"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
