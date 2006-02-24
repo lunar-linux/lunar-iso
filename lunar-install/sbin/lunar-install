@@ -25,7 +25,7 @@ is_26()
 
 msgbox()
 {
-	LINES=$(( ${#1} / 55 + 5 ))
+	LINES=$(( ${#1} / 55 + 7 ))
 	$DIALOG --cr-wrap --msgbox "$1" $LINES 60
 }
 
@@ -486,16 +486,22 @@ select_swap_file()
 	SIZE_PROMPT="Enter the size (in MB) of the swapfile you want to generate. It is recommended make it twice the amount of physical RAM. TMPFS users will need more swap (typically 1000MB)."
 
 	SWAPFILE=$(inputbox "$LOCATION_PROMPT" "/swapfile") &&
+	if [ -n "$SWAPFILE" ]; then
 
-	# strange calc. but it ends up being ~ 2xRAM rounded up to 256MB blocks
-	SWAPSIZE=$(grep MemTotal: /proc/meminfo | awk '{print $2}' | sed 's/[0-9][0-9][0-9]$//') &&
-	(( SWAPSIZE = ( ( SWAPSIZE / 128 ) + 1 ) * 256 )) &&
+		# strange calc. but it ends up being ~ 2xRAM rounded up to 256MB blocks
+		SWAPSIZE=$(grep MemTotal: /proc/meminfo | awk '{print $2}' | sed 's/[0-9][0-9][0-9]$//') &&
+		(( SWAPSIZE = ( ( SWAPSIZE / 128 ) + 1 ) * 256 )) &&
 
-	SWAPSIZE=$(inputbox "$SIZE_PROMPT" "$SWAPSIZE") &&
+		SWAPSIZE=$(inputbox "$SIZE_PROMPT" "$SWAPSIZE")
+		if [ -n "$SWAPSIZE" ]; then
+			S_OK=\\Z2
+		else
+			unset SWAPFILE SWAPSIZE
+		fi
+	fi
 	if (( STEP == 5 )); then
 		(( STEP++ ))
 	fi
-	S_OK=\\Z2
 }
 
 
@@ -646,17 +652,18 @@ raid_setup()
 					if [ $? != 0 ]; then
 						break
 					fi
-					if [ "$RRCHOICE" == "Add disc" ] ; then
+					if [ "$RRCHOICE" == "Add disc" -o "$RRCHOICE" == "Add spare" ] ; then
 						NEW=$(menu_select_device)
 						if [ -n "$NEW" ]; then
-							DISCS=$(echo "$DISCS,$NEW" | sed -e 's/^,//')
+							if [ "$RRCHOICE" == "Add disc" ] ; then
+								DISCS=$(echo "$DISCS,$NEW" | sed -e 's/^,//')
+							else # if [ "$RRCHOICE" == "Add spare" ] ; then
+								SPARE=$(echo "$SPARE,$NEW" | sed -e 's/^,//')
+							fi
 							block_devices use $NEW
-						fi
-					elif [ "$RRCHOICE" == "Add spare" ] ; then
-						NEW=$(menu_select_device)
-						if [ -n "$NEW" ]; then
-							SPARE=$(echo "$SPARE,$NEW" | sed -e 's/^,//')
-							block_devices use $NEW
+							if [ $(fdisk -l ${NEW/[0-9]*/} | sed 's/\*/ /' | grep "^$NEW" | awk '{print $5}') != "fd" ]; then
+								msgbox "The partition type of this device is not 0xFD (Linux RAID Autodetect). You should correct this in the partition table with a partitioning tool, otherwise linux will not automatically enable this RAID array at boot."
+							fi
 						fi
 					elif [ "$RRCHOICE" == "chunksize" ] ; then
 						CHUNK=`inputbox "Enter chunksize in kB" "$CHUNK"`
@@ -712,6 +719,7 @@ raid_setup()
 				;;
 		esac
 	done
+	DEFAULT=M
 }
 
 
@@ -1200,10 +1208,12 @@ font_menu()
 	TITLE="Console Font Selection Menu"
 	HELP="Please select your preferred console fonts."
 	FONTS=`show_consolefonts`
-	DEFAULT=${CONSOLEFONT:-default8x16}
-	CONSOLEFONT=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 $FONTS`
-	consolechars -f $CONSOLEFONT
-	D_OK=\\Z2
+	CONSOLEFONT=${CONSOLEFONT:-default8x16}
+	CONSOLEFONT=`$DIALOG --title "$TITLE" --default-item "$CONSOLEFONT" --menu "$HELP" 0 0 0 $FONTS`
+	if [ $? == 0 ]; then
+		consolechars -f $CONSOLEFONT
+		D_OK=\\Z2
+	fi
 	DEFAULT=E
 }
 
@@ -1228,8 +1238,8 @@ Please select your preferred langauge.
 This process will ONLY set the LANG environment variable. Do
 not expect any changes till you finish and reboot."
 
-	DEFAULT=${LANG:-en_US}
-	LANG=$($DIALOG --title "Language Selection Menu" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 `show_languages`)
+	LANG=${LANG:-en_US}
+	LANG=$($DIALOG --title "Language Selection Menu" --default-item "$LANG" --menu "$HELP" 0 0 0 `show_languages`)
 	export LANG
 	E_OK=\\Z2
 	DEFAULT=J
@@ -1238,19 +1248,19 @@ not expect any changes till you finish and reboot."
 
 editor_menu()
 {
-	DEFAULT=${EDITOR:-vi}
-	EDITOR=`$DIALOG --title "Editor Selection Menu" --default-item "$DEFAULT" --item-help --cr-wrap \
+	EDITOR=${EDITOR:-vi}
+	EDITOR=`$DIALOG --title "Editor Selection Menu" --default-item "$EDITOR" --item-help --cr-wrap \
 			--menu "Not all of these editors are available right away. Some require that you compile them yourself (like emacs) or are only available on the target installation, and possibly emulated through another editor" 0 0 0 \
 			"e3"    "fully available" \
 			    "an emacs, vim, pico emulator" \
-			"emacs" "emulated on the ISO, not installed" \
+			"emacs" "emulated on the ISO by e3, not installed" \
 			    "Richard Stallmans editor" \
 			"joe"   "fully available" \
 			    "WS compatible editor" \
 			"nano"  "fully available" \
 			    "a pico clone" \
-			"vi"    "emulated on the live ISO, but also fully installed" \
-			    "good old vi" \
+			"vi"    "fully available" \
+			    "vim - good old vi" \
 			"zile"  "fully available" \
 			    "an emacs clone"`
 
@@ -1282,12 +1292,11 @@ timezone()
 	LOCALTIME=/usr/share/zoneinfo
 	TITLE="Time Zone Selection Menu"
 	HELP="Select timezone or directory"
-	ZONE=""
-	DEFAULT=${ZONE:-GMT}
+	ZONE=${ZONE:-GMT}
 
 	while true; do
 		ZONE=`$DIALOG --title "$TITLE"           \
-		              --default-item "$DEFAULT"  \
+		              --default-item "$ZONE"     \
 		              --menu                     \
 			      "$HELP"                    \
 			      0 0 0                      \
@@ -1301,9 +1310,9 @@ timezone()
 			TITLE="GMT or Local"
 			HELP="Does the hardware clock store time in GMT or local?"
 
-			DEFAULT=${CLOCK:-Local}
-			CLOCK=`$DIALOG --title "$TITLE"       \
-			           --default-item "$DEFAULT" \
+			CLOCK=${CLOCK:-Local}
+			CLOCK=`$DIALOG --title "$TITLE"      \
+			           --default-item "$CLOCK"   \
 			           --menu "$HELP"     \
 			           0 0 0              \
 			           "GMT" ""           \
