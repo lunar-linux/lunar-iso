@@ -62,3 +62,6 @@ wipe
 dmidecode
 ethtool
 foremost
+acl
+attr
+vim

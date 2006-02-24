@@ -42,9 +42,6 @@ iptables
 xinetd
 make
 gcc
-acl
-attr
-vim
 joe
 Time-HiRes
 TimeDate
@@ -52,3 +49,4 @@ lard
 links2
 irssi
 irqbalance
+lftp
