@@ -66,7 +66,6 @@ ln -s /tmp $ISO_TARGET/var/tmp
 ln -s /var/tmp $ISO_TARGET/var/lib/discover
 
 # e3 symlinks
-ln -s /usr/bin/e3vi $ISO_TARGET/usr/bin/vi
 ln -s /usr/bin/zile $ISO_TARGET/usr/bin/emacs
 
 mkdir -p $ISO_TARGET/var/lib/discover
