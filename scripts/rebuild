@@ -3,6 +3,8 @@
 echo "+ Starting rebuild of all modules"
 . /etc/lunar/config
 
+export LC_ALL=C
+
 # do the parallel thingy?
 if [ -n "$ISO_MAKES" ]; then
   sedit '/MAKES=/d' $ISO_TARGET/etc/lunar/local/optimizations
