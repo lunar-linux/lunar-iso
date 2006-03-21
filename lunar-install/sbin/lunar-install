@@ -820,6 +820,10 @@ means that your root or boot filesystem should be ext2."
 
 make_lilo_conf()
 {
+	if [ -e $TARGET/etc/lilo.conf ]; then
+		return
+	fi
+
 	DISC=$(echo $ROOT | sed 's/[0-9]*$//')
 	(
 		echo "# lba32"
@@ -839,6 +843,10 @@ make_lilo_conf()
 
 make_grub_conf()
 {
+	if [ -e $TARGET/boot/grub/menu.lst ] ; then
+		return
+	fi
+
 	mkdir -p $TARGET/boot/grub
 	(
 		echo "# uncomment the following 2 lines to enable serial console booting"
