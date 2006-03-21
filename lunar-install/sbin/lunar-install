@@ -661,7 +661,7 @@ raid_setup()
 								SPARE=$(echo "$SPARE,$NEW" | sed -e 's/^,//')
 							fi
 							block_devices use $NEW
-							if [ $(fdisk -l ${NEW/[0-9]*/} | sed 's/\*/ /' | grep "^$NEW" | awk '{print $5}') != "fd" ]; then
+							if [ "$(fdisk -l ${NEW/[0-9]*/} | sed 's/\*/ /' | grep "^$NEW" | awk '{print $5}')" != "fd" ]; then
 								msgbox "The partition type of this device is not 0xFD (Linux RAID Autodetect). You should correct this in the partition table with a partitioning tool, otherwise linux will not automatically enable this RAID array at boot."
 							fi
 						fi
