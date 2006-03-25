@@ -6,7 +6,6 @@ ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 echo "+ Starting compile of kernels"
 . /etc/lunar/config
 export VERBOSE=off
-optimize
 
 prepare()
 {

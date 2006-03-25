@@ -3,7 +3,6 @@
 . /etc/lunar/config
 
 export VERBOSE=off
-optimize
 
 RESULT=0
 

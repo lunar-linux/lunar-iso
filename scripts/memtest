@@ -2,7 +2,6 @@
 
 . /etc/lunar/config
 unset VERBOSE
-optimize
 
 BUILD_DIRECTORY=${ISO_SOURCE}/memtest
 mkdir -p ${ISO_SOURCE}/memtest

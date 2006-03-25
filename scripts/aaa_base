@@ -5,7 +5,6 @@ umount $ISO_TARGET/dev &> /dev/null
 
 . /etc/lunar/config
 unset VERBOSE
-optimize
 
 # backup core tools
 echo "+ backing up \"$ISO_LUNAR_MODULE-*-$ISO_BUILD.tar.bz2\""

@@ -13,7 +13,6 @@ fi
 
 export VERBOSE=off
 export BOOTLOADER=none
-optimize
 
 mkdir -p $ISO_TARGET/var/build
 

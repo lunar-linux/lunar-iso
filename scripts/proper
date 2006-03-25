@@ -13,7 +13,6 @@ umount $ISO_TARGET/dev &> /dev/null
 
 . /etc/lunar/config
 unset VERBOSE
-optimize
 
 echo "+ running ldconfig"
 chroot $ISO_TARGET ldconfig
