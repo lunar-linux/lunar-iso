@@ -1,0 +1,10 @@
+
+Welcome to Lunar Linux %VERSION% (%CODENAME%)!
+
+You are running the system from the lunar ISO - as a Live CD. Not
+all tools are available within this system, as it only contains
+the base tools. Limited networking tools are also available.
+
+The install target location is /mnt. You can mount it yourself
+there or chroot into it to perform maintenance and rescue.
+
