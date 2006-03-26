@@ -13,7 +13,7 @@ Download Lunar Linux and docs from 0dhttp://lunar-linux.org/07
 To continue press ENTER, or use the function keys to select other pages.
 
 F1 - this page
-F2 - booting when you need IDE or SCSI drivers
+F2 - booting when you need special drivers loaded
 F3 - safe mode booting
 F4 - memtest86+
 

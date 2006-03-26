@@ -5,7 +5,7 @@ Lunar-%VERSION%.iso, 0c%CODENAME% (%DATE%)07, kernel %KERNEL%
 09Lunar-Linux team <maintainer@lunar-linux.org>07
 All Rights Reserved.
 
-SAFE MODE
+Safe mode
 
 In order to boot with certain hardware and kernel features disabled,
 type 02safe07 to the boot prompt and press ENTER. This option
