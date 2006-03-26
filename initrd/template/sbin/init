@@ -49,6 +49,7 @@ input_module_parameters()
     $DIALOG --nocancel --inputbox "$HELP" 0 0
 }
 
+
 auto_load_modules()
 {
     MODULES=$(discover --data-path=linux/module/name --format="%s" --data-version=`uname -r` fixeddisk optical removabledisk tape)
@@ -220,8 +221,8 @@ skipinitrd()
 
 
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin
-export IFS="	
-"
+export IFS=$'\t\n'
+
 export DIALOGRC=/etc/dialogrc
 DIALOG="dialog
 --backtitle
@@ -245,8 +246,17 @@ is_26 && (
 # short timeout, we really need to be able to see debug info
 sleep 2
 
+# load modules when passed on the boot prompt
+IFS=$' \t\n'
+for module in $(cat /proc/cmdline); do
+	if grep -q "/${module}.ko:" /lib/modules/`uname -r`/modules.dep; then
+		modprobe $module
+	fi
+done
+IFS=$'\t\n'
+
 # fastboot or not?
-if cat /proc/cmdline | grep -q 'skipinitrd=1'; then
+if cat /proc/cmdline | grep -q 'skipinitrd'; then
     echo ""
     echo " /--------------  fast boot in process  -----------------\\"
     echo " |                                                       |"
