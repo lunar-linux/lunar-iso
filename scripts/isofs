@@ -44,12 +44,15 @@ echo "+ copying aaa_dev.tar.bz2"
 cp $ISO_SOURCE/aaa_dev/aaa_dev.tar.bz2 $ISO_TARGET/var/cache/lunar/
 echo "+ copying README"
 cp $ISO_SOURCE/template/README $ISO_TARGET
+echo "+ copying motd"
+cp $ISO_SOURCE/template/motd $ISO_TARGET/etc/
+cp $ISO_SOURCE/template/motd.target $ISO_TARGET/etc/
 
-for file in $ISO_TARGET/isolinux/{f{1,2,3,4}.txt,boot.cat,isolinux.{bin,cfg}} $ISO_TARGET/etc/motd $ISO_TARGET/etc/motd $ISO_TARGET/sbin/lunar-install $ISO_TARGET/README ; do
+for file in $ISO_TARGET/isolinux/{f{1,2,3,4}.txt,boot.cat,isolinux.{bin,cfg}} $ISO_TARGET/etc/motd $ISO_TARGET/etc/motd $ISO_TARGET/sbin/lunar-install $ISO_TARGET/README $ISO_TARGET/etc/motd $ISO_TARGET/etc/motd.target ; do
   sed -i -e "s:%VERSION%:${ISO_VERSION}:g" \
          -e "s:%CODENAME%:${ISO_CODENAME}:g" \
          -e "s:%DATE%:${ISO_DATE}:g" \
-         -e "s:%KERNEL%:${ISO_KVER}:g" \
+         -e "s:%KERNEL%:${ISO_PVER}:g" \
 	 -e "s:%CNAME%:${ISO_CNAME}:g" $file
 done
 
