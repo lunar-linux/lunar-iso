@@ -68,14 +68,10 @@ ln -s /var/tmp $ISO_TARGET/var/lib/discover
 ln -s /usr/bin/zile $ISO_TARGET/usr/bin/emacs
 
 mkdir -p $ISO_TARGET/var/lib/discover
-rm -f $ISO_TARGET/etc/rc*/*modutils
-rm -f $ISO_TARGET/etc/rc*/*bootmisc
-rm -f $ISO_TARGET/etc/rc*/*sysctl
-rm -f $ISO_TARGET/etc/rc*/*nfslock
-rm -f $ISO_TARGET/etc/rc*/*nfs
-rm -f $ISO_TARGET/etc/rc*/*xinetd
-rm -f $ISO_TARGET/etc/rc*/*serial
-rm -f $ISO_TARGET/etc/rc*/*portmap
+
+for INIT_D in modutils bootmisc sysctl nfslock nfs xinetd serial portmap sshd irqbalance network netmount lard ; do
+	rm -f $ISO_TARGET/etc/rc?.d/???$INIT_D
+done
 
 # this is a space killer:
 echo "+ stripping binaries"
