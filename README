@@ -54,17 +54,20 @@ unpack		extract the cache tar.bz2's
 etcf		copy the template files that are not provided by modules
 rebuild		rebuild all modules at least once
 aaa_base	create a tarball with required but untracked files
+aaa_dev		create static device nodes needed by iso and initrd
 proper		clear temporary files in the image and clean up some misc stuff
 memtest		create a memtest boot image
 kernels		compile a set of kernels for both the initrd and to be installed
-discover	create a static discover binary and required files
 initrd		compose the initrd from the template and miscfiles
-isolinux	generate the isolinux files and copy them to the target
 iso		create the final iso image
+test		run some (limited) tests after `make iso`
+dist		pack up the iso and calculate md5sums
 
-two misc. targets exist:
+misc. targets:
+tar		create a big tar of the current BUILD tree
 burn		burn the latest iso image
 blank		blank an entire cdrw
+clean		wipes it all away
 
 The Makefile itself contains no configurable items. Copy the template config
 in the conf/ directory to conf/config and adjust the values as needed for
