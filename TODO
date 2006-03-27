@@ -1,4 +1,5 @@
-* add edvanced options:
-	- extract && make oldconfig a full kernel source on target
-* add and incorporate irqbalance for SMP systems -> TEST
-* figure out why loading modules from the menu fails
+* netmount init.d script runlevel 3 on iso
+* man lfirsttime bugs?
+* devfs=nomount still added to lilo
+* timezone is fubar
+* fix motd on target
