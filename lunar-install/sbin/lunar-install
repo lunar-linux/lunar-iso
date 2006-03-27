@@ -71,7 +71,7 @@ chroot_run()
 	umount $TARGET/proc
 
 	# debug the problem in case there is one
-	if [ $RESULT == 1 ] ; then 
+	if [ $RESULT == 1 ] ; then
 	  (
 		echo ""
 		echo "ERROR: An error occurred while executing a command. The command was:"
@@ -405,7 +405,7 @@ show_keymaps()
 
 	for MAP in $MAP_FILES; do
 		echo $MAP
-		echo keymap                        
+		echo keymap
 	done
 }
 
@@ -427,7 +427,7 @@ keymap_menu()
 
 partition_discs()
 {
-	CFDISK="Curses based disk partition table manipulator"  
+	CFDISK="Curses based disk partition table manipulator"
 	FDISK="Partition table manipulator"
 	PARTED="Create, destroy, resize, and copy partitions"
 	HELP="Please create a boot and root partition."
@@ -447,7 +447,7 @@ partition_discs()
 			PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
 			        "cfdisk"  "$CFDISK"                          \
 			        "fdisk"   "$FDISK"                           \
-			        "parted"  "$PARTED"`                         
+			        "parted"  "$PARTED"`
 		;;
 	esac &&	
 	PROMPT="Are you certain that you want to run $PROG on $DISC? (This will erase any partition selection you might have already performed)" &&
@@ -467,10 +467,10 @@ partition_discs()
 check_partition()
 {
 	PROMPT="Check for errors?"
-	case $1 in  
+	case $1 in
 		ext2|ext3|swap)
 			if confirm "$PROMPT" "--defaultno"; then
-			    echo "-c";  
+			    echo "-c";
 			fi
 			;;
 		*)
@@ -743,7 +743,7 @@ menu_select_partitions()
 				continue 2
 			fi
 		done
-		FSYS=$(menu_get_filesystem) 
+		FSYS=$(menu_get_filesystem)
 		if [ -z "$FSYS" ]; then
 			continue
 		fi &&
@@ -1024,7 +1024,7 @@ transfer()
 			ln -sf share/info usr/info
 			mkdir -p etc/lunar/local/depends
 			ln -s . etc/rc.d
-			mkdir -p etc/init.d etc/rc{0,1,2,3,4,5,6,S}.d 
+			mkdir -p etc/init.d etc/rc{0,1,2,3,4,5,6,S}.d
 			mkdir -p var/log/lunar/{install,md5sum,compile}
 			mkdir -p var/{cache,empty,lib,lock,log,run,spool,state,tmp}
 			mkdir -p var/{cache,lib,log,spool,state}/lunar
@@ -1063,7 +1063,7 @@ transfer()
 			# unpack a kernel source and preconfigure ir
 			percent_msg "Extracting kernel sources..."
 			(
-				BUILD_DIRECTORY=$TARGET/usr/src 
+				BUILD_DIRECTORY=$TARGET/usr/src
 				MOONBASE=$TARGET/$MOONBASE
 				is_26 && run_details linux-2.6 || run_details linux-2.4
 				ln -s linux-$VERSION $TARGET/usr/src/linux
@@ -1099,6 +1099,7 @@ transfer()
 			cp /etc/init.d/lunar-install $TARGET/etc/init.d/
 			ln -sf /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
 			cp /README $TARGET/root/README
+			cp /etc/motd.target $TARGET/etc/motd
 
 			# save proxies
 			if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
@@ -1108,6 +1109,10 @@ transfer()
 				[ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\""
 				[ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\""
 			) > $TARGET/etc/profile.d/proxy.rc
+			fi
+
+			if [ -e etc/fstab ]; then
+				cp etc/fstab etc/fstab-
 			fi
 
 			echo -e "$FSTAB" >> etc/fstab
@@ -1131,7 +1136,7 @@ transfer()
 			chmod 0600 $TARGET/var/log/btmp
 	
 		# really we are done now ;^)
-		) | $DIALOG --title " Installing Lunar-Linux " --gauge "" 10 70 0 
+		) | $DIALOG --title " Installing Lunar-Linux " --gauge "" 10 70 0
 
 		cd /
 		
@@ -1162,7 +1167,7 @@ configure_proxy()
 	NO_PROMPT="Please enter all domains/ip addresses (comma-seperated) proxy should NOT be used for:\nExample: .mit.edu,mysite.com"
 	HPROXY=`inputbox "$HTTP_PROMPT"`           &&
 	FPROXY=`inputbox "$FTP_PROMPT" "$HPROXY"`  &&
-	NPROXY=`inputbox "$NO_PROMPT"` 
+	NPROXY=`inputbox "$NO_PROMPT"`
 }
 
 
@@ -1188,7 +1193,7 @@ confirm_proxy_settings()
 proxy_exit_message()
 {
 	msgbox \
-		"Your proxy configuration has been saved. 
+		"Your proxy configuration has been saved.
 
 Please note that these proxy settings will only be used
 by Lunar (wget) and possibly some other command-line utilities.
@@ -1250,7 +1255,7 @@ show_languages()
 lang_menu()
 {
 	TITLE="Language Selection Menu"
-	HELP="While lunar is entirely in English 
+	HELP="While lunar is entirely in English
 it is possible to change the languages of many other programs.
 Please select your preferred langauge.
 
@@ -1612,7 +1617,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 		export IFS=$'\t\n'
 	  )
 	}
-   
+
 	if [ "$GUIDE" == "off" ]; then
 		CHOICES="X I C D E J P W M S T O L K R U H V G A Z"
 		STEPHELP="Step $STEP of $STEPS:"
@@ -1635,9 +1640,9 @@ cd-rom tray and reboot. See you at the login prompt!"
 		15) DEFAULT=Z ; CHOICES="B Z"
 		esac
 	fi
-	COMMAND=`$DIALOG --title "Lunar-Linux install menu" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)` 
+	COMMAND=`$DIALOG --title "Lunar-Linux install menu" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)`
 
-	case $? in 
+	case $? in
 		3)
 			COMMAND=S
 			while true; do
@@ -1723,7 +1728,7 @@ main()
 	while true; do
 		install_menu
 	done
-}  
+}
 
 
 # start up the code
