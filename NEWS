@@ -1,3 +1,21 @@
+
+	*
+
+	- Allow the user to pass a module on the boot prompt so it gets loaded
+	  even if discover doesn't find it (e.g.: linux uhci-hcd)
+	- separate motd on the ISO
+	- upgraded isolinux to 3.11 - hopefully fixes some boot issues I've had
+	- upgraded kernels to 2.6.16. Added older grsec and -mm4 kernels
+	  precompiled only
+	- full vim on the rescue part
+	- new packages: foremost, irqbalance, lftp
+	- better kernel configs with smp, 4gb mem by default
+	- fix overwriting of grub/lilo confs
+	- a kernel source is now extracted and configured on the target so that
+	  packages which require kernel sources to be present in /usr/src/linux
+	  will compile OOTB (XOrg etc)
+
+
 20060206 1.6.0-i686-rc3 sofar
 	* bugfix/feature release
 
