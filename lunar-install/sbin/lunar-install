@@ -1003,11 +1003,11 @@ transfer()
 				msgbox "Problem creating swapfile. Installation will continue."
 			fi
 		fi
-		
+
 		# calculate the total so we can display progress
 		NUM=$(wc -l /.packages | awk '{print $1}')
 		# add the number of times we call percent_msg, subtract 2 for lilo/grub
-		(( NUM = NUM + 9 - 2 ))
+		(( NUM = NUM + 10 - 2 ))
 
 		cd $TARGET
 
@@ -1033,7 +1033,7 @@ transfer()
 			mkdir -p media/{cdrom0,cdrom1,floppy0,floppy1,mem0,mem1}
 			chmod 0700 root
 			chmod 1777 tmp var/tmp
-	
+
 			if [ -f /var/cache/lunar/aaa_base.tar.bz2 ]; then
 				percent_msg "Installing aaa_base: base directories and files"
 				tar xjf /var/cache/lunar/aaa_base.tar.bz2 2> /dev/null
@@ -1042,7 +1042,7 @@ transfer()
 				percent_msg "Installing aaa_dev: device nodes"
 				tar xjf /var/cache/lunar/aaa_dev.tar.bz2 2> /dev/null
 			fi
-			
+
 			for LINE in $(cat /.packages | grep -v -e '^lilo:' -e '^grub:') ; do
 				MOD=$(echo $LINE | cut -d: -f1)
 				VER=$(echo $LINE | cut -d: -f4)
@@ -1060,10 +1060,22 @@ transfer()
 				)
 			fi
 
+			# unpack a kernel source and preconfigure ir
+			percent_msg "Extracting kernel sources..."
+			(
+				BUILD_DIRECTORY=$TARGET/usr/src 
+				MOONBASE=$TARGET/$MOONBASE
+				is_26 && run_details linux-2.6 || run_details linux-2.4
+				ln -s linux-$VERSION $TARGET/usr/src/linux
+				default_pre_build
+				zcat /proc/config.gz > $TARGET/usr/src/linux/.config
+				chroot_run make -C /usr/src/linux oldconfig
+			)
+
 			# transfer sources
 			percent_msg "Copying sources"
 			cp /var/spool/lunar/* $TARGET/var/spool/lunar/
-	
+
 			# setup list of installed packages etc.
 			percent_msg "Updating administrative files"
 			echo "moonbase:%DATE%:installed:%DATE%:37M" >> $TARGET/var/state/lunar/packages
@@ -1071,24 +1083,23 @@ transfer()
 			cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
 			cp /var/state/lunar/depends.cache  $TARGET/var/state/lunar/
 			cp /var/state/lunar/module.index   $TARGET/var/state/lunar/
-	
+
 			# more moonbase related stuff
 			percent_msg "Updating moonbase plugins"
 			chroot_run lsh update_plugins
-	
+
 			# pass through some of the configuration at this point:
 			percent_msg "Finishing up installation"
 			[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
 			[ -z "$CONSOLEFONT" ] || echo "$CONSOLEFONT" > $TARGET/etc/consolefont
 			[ -z "$LANG" ] || echo -e "# you can add declarations for LC_ALL etc in here\n\nexport LANG=\"$LANG\"\n" > $TARGET/etc/LOCALE
 			[ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
-	
+
 			# post-first-boot message:
 			cp /etc/init.d/lunar-install $TARGET/etc/init.d/
 			ln -sf /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
-			cp /etc/motd $TARGET/etc/motd
 			cp /README $TARGET/root/README
-		
+
 			# save proxies
 			if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
 			(
@@ -1733,6 +1744,15 @@ $DIALOG --infobox "Lunar-Linux Installer %VERSION% - %CODENAME% starting... " 4 
 # turn off console blanking
 /usr/bin/setterm -blank 0
 cd /
+
+# load modules when passed on the boot prompt$
+IFS=$' \t\n'
+for module in $(cat /proc/cmdline); do
+	if grep -q "/${module}.ko:" /lib/modules/`uname -r`/modules.dep ; then
+		modprobe $module
+	fi
+done
+IFS=$'\t\n'
 
 # allow custom startup scripts to run instead of the installer
 if [ -x /run.sh ]; then
