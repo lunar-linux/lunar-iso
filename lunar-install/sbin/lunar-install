@@ -1051,26 +1051,24 @@ transfer()
 				transfer_package $MOD
 			done
 
-			if [ -f /var/lib/lunar/moonbase.tar.bz2 ] ; then
-				percent_msg "Installing moonbase"
-				(
-					cd $TARGET/var/lib/lunar
-					tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
-					tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
-				)
-			fi
+			percent_msg "Installing moonbase"
+			(
+				cd $TARGET/var/lib/lunar
+				tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
+				tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
+			)
 
 			# unpack a kernel source and preconfigure ir
 			percent_msg "Extracting kernel sources..."
 			(
 				BUILD_DIRECTORY=$TARGET/usr/src
 				MOONBASE=$TARGET/$MOONBASE
-				is_26 && run_details linux-2.6 || run_details linux-2.4
+				is_26 && run_details linux-2.6 > /dev/null || run_details linux-2.4
 				ln -s linux-$VERSION $TARGET/usr/src/linux
 				default_pre_build
 				zcat /proc/config.gz > $TARGET/usr/src/linux/.config
 				chroot_run make -C /usr/src/linux oldconfig
-			)
+			) > /dev/null
 
 			# transfer sources
 			percent_msg "Copying sources"
@@ -1127,7 +1125,7 @@ transfer()
 
 			# some more missing files:
 			cp /etc/lunar.release $TARGET/etc/
-			echo "GCCVER=3" > $TARGET/etc/lunar/local/config
+			echo "    LUNAR_MODULE=lunar" > $TARGET/etc/lunar/local/config
 			cp /etc/lunar/local/.config* $TARGET/etc/lunar/local/
 	
 			# initialize the new machine:
@@ -1296,13 +1294,14 @@ editor_menu()
 
 show_timezones()
 {
-	for ITEM in `ls $LOCALTIME/$1`; do
+	local ITEM
+	for ITEM in $(ls /usr/share/zoneinfo/$1 | grep -v zone.tab); do
 		if [ -n "$1" ]; then
 			echo "$1/$ITEM"
 		else
 			echo "$ITEM"
 		fi
-		if [ -d $LOCALTIME/$1/$ITEM ]; then
+		if [ -d $ITEM ]; then
 			echo "Directory"
 		else
 			echo "Timezone"
@@ -1313,23 +1312,22 @@ show_timezones()
 
 timezone()
 {
-	LOCALTIME=/usr/share/zoneinfo
 	TITLE="Time Zone Selection Menu"
 	HELP="Select timezone or directory"
-	ZONE=${ZONE:-GMT}
 
 	while true; do
-		ZONE=`$DIALOG --title "$TITLE"           \
-		              --default-item "$ZONE"     \
-		              --menu                     \
-			      "$HELP"                    \
-			      0 0 0                      \
+		ZONE=`$DIALOG --title "$TITLE"              \
+		              --default-item "${ZONE:-GMT}" \
+		              --menu                        \
+			      "$HELP"                       \
+			      0 0 0                         \
 			      $(show_timezones $ZONE)`
 
 		if [ $? != 0 ]; then
 			break
-		elif [ -f "$LOCALTIME/$ZONE" ]; then
-			ln -sf $LOCALTIME/$ZONE $TARGET/etc/localtime
+		elif [ -f "/usr/share/zoneinfo/$ZONE" ]; then
+			rm -f $TARGET/etc/localtime
+			ln -sf /usr/share/zoneinfo/$ZONE $TARGET/etc/localtime
 
 			TITLE="GMT or Local"
 			HELP="Does the hardware clock store time in GMT or local?"
