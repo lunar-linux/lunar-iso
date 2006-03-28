@@ -1,5 +1,1 @@
-* netmount init.d script runlevel 3 on iso
 * man lfirsttime bugs?
-* devfs=nomount still added to lilo
-* timezone is fubar
-* fix motd on target
