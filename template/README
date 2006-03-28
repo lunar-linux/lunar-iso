@@ -149,22 +149,6 @@ and a few more settings can be set.
 
 4. After installation
 
-* Kernel headers/includes
-
-After installation, you should perform the usual routines to make your
-system healthy and ready for your tasks. One of the most vital items to
-do to be able to compile happily is install a kernel source and kernel
-headers. This may sound contradictionary now, since we already have
-precompiled kernels, but it pays off later as many packages require
-either /usr/include/linux and /usr/include/asm to be present or even
-sometimes /usr/src/linux. That counts especially for packages that
-install kernel modules.
-
-You should pick your favorite kernel module and `lin` it. Make sure
-that the kernel headers in /usr/include reflect your kernel, so if
-you switch to a different kernel (even from or to grsecurity or any
-other kernel patchset) they reflect the current kernel features.
-
 * Update lunar toolset
 
 Update your core tools (lunar or theedge) before you update your
