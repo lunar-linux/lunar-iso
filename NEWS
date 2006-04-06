@@ -1,5 +1,5 @@
-
-	*
+20060405 1.6.0-i686 sofar
+	* Feature release - First 2.6-based -final release
 
 	- Allow the user to pass a module on the boot prompt so it gets loaded
 	  even if discover doesn't find it (e.g.: linux uhci-hcd)
