@@ -1,3 +1,574 @@
+2006-03-24 05:41  sofar
+
+	* lunar-iso/trunk/scripts/aaa_base,
+	  lunar-iso/trunk/template/etc/lunar/local/optimizations,
+	  lunar-iso/trunk/template/etc/lunar/local/optimizations.CCACHE,
+	  lunar-iso/trunk/template/etc/lunar/local/optimizations.GCC_3_4,
+	  lunar-iso/trunk/template/etc/lunar/local/optimizations.GNU_LD,
+	  lunar-iso/trunk/template/etc/lunar/local/optimizations.GNU_MAKE,
+	  lunar-iso/trunk/template/etc/lunar/local/optimizations.WRAPPERS:
+	  Move to the new optimization wrappers - add sane defaults - remove
+	  the old ones.
+
+2006-03-24 05:40  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base,
+	  lunar-iso/trunk/kernels/conf/2.6/build: renamed -smp to -server
+	  and added a proper 2.6.16 .config (many changed options)
+
+2006-03-21 04:47  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: safeguard
+	  against empty string
+
+2006-03-21 04:45  sofar
+
+	* lunar-iso/trunk/scripts/rebuild: Build all packages with LC_ALL=C
+
+2006-03-21 04:45  sofar
+
+	* lunar-iso/trunk/scripts/kernels: Force kernels to be compiled
+	  against UTC timezone
+
+2006-03-21 04:42  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Never overwrite
+	  grub or lilo configurations.
+
+2006-03-20 04:12  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: Yet more two required
+	  options in order to compile without problems.
+
+2006-03-19 20:12  sofar
+
+	* lunar-iso/trunk/template/etc/group,
+	  lunar-iso/trunk/template/etc/passwd: adding vcsa - console owner
+	  uid/gid
+
+2006-03-18 23:18  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: Adding required support
+	  needed for synaptics pads et al - this will benefit the
+	  desktop/laptop users.
+
+2006-02-24 21:42  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: - Reserve more
+	  space in msgboxes - don't use $DEFAULT in subfolders (it's a
+	  global already) - rewrite raid disc assign code a bit smarter -
+	  warn partition type != 0xfd for sw raid partitions
+
+2006-02-24 20:21  sofar
+
+	* lunar-iso/trunk/initrd/initrd.list-2.6: Adjust to udev changes.
+
+2006-02-24 17:14  sofar
+
+	* lunar-iso/trunk/scripts/proper: remove e3 symlink to vi since we
+	  have a full vim now
+
+2006-02-24 17:13  sofar
+
+	* lunar-iso/trunk/scripts/aaa_base: and also administrate it in the
+	  list of packages
+
+2006-02-24 17:13  sofar
+
+	* lunar-iso/trunk/scripts/rebuild: manually install kernel-headers
+
+2006-02-24 17:12  sofar
+
+	* lunar-iso/trunk/scripts/test: Pass version so this actually passes
+	  when booted under a different kernel.
+
+2006-02-24 17:09  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base,
+	  lunar-iso/trunk/kernels/conf/2.6/build,
+	  lunar-iso/trunk/kernels/conf/2.6/server: Updated configs, removed
+	  grsec from being built automatically, fix server config to disable
+	  1000hz and 250hz.
+
+2006-02-24 17:05  sofar
+
+	* lunar-iso/trunk/conf/base.list,
+	  lunar-iso/trunk/conf/base.list-2.6,
+	  lunar-iso/trunk/conf/extended.list: Add vim to the ISO instead of
+	  emulated, add lftp to the installaed target system, remove hotplug
+	  for 2.6.
+
+2006-02-24 17:04  sofar
+
+	* lunar-iso/trunk/template/etc/motd: Updated motd to contain more
+	  pointers.
+
+2006-02-17 18:37  sofar
+
+	* lunar-iso/trunk/template/etc/fstab: remove devfs fstab line -
+	  obsoleted by new muont script
+
+2006-02-17 15:24  sofar
+
+	* lunar-iso/trunk/scripts/rebuild, lunar-iso/trunk/scripts/unpack:
+	  We don't need to compile the kernel first - we can just put the
+	  kernel-headers-package in place.
+
+2006-02-16 23:45  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Cosmetics:
+	  reworked TZ menu to normal flow, updated eval statement and
+	  reduced $(choices) a bit.
+
+2006-02-15 21:41  sofar
+
+	* lunar-iso/trunk/conf/extended.list: SeLinux userspace tools
+	  require Python. The loser who thought that that was a good idea
+	  will get a free python+swig install shoved up^H^H^H^ No Python on
+	  the ISO, I'm not adding 60MB to it just for some userspace tools.
+
+2006-02-14 23:19  sofar
+
+	* lunar-iso/trunk/conf/extended.list: Adding SELINUX userland tools
+	  to the list of available packages after installation. Adds about
+	  2mb to the iso.
+
+2006-02-08 20:55  sofar
+
+	* lunar-iso/trunk/conf/base.list,
+	  lunar-iso/trunk/conf/extended.list: cracklib is needed for passwd,
+	  thus it needs to be extacted on the iso.
+
+2006-02-08 20:14  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: * probe for new
+	  block devices after module insertion * only probe when
+	  /proc/partitions has actually changed
+
+2006-02-08 19:49  sofar
+
+	* lunar-iso/trunk/TODO: bugfix needed - loading modules fails in the
+	  lunar-install menu.
+
+2006-02-08 18:29  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Optimize and Fix
+	  - properly recognize all disc/part combinations based on the
+	  notice that all partitions reside on a disc that also will be
+	  listed in /proc/partitions.
+
+2006-02-08 15:50  sofar
+
+	* lunar-iso/trunk/initrd/template/sbin/init: New year.
+
+2006-02-07 23:31  sofar
+
+	* lunar-iso/trunk/conf/base.list: typo
+
+2006-02-07 23:30  sofar
+
+	* lunar-iso/trunk/NEWS: News!
+
+2006-02-07 21:07  sofar
+
+	* lunar-iso/trunk/conf/base.list: Adding "foremost" to the list of
+	  core modules - this is a kickass data recovery tool that really
+	  should be present on any recovery iso.
+
+2006-02-07 20:29  sofar
+
+	* lunar-iso/trunk/isolinux/isolinux.cfg: Isolinux doesn't allow #
+	  without a space after it as a comment.
+
+2006-02-07 19:04  sofar
+
+	* lunar-iso/trunk/isolinux/isolinux.cfg: More hints to enable serial
+	  console usage.
+
+2006-02-07 19:03  sofar
+
+	* lunar-iso/trunk/scripts/isofs: Set hostname to lunar, and we don't
+	  need the symlink to /etc/init.d/lunar-install for rl2 on the iso.
+
+2006-02-07 19:02  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Add hints toward
+	  serial console for grub in here - commented by default.
+
+2006-02-07 19:02  sofar
+
+	* lunar-iso/trunk/lunar-install/etc/inittab: this works pretty good
+	  - boot into level 2 by default for the installer, afterwards init
+	  3 for a console. Fully enables vc's on vc2/3+ when running the
+	  installer too - no more castrated shells ;^).
+
+2006-02-07 17:15  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: After fsck - we
+	  need to regenerate the device list alltogether.
+
+2006-02-07 16:22  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Major revision:
+	  * fixes to grub code (again) * delete vc/X code - replaced with a
+	  decent inittab * speed up disk/part detection code * streamline
+	  some gui output/menus
+
+2006-02-07 16:10  sofar
+
+	* lunar-iso/trunk/lunar-install/init.d/lunar-install: No longer
+	  needed - we start the installer now from inittab.
+
+2006-02-06 21:16  sofar
+
+	* lunar-iso/trunk/initrd/template/sbin/init: Remvoe spurious mtab
+	  warnings after the iso booted.
+
+2006-02-06 18:43  sofar
+
+	* lunar-iso/trunk/scripts/test: lsmod always fails.
+
+2006-02-06 18:40  sofar
+
+	* lunar-iso/trunk/initrd: added ignore list
+
+2006-02-06 18:38  sofar
+
+	* lunar-iso/trunk/kernels: Added svn ignore.
+
+2006-02-06 18:34  sofar
+
+	* lunar-iso/trunk/scripts/aaa_base: Clean this up before making the
+	  aaa_base tarball
+
+2006-02-06 18:33  sofar
+
+	* lunar-iso/trunk/scripts/proper: Only wipe the startup links.
+
+2006-02-06 18:30  sofar
+
+	* lunar-iso/trunk/template/etc/lunar/local/depends/irqbalance: We
+	  want this.
+
+2006-02-06 16:15  sofar
+
+	* lunar-iso/trunk/scripts/etc: Not needed.
+
+2006-02-06 16:13  sofar
+
+	* lunar-iso/trunk/template/etc/lunar.release: sigh
+
+2006-02-06 16:12  sofar
+
+	* lunar-iso/trunk/template/etc/lunar.release: adding this so the
+	  version number can be replaced later again easily
+
+2006-02-06 01:43  sofar
+
+	* lunar-iso/trunk/TODO: Got a lot done recently.
+
+2006-02-06 01:04  sofar
+
+	* lunar-iso/trunk/scripts/proper: Zero root password on the iso, and
+	  allow discover to run without RO error stuff.
+
+2006-02-06 00:54  sofar
+
+	* lunar-iso/trunk/template/etc/securetty: Sync with template.
+
+2006-02-03 20:59  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/build: Add some desc. text.
+
+2006-02-03 20:56  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/build: Add selinux to the most
+	  useful kernels
+
+2006-02-03 20:54  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/selinux: Adding selinux options.
+
+2006-02-03 20:11  sofar
+
+	* lunar-iso/trunk/scripts/kernels: add some explicit exits,
+	  reformats
+
+2006-02-03 20:09  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: now that we have irqbalance
+	  we can disable the kernel code for this. CFQ is also a good
+	  scheduler and we dont need 4 of em
+
+2006-02-03 20:08  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/build: reformatted
+
+2006-02-03 05:31  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: Yet again serial console
+	  was disabled - they tuck these things far too far away in the
+	  configs.
+
+2006-02-02 21:30  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Major rewrite of
+	  the blockdevice handling code: * keep a list of all devices and
+	  types * basic class functions to add, use, free devices * started
+	  md devices are 'freed' * used partitions by a md device are
+	  'occupied' * devices removed from selection or raid array are
+	  freed for use too
+
+2006-02-01 22:36  sofar
+
+	* lunar-iso/trunk/isolinux/f1.txt, lunar-iso/trunk/isolinux/f2.txt,
+	  lunar-iso/trunk/isolinux/f3.txt, lunar-iso/trunk/isolinux/f4.txt:
+	  2005->2006
+
+2006-02-01 18:05  sofar
+
+	* lunar-iso/trunk/scripts/kernels: Move kernel build lines into
+	  config area.
+
+2006-02-01 17:51  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.4/build,
+	  lunar-iso/trunk/kernels/conf/2.6/build: Moving this part out of
+	  the scripts and into the conf area of the kernels.
+
+2006-02-01 17:37  sofar
+
+	* lunar-iso/trunk/conf/extended.list: Added irqbalance for
+	  performance IO on SMP systems.
+
+2006-02-01 16:53  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/highmem: Adding highmem (64gb)
+	  memory size config.
+
+2006-01-31 21:06  sofar
+
+	* lunar-iso/trunk/NEWS: Prelim update.
+
+2006-01-31 21:05  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Major additions
+	  to the installer code: * removed 'notify" call as it obscured
+	  stuff with 'clear' calls * added percent_msg call to simplify
+	  progress dialog, incorporated more install components into it *
+	  added software raid setup tool, which allows you to create and
+	  start (initialize) software raid. Tested with loopback devices
+	  =^).
+
+2006-01-30 16:37  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: * confirm dialog
+	  needed more space * adding an extra device node to the partition
+	  selection diagram now is lsited as the bottom item in the list -
+	  much more findable then the extra button.
+
+2006-01-29 18:49  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Add -q option
+	  for jfs call to make it format without asking.
+
+2006-01-27 19:59  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Wait if the
+	  kernel compile fails so the user can read some of the output
+	  first.
+
+2006-01-27 19:50  sofar
+
+	* lunar-iso/trunk/TODO: grsecurity kernels are 100%
+	  grsecurity-enabled.
+
+2006-01-27 19:50  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Don't use curses
+	  and wait 2 seconds in all cases. Also grub is dainbread and
+	  doesn't return an error status code in case an error happened. I
+	  despise grub. thank you.
+
+2006-01-27 15:36  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Bugfix:
+	  allthough the reiserfs manual says to specify -f twice, it doesn't
+	  work. NICE.
+
+2006-01-26 23:41  sofar
+
+	* lunar-iso/trunk/scripts/aaa_base: this is needed because aaa_base
+	  may be re-run after an iso was rolled - fixes mtab bug. (long
+	  outstanding one).
+
+2006-01-26 23:40  sofar
+
+	* lunar-iso/trunk/TODO: updates and concluding after rc2 release.
+
+2006-01-26 19:47  sofar
+
+	* lunar-iso/trunk/NEWS: Latest release!
+
+2006-01-25 22:36  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Explicitly skip
+	  all kernel modules that have missing sources - there's no use in
+	  trying to compile them for now anyway.
+
+2006-01-25 21:43  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: Enable PCI_MSI - sort of a
+	  pci-software memory mapped irq handling. Greatly increases
+	  performance for PCI devices.
+
+2006-01-25 06:28  sofar
+
+	* lunar-iso/trunk/Makefile: Make the md5sum files contain the
+	  filename for easy checking.
+
+2006-01-25 05:50  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: I kind of like this
+	  feature.
+
+2006-01-24 22:29  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: Adding megaraid and lsi
+	  stuff with their changed names, also made a few builtins now
+	  module, as they're unlikely cd-rom carrying busses.
+
+2006-01-24 22:28  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/grsec: recent changes to the
+	  grsec patchset require this
+
+2006-01-24 22:27  sofar
+
+	* lunar-iso/trunk/template/README: Make note of the recent change to
+	  copy the cache tarballs over.
+
+2006-01-24 22:24  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Copy the cache
+	  tarballs over to the installed system: eats up 120mb of hd space
+	  but gives you a nice backup copy of known-good tarballs making up
+	  your system.
+
+2006-01-24 19:08  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: More IFS tweaks
+	  to be sure, adjustments of confirmation. Textual change. Reiserfs
+	  force option added.
+
+2006-01-24 17:55  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Some minor IFS
+	  manipulation, cleaned up `kill` stderr.
+
+2006-01-24 17:52  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: small adjustment
+	  that doesn't fix the weird problem dialog is having (btw it dumps
+	  glibc errors if you pay attention).
+
+2006-01-24 17:50  sofar
+
+	* lunar-iso/trunk/initrd/initrd.list: libexpat update forces this
+
+2006-01-23 16:09  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/server: Needed to make it compile
+
+2006-01-22 23:17  sofar
+
+	* lunar-iso/trunk/scripts/kernels: Fix grsecurity kernels, also
+	  implementing "server" configs in 2 kernels
+
+2006-01-22 23:11  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/server: Adding a 'server' config
+	  - optimized for server operation and including ip_vs options as
+	  module. no lowlatency/preeempt either!
+
+2006-01-22 22:09  sofar
+
+	* lunar-iso/trunk/conf/base.list: More hw detection toold -
+	  dmidecode - reads smbios data.
+
+2006-01-17 18:47  sofar
+
+	* lunar-iso/trunk/conf/base.list: Another networking test tool -
+	  link checking and autonegotion debuggin for when your cable sucks
+	  ;^).
+
+2006-01-17 18:08  sofar
+
+	* lunar-iso/trunk/TODO: Lilo plugin code is broken!
+
+2006-01-17 17:56  sofar
+
+	* lunar-iso/trunk/TODO: Adding these two options - they're really
+	  handy for later and I might make them on by default.
+
+2006-01-13 18:18  sofar
+
+	* lunar-iso/trunk/TODO: update
+
+2006-01-13 18:12  sofar
+
+	* lunar-iso/trunk/TODO: updates.
+
+2006-01-06 22:50  sofar
+
+	* lunar-iso/trunk/TODO: spotted a little bug
+
+2006-01-06 22:37  sofar
+
+	* lunar-iso/trunk/TODO: I need to track some of this since I work
+	  across N boxes (where N is an increasingly large number).
+
+2006-01-06 01:30  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: dveatch is on a
+	  rampage!!! fix for broken kernel display choices.
+
+2006-01-06 01:25  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Fix for #55: sdb
+	  hdb etc. have minor device id == 16,32,48 etc... this also causes
+	  sdb to show up as partition - full fix.
+
+2006-01-05 16:04  sofar
+
+	* lunar-iso/trunk/initrd/template/sbin/init: add srX sgX dvd cdrom
+	  cdroms/cdromX as possible root device - scan more root devices to
+	  discover lunar iso cd.
+
+2006-01-05 15:54  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: enabling nforce eth driver
+	  from the kernel as module for future isos
+
+2006-01-05 15:46  sofar
+
+	* lunar-iso/trunk/NEWS: Added latest release
+
+2006-01-05 15:40  sofar
+
+	* lunar-iso/trunk/ChangeLog: Adding a real "ChangeLog" next to the
+	  NEWS file I've been maintaining.
+
+2006-01-05 15:39  sofar
+
+	* lunar-iso/trunk/ChangeLog: need to update this
+
+2006-01-05 00:37  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Bugfixes:
+	  properly kill vc terms, don't start them when running in a
+	  terminal, copy all .config* files over.
+
 2006-01-02 04:15  sofar
 
 	* lunar-iso/trunk/lunar-install/sbin/lunar-install: escape...
