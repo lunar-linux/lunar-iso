@@ -24,7 +24,7 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo ""
 
 for mod in $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list) ; do
-  yes '' | chroot $ISO_TARGET /sbin/lin --deps $mod
+  yes '' | NEVER_ASK=y chroot $ISO_TARGET /sbin/lin --deps $mod
 done
 
 umount $ISO_TARGET/proc &> /dev/null
