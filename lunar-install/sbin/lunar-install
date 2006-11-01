@@ -159,7 +159,7 @@ load_module()
 			modprobe $MODULE $PARAMETERS
 			sleep 1
 			if ! grep -qw $MODULE /proc/modules ; then
-				messagebox "The module failed to load!"
+				msgbox "The module failed to load!"
 			else
 				block_devices init
 			fi
