@@ -1,3 +1,11 @@
+20061110 1.6.1rc1 sofar
+       * update release - release candidate 1
+
+       - Enable EFI boot support
+       - remove -mm -prepatch -grsec kernel sources alltogether
+       - update all packages to moonbase-20061110: kernel 2.6.18.2
+
+
 20060405 1.6.0-i686 sofar
 	* Feature release - First 2.6-based -final release
 
