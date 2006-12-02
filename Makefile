@@ -6,17 +6,22 @@
 # all user configurable options are in conf/config
 #
 
+# need to make this defined during run-time
+ISO_SOURCE = $(shell bash -c "pwd -P")
+
+# define the kernel arch name
+ISO_KARCH=$(shell arch | grep -qw i.86 && echo i386 || arch)
+
 include conf/config
 
 ISO_KSUFFIX = $(shell if echo $(ISO_KVER) | grep -q "^2\.6\." ; then echo 2.6 ; else echo 2.4 ; fi ;)
 
-# need to make this defined during run-time
-ISO_SOURCE = $(shell bash -c "pwd -P")
-
 # define the location where the ISO will be generated
 ISO_TARGET = $(ISO_SOURCE)/BUILD
 
-export ISO_SOURCE ISO_TARGET ISO_VERSION ISO_CODENAME ISO_DATE ISO_CNAME ISO_KVER ISO_PVER ISO_GRSVER ISO_LUNAR_MODULE ISO_KSUFFIX ISO_MAKES ISO_REDUCE ISO_BUILD
+export ISO_SOURCE ISO_TARGET ISO_MAJOR ISO_MINOR ISO_VERSION ISO_CODENAME \
+       ISO_DATE ISO_CNAME ISO_KVER ISO_PVER ISO_GRSVER ISO_LUNAR_MODULE \
+       ISO_KSUFFIX ISO_MAKES ISO_REDUCE ISO_BUILD ISO_KARCH
 
 all: iso
 
@@ -102,7 +107,7 @@ clean:
 	rm -f kernels/safe kernels/safe.map
 
 dist: lunar-$(ISO_VERSION).iso
-	bzip2 < lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.bz2
+	bzip2 -k lunar-$(ISO_VERSION).iso
 	md5sum lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.md5
 	md5sum lunar-$(ISO_VERSION).iso.bz2 > lunar-$(ISO_VERSION).iso.bz2.md5
 

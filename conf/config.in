@@ -6,16 +6,18 @@
 # copy this file to 'config' and edit your settings as needed
 
 # the ISO FULL version number
-ISO_VERSION = NOVERSION
+ISO_MAJOR = 1.6.1
+ISO_MINOR = rc1
+ISO_VERSION = $(ISO_MAJOR)-$(ISO_MINOR)-$(ISO_KARCH)
 
 # the ISO codename (i.e. Gen. P. Fault)
-ISO_CODENAME = UNNAMED
+ISO_CODENAME = Moose Drool
 
 # the release/offical date tag - must be in the form of YYYYMMDD
-ISO_DATE = 20050201
+ISO_DATE = 20061130
 
 # the iso BUILD arch:
-ISO_BUILD = i686-pc-linux-gnu
+ISO_BUILD = $(ISO_KARCH)-pc-linux-gnu
 
 # this copncatenates the full name
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
@@ -29,14 +31,12 @@ ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
 ## for 2.6 kernels - read this:
 # the kernel version used on the ISO
-ISO_KVER = 2.6.14
+ISO_KVER = 2.6.18
 # the patch LEVEL used (from kernel.org)
-ISO_PVER = 2.6.14.4
-# and for grsecurity
-ISO_GRSVER = 2.1.7-2.6.14.3-200512111706
+ISO_PVER = 2.6.18.3
 
 # which lunar core tools do we want on the ISO
 ISO_LUNAR_MODULE = lunar
 
 # set this to number of makes for parallel builds or leave empty
-#ISO_MAKES = 2
+# ISO_MAKES = 2
