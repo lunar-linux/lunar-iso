@@ -5,10 +5,16 @@
 
 # copy this file to 'config' and edit your settings as needed
 
-# the ISO FULL version number
+# the ISO major version number
 ISO_MAJOR = 1.6.1
+# minor version (pre, rc, etc). leave empty for final release
 ISO_MINOR = rc1
-ISO_VERSION = $(ISO_MAJOR)-$(ISO_MINOR)-$(ISO_KARCH)
+
+ifeq (,$(ISO_MINOR))
+  ISO_VERSION = $(ISO_MAJOR)-$(ISO_ARCH)
+else
+  ISO_VERSION = $(ISO_MAJOR)-$(ISO_MINOR)-$(ISO_ARCH)
+endif
 
 # the ISO codename (i.e. Gen. P. Fault)
 ISO_CODENAME = Moose Drool
@@ -17,7 +23,7 @@ ISO_CODENAME = Moose Drool
 ISO_DATE = 20061130
 
 # the iso BUILD arch:
-ISO_BUILD = $(ISO_KARCH)-pc-linux-gnu
+ISO_BUILD = $(ISO_ARCH)-pc-linux-gnu
 
 # this copncatenates the full name
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))

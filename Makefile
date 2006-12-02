@@ -11,6 +11,8 @@ ISO_SOURCE = $(shell bash -c "pwd -P")
 
 # define the kernel arch name
 ISO_KARCH=$(shell arch | grep -qw i.86 && echo i386 || arch)
+# and the general arch (i386/i686)
+ISO_ARCH=$(shell arch)
 
 include conf/config
 
