@@ -1016,6 +1016,10 @@ transfer()
 			mkdir -p bin boot dev etc home lib mnt media
 			mkdir -p proc root sbin srv tmp usr var opt
 			is_26 && mkdir -p sys
+			if [ `arch` == "x86_64" ]; then
+				ln -sf /lib lib64
+				ln -sf /usr/lib usr/lib64
+			fi
 			mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
 			mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
 			mkdir -p usr/share/man/man{1,2,3,4,5,6,7,8}
