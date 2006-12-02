@@ -7,8 +7,8 @@ umount $ISO_TARGET/dev &> /dev/null
 unset VERBOSE
 
 # backup core tools
-echo "+ backing up \"$ISO_LUNAR_MODULE-*-$ISO_BUILD.tar.bz2\""
-cp $ISO_TARGET/var/cache/lunar/$ISO_LUNAR_MODULE-*-$ISO_BUILD.tar.bz2 aaa_base/$ISO_LUNAR_MODULE-$ISO_DATE-$ISO_BUILD.tar.bz2
+echo "+ backing up \"$ISO_LUNAR_MODULE-$(chroot $ISO_TARGET lsh installed_version $ISO_LUNAR_MODULE)-$ISO_BUILD.tar.bz2\""
+cp $ISO_TARGET/var/cache/lunar/$ISO_LUNAR_MODULE-$(chroot $ISO_TARGET lsh installed_version $ISO_LUNAR_MODULE)-$ISO_BUILD.tar.bz2 aaa_base/$ISO_LUNAR_MODULE-$ISO_DATE-$ISO_BUILD.tar.bz2
 
 echo "+ cleaning up (some) file structure items"
 rm -f $ISO_TARGET/etc/rc*/*nfslock
