@@ -3,7 +3,6 @@ yawl
 rp-pppoe
 perl
 openssh
-xdelta
 chkconfig
 installwatch
 check
@@ -29,7 +28,6 @@ bison
 autoconf
 automake
 libtool
-glib
 groff
 XML-Parser
 intltool
