@@ -49,8 +49,7 @@ findutils
 pciutils
 hdparm
 net-tools
-console-data
-console-tools
+kbd
 popt
 rsync
 zile
