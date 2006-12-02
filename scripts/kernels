@@ -98,10 +98,10 @@ build_kernel()
 		# we need them on the iso later too
 		tar cjf $ISO_SOURCE/kernels/$2-modules.tar.bz2 -C $ISO_SOURCE/kernels/BUILD lib/modules &&
 		tar xj -C $ISO_TARGET -f $ISO_SOURCE/kernels/$2-modules.tar.bz2 &&
-		cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/$2 &&
+		cp arch/$ISO_KARCH/boot/bzImage $ISO_SOURCE/kernels/$2 &&
 		cp System.map $ISO_SOURCE/kernels/$2.map || exit 1
 	fi
-	cp arch/i386/boot/bzImage $ISO_SOURCE/kernels/BUILD/boot/$VERSION$1 &&
+	cp arch/$ISO_KARCH/boot/bzImage $ISO_SOURCE/kernels/BUILD/boot/$VERSION$1 &&
 	cp System.map $ISO_SOURCE/kernels/BUILD/boot/System.map-$VERSION$1 &&
 	cp .config $ISO_SOURCE/kernels/BUILD/boot/config-$VERSION$1 &&
 	gzip $ISO_SOURCE/kernels/BUILD/boot/config-$VERSION$1 &&
