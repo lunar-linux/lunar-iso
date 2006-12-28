@@ -4,7 +4,6 @@
 cp -a $ISO_SOURCE/template/etc/* $ISO_TARGET/etc/
 chown -R root:root $ISO_TARGET/etc
 chmod 0400 $ISO_TARGET/etc/shadow
-chmod 0600 $ISO_TARGET/etc/lilo.conf
 rm -f $ISO_TARGET/etc/mtab
 ln -s /proc/mounts $ISO_TARGET/etc/mtab
 
