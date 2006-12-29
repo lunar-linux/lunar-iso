@@ -55,7 +55,11 @@ prepare_patch()
 
 prepare_options()
 {
-	cp $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/base $ISO_SOURCE/kernels/linux-$VERSION/.config 
+	if [ -f $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/base.$ISO_KARCH ]; then
+		cp $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/base.$ISO_KARCH $ISO_SOURCE/kernels/linux-$VERSION/.config 
+	else
+		cp $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/base $ISO_SOURCE/kernels/linux-$VERSION/.config 
+	fi
 	for OPT in $@; do
 		cat $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/$OPT | while read O; do 
 			OPT=$(echo $O|cut -d= -f1)
