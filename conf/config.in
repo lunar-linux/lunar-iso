@@ -7,8 +7,9 @@
 
 # the ISO major version number
 ISO_MAJOR = 1.6.1
+
 # minor version (pre, rc, etc). leave empty for final release
-ISO_MINOR = rc1
+ISO_MINOR = rc2
 
 ifeq (,$(ISO_MINOR))
   ISO_VERSION = $(ISO_MAJOR)-$(ISO_ARCH)
@@ -20,7 +21,7 @@ endif
 ISO_CODENAME = Moose Drool
 
 # the release/offical date tag - must be in the form of YYYYMMDD
-ISO_DATE = 20061130
+ISO_DATE = 20061228
 
 # the iso BUILD arch:
 ISO_BUILD = $(ISO_ARCH)-pc-linux-gnu
@@ -37,12 +38,15 @@ ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
 ## for 2.6 kernels - read this:
 # the kernel version used on the ISO
-ISO_KVER = 2.6.18
+ISO_KVER = 2.6.19
 # the patch LEVEL used (from kernel.org)
-ISO_PVER = 2.6.18.3
+ISO_PVER = 2.6.19.1
 
 # which lunar core tools do we want on the ISO
 ISO_LUNAR_MODULE = lunar
 
 # set this to number of makes for parallel builds or leave empty
 # ISO_MAKES = 2
+
+# set this to the base optimization (e.g. i386, i586, i686, x86-64)
+ISO_GCCARCH = i686

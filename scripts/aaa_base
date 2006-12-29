@@ -22,7 +22,7 @@ chroot $ISO_TARGET ccache -C
 chroot $ISO_TARGET ccache -M 256M
 rm -rf $ISO_TARGET/etc/ssh/ssh_host_*key $ISO_TARGET/etc/ssh/ssh_host_*key.pub
 rmdir /usr/lib/locale/*
-sed -i 's/^MAKES=.*/MAKES=/' $ISO_TARGET/etc/lunar/local/optimizations
+sed -i 's/^MAKES=.*/MAKES=/' $ISO_TARGET/etc/lunar/local/optimizations.GNU_MAKE
 # this might go wrong so force it's removal before creating it as empty file:
 rm -f $ISO_TARGET/etc/mtab
 > $ISO_TARGET/etc/mtab

@@ -1,15 +1,15 @@
 #!/bin/bash
 
-echo "+ Starting rebuild of all modules"
-. /etc/lunar/config
-
 export LC_ALL=C
 
+echo "CPU=$ISO_GCCARCH" >> $ISO_TARGET/etc/lunar/local/optimizations.GCC_3_4
 # do the parallel thingy?
 if [ -n "$ISO_MAKES" ]; then
-  sedit '/MAKES=/d' $ISO_TARGET/etc/lunar/local/optimizations
-  echo "MAKES=$ISO_MAKES" >> $ISO_TARGET/etc/lunar/local/optimizations
+  echo "MAKES=$ISO_MAKES" >> $ISO_TARGET/etc/lunar/local/optimizations.GNU_MAKE
 fi
+
+echo "+ Starting rebuild of all modules"
+. /etc/lunar/config
 
 export VERBOSE=off
 export BOOTLOADER=none
