@@ -137,7 +137,11 @@ rm -f $ISO_SOURCE/kernels/{{safe,linux}{,.map,-modules.tar.bz2}}
 rm -rf $ISO_SOURCE/kernels/TAR
 
 # the actual 'build' lines are now sourced from the conf directory:
-source $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/build
+if [ -f $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/build.$ISO_KARCH ]; then
+	source $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/build.$ISO_KARCH
+else
+	source $ISO_SOURCE/kernels/conf/${ISO_KSUFFIX}/build
+fi
 
 mv $ISO_SOURCE/kernels/.kernels-tmp $ISO_SOURCE/kernels/.kernels
 mv $ISO_SOURCE/kernels/.initrd_kernels-tmp $ISO_SOURCE/kernels/.initrd_kernels
