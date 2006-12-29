@@ -7,6 +7,6 @@
 #  $5 - nonempty for initrd's "linux" and "safe" kernel choices
 #
 
-build "" "x86_64 smp mem" "" "Normal kernel (SMP, 4GB memory max) (RECOMMENDED)" "linux"
-build "-safe" "x86_64 nosmp lowmem safe" "" "Very safe non-optimized minimal kernel (no ACPI, DMA, SMP, 1GB)" "safe"
-build "-server" "x86_64 server selinux smp highmem" "" "Server optimized (SELINUX, SMP, 64GB, no preempt)" ""
+build "" "smp mem" "" "Normal kernel (SMP, 4GB memory max) (RECOMMENDED)" "linux"
+build "-safe" "nosmp lowmem safe" "" "Very safe non-optimized minimal kernel (no ACPI, DMA, SMP, 1GB)" "safe"
+build "-server" "server selinux smp highmem" "" "Server optimized (SELINUX, SMP, 64GB, no preempt)" ""
