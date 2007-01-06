@@ -66,6 +66,10 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          REBUILD FINISHED                            +"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 
+echo "Broken compiles:"
+(cd $ISO_TARGET/var/build && ls -1)
+echo ""
+
 umount $ISO_TARGET/proc
 
 touch $ISO_TARGET/.rebuild

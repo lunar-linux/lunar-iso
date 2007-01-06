@@ -1,0 +1,8 @@
+#!/bin/bash
+
+. /etc/lunar/config
+
+for mod in $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list conf/sources.list conf/sources.list-${ISO_KSUFFIX}) memtest86+ ; do
+  download_module $mod
+done
+

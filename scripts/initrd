@@ -119,8 +119,12 @@ ln -s /proc/mounts BUILD/etc/mtab
 # calculate the size of the initrd image
 SIZE=$(du -kcs BUILD | tail -1 | cut -f1)
 echo "+ estimated $SIZE"
-(( SIZE = SIZE + 1 ))
+# sometimes the size is way off (?) and needs manual adjustment
+# (( SIZE = SIZE + 1 ))
 echo "+ used size $SIZE"
+# and write it to the isolinux cfg
+sed "s/INITRDSIZE/$SIZE/g" $ISO_SOURCE/isolinux/isolinux.cfg.in > $ISO_SOURCE/isolinux/isolinux.cfg
+
 dd if=/dev/zero of=initrd.raw bs=1024 count=$SIZE
 losetup /dev/loop/0 initrd.raw
 mkfs.ext2 -b 1024 -m 0 -i 1024 -N 1024 /dev/loop/0
