@@ -45,6 +45,9 @@ esac
 
 chroot $ISO_TARGET lin kernel-headers-${ISO_KSUFFIX}
 
+# install core tools manually, since we can't download
+
+
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          STARTING COMPILE PHASE OF ALL MODULES       +"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"

@@ -65,15 +65,15 @@ $(ISO_TARGET)/.rebuild:
 	@echo "Starting rebuild process"
 	@scripts/rebuild
 
-etc: moonbase unpack $(ISO_TARGET)/.etcf
+etc: toolset unpack $(ISO_TARGET)/.etcf
 $(ISO_TARGET)/.etcf:
 	@echo "Copying miscfiles"
 	@scripts/etc
 
-moonbase: $(ISO_SOURCE)/template/moonbase.tar.bz2
-$(ISO_SOURCE)/template/moonbase.tar.bz2:
+toolset: $(ISO_SOURCE)/template/moonbase.tar.bz2 $(ISO_SOURCE)/template/$(ISO_LUNAR_MODULE).tar.bz2
+$(ISO_SOURCE)/template/moonbase.tar.bz2 $(ISO_SOURCE)/template/$(ISO_LUNAR_MODULE).tar.bz2:
 	@echo "Getting a proper moonbase"
-	@scripts/moonbase
+	@scripts/toolset
 
 unpack: cachefill dirs $(ISO_TARGET)/.unpack
 $(ISO_TARGET)/.unpack:
