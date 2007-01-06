@@ -1,8 +1,12 @@
-etc/udev/rules.d/05-firmware-085.rules
+etc/udev/rules.d/05-udev-early.rules
+etc/udev/rules.d/75-persistent-net-generator.rules
+etc/udev/rules.d/95-udev-late.rules
 etc/udev/rules.d/50-udev.rules
-etc/udev/scripts.d/ide-devfs.sh
+etc/udev/rules.d/60-cdrom_id.rules
+etc/udev/rules.d/60-persistent-storage.rules
+etc/udev/rules.d/60-persistent-input.rules
+etc/udev/rules.d/75-cd-aliases-generator.rules
 etc/udev/scripts.d/raid-devfs.sh
-etc/udev/scripts.d/scsi-devfs.sh
 etc/udev/udev.conf
 lib/module-init-tools/bin/lsmod     sbin/
 lib/module-init-tools/sbin/depmod   sbin/
@@ -11,7 +15,5 @@ lib/module-init-tools/sbin/modprobe sbin/
 lib/module-init-tools/sbin/rmmod    sbin/
 sbin/udevcontrol
 sbin/udevd
-sbin/udevsend
-sbin/udevstart
 usr/bin/udevinfo
 usr/bin/udevtest
