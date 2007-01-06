@@ -3,220 +3,219 @@
 #
 # Parts (C) K. Sallee 2002
 # Parts (C) K. Kongar 2002,2003
-# Parts (C) Lunar-Linux 2002-2006
+# Parts (C) Lunar-Linux 2002-2007
 #
 # This document is licensed under the GPL
 #
 
-is_26() {
-    case `uname -r` in
-        2.6*) return 0 ;;
-           *) return 1 ;;
-    esac
+is_26()
+{
+	case `uname -r` in
+		2.6*) return 0 ;;
+		   *) return 1 ;;
+	esac
 }
 
 
 shell()
 {
-    echo "Press CTRL-D or type exit to return"
-    sh
+	echo "Press CTRL-D or type exit to return"
+	sh
 }
 
 
 show_modules()
 {
-    if [ "$(pwd)" != "/lib/modules" ]; then
-        echo ".."
-        echo "Directory"
-    fi
-    for ITEM in *; do
-        case $ITEM in
-	    modules.*) continue ;;
-	esac
-	echo "$ITEM"
-        if [ -d "$ITEM" ]; then
-	    echo "Directory"
-	else
-            echo "Module"
-        fi
-    done
+	if [ "$(pwd)" != "/lib/modules/`uname -r`" ]; then
+		echo ".."
+		echo "Directory"
+	fi
+	for ITEM in *; do
+		case $ITEM in
+			modules.*) continue ;;
+		esac
+		echo "$ITEM"
+		if [ -d "$ITEM" ]; then
+			echo "Directory"
+		else
+			echo "Module"
+		fi
+	done
 }
 
 
 input_module_parameters()
 {
-    HELP="Optionally, enter module parameters"
-    $DIALOG --nocancel --inputbox "$HELP" 0 0
+	HELP="Optionally, enter module parameters"
+	$DIALOG --nocancel --inputbox "$HELP" 0 0
 }
 
 
 auto_load_modules()
 {
-    MODULES=$(discover --data-path=linux/module/name --format="%s" --data-version=`uname -r` fixeddisk optical removabledisk tape)
+	MODULES=$(discover --data-path=linux/module/name --format="%s" --data-version=`uname -r` fixeddisk optical removabledisk tape)
 
-    if [ -z "$1" ]; then
-        MODULES=`$DIALOG --inputbox "The following modules will be attempted to load. Press enter to load them, or edit the list manually. To cancel select 'Cancel'." 10 60 "$MODULES"`
-    fi
-    for MODULE in $MODULES ; do
-      echo "Attempting to load \"$MODULE\":"
-      modprobe $MODULE
-      if [ -z "$1" ]; then
-        sleep 2
-      fi
-    done
-    if [ -z "$1" ]; then
-      echo "Finished loading modules!"
-      sleep 2
-    fi
+	if [ -z "$1" ]; then
+		MODULES=`$DIALOG --inputbox "The following modules will be attempted to load. Press enter to load them, or edit the list manually. To cancel select 'Cancel'." 10 60 "$MODULES"`
+	fi
+	for MODULE in $MODULES ; do
+		echo "Attempting to load \"$MODULE\":"
+		modprobe $MODULE
+		if [ -z "$1" ]; then
+			sleep 2
+		fi
+	done
+	if [ -z "$1" ]; then
+		echo "Finished loading modules!"
+		sleep 2
+	fi
 }
 
 
 load_modules()
 {
-  (
-    MODULES_ROOT="/lib/modules"
-    cd $MODULES_ROOT/$(uname -r)/kernel/drivers
-    TITLE="Module Menu"
-    HELP="Select a module to load or enter a subdirectory (pwd = $(pwd))"
-    CHOICE=""
+	MODULES_ROOT="/lib/modules/`uname -r`"
+	cd $MODULES_ROOT/kernel/drivers
+	TITLE="Module Menu"
+	HELP="Select a module to load or enter a subdirectory (pwd = $(pwd))"
+	CHOICE=""
 
-    while true; do
-        MODULES=`show_modules $(pwd)`
-	CHOICE=`$DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 $MODULES`
-        if [ $? != 0 ]; then
-	    return
-	fi
-        if [ -f "$CHOICE" ]; then
-            MODULE=`basename $CHOICE | sed -e "s/\.o$//" -e "s/\.ko$//"`
-            PARAMETERS=`input_module_parameters` &&
-            modprobe $MODULE $PARAMETERS
-            sleep 2
-	elif [ -d "$CHOICE" ]; then
-	    cd "$CHOICE"
-	fi
-    done
-  )
+	while true; do
+		MODULES=`show_modules $(pwd)`
+		CHOICE=`$DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 $MODULES`
+		if [ $? != 0 ]; then
+			return
+		fi
+		if [ -f "$CHOICE" ]; then
+			MODULE=`basename $CHOICE | sed -e "s/\.o$//" -e "s/\.ko$//"`
+			PARAMETERS=`input_module_parameters` &&
+			modprobe $MODULE $PARAMETERS
+			sleep 2
+		elif [ -d "$CHOICE" ]; then
+			cd "$CHOICE"
+		fi
+	done
 }
 
 
 scan_cdroms()
 {
-    if [ -z "$LUNAR_CD" ]; then
-        DEVICES=$(for DEV in cdrom dvd {{hd,sd,ub}{a,b,c,d,e,f,g,h},s{r,g},cdroms/cdrom}{,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} ; do if [ -e /dev/$DEV ]; then echo /dev/$DEV ; fi ; done)
+	if [ -z "$LUNAR_CD" ]; then
+		DEVICES=$(for DEV in cdrom dvd {{hd,sd,ub}{a,b,c,d,e,f,g,h},s{r,g},cdroms/cdrom}{,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15} ; do if [ -e /dev/$DEV ]; then echo /dev/$DEV ; fi ; done)
 	for DEVICE in $DEVICES; do
-            mount -n -r $DEVICE /mnt -t iso9660 2>/dev/null
-            if [ -e "/mnt/.lunar-cd" ]; then
-                umount -n /mnt 2>/dev/null
-                LUNAR_CD=$DEVICE
-                break
-            else
-                (( COUNT++ ))
-                umount -n /mnt 2>/dev/null
-            fi
-        done
-    fi
+			mount -n -r $DEVICE /mnt -t iso9660 2>/dev/null
+			if [ -e "/mnt/.lunar-cd" ]; then
+				umount -n /mnt 2>/dev/null
+				LUNAR_CD=$DEVICE
+				break
+			else
+				(( COUNT++ ))
+				umount -n /mnt 2>/dev/null
+			fi
+		done
+	fi
 }
 
 
 show_filesystems()
 {
-    for FILESYSTEM in `cat /proc/filesystems | grep -v nodev`; do
-        echo $FILESYSTEM
-        echo filesystem
-    done
+	for FILESYSTEM in `cat /proc/filesystems | grep -v nodev`; do
+		echo $FILESYSTEM
+		echo filesystem
+	done
 }
 
 
 select_root()
 {
-    FILESYSTEMS=`show_filesystems` &&
-    ROOT=`$DIALOG --inputbox "Please enter the root device." 10 60 $LUNAR_CD` &&
-    VFSTYPE=`$DIALOG --nocancel --menu "Please select a file system." 0 0 0 $FILESYSTEMS` &&
-    OPTIONS=`$DIALOG --nocancel --inputbox "Please enter mounting options" 10 60 "defaults,ro"`
+	FILESYSTEMS=`show_filesystems` &&
+	ROOT=`$DIALOG --inputbox "Please enter the root device." 10 60 $LUNAR_CD` &&
+	VFSTYPE=`$DIALOG --nocancel --menu "Please select a file system." 0 0 0 $FILESYSTEMS` &&
+	OPTIONS=`$DIALOG --nocancel --inputbox "Please enter mounting options" 10 60 "defaults,ro"`
 }
 
 
 main_menu()
 {
-    while
-        M_HELP="Select modules to load"
-        S_HELP="Shell out for a moment"
-        D_HELP="Continue boot process."
+	while
+		M_HELP="Select modules to load"
+		S_HELP="Shell out for a moment"
+		D_HELP="Continue boot process."
 
-        scan_cdroms
+		scan_cdroms
 
-        if [ -z "$LUNAR_CD" ] && [ -z "$ROOT" ]; then
-	    HELP="Load the additional PCI/IDE/SCSI kernel module(s) to be able to detect and read the Lunar-Linux CDROM."
-	    DEFAULT_ITEM="A"
+		if [ -z "$LUNAR_CD" ] && [ -z "$ROOT" ]; then
+		HELP="Load the additional PCI/IDE/SCSI kernel module(s) to be able to detect and read the Lunar-Linux CDROM."
+		DEFAULT_ITEM="A"
 	elif [ -z "$ROOT" ]; then
-	    HELP="Lunar-Linux Install/Rescue CDROM is detected on $LUNAR_CD"
-	    DEFAULT_ITEM="C"
+		HELP="Lunar-Linux Install/Rescue CDROM is detected on $LUNAR_CD"
+		DEFAULT_ITEM="C"
 	else
-	    HELP="You have selected to mount $ROOT as the root file system."
-	    DEFAULT_ITEM="C"
-	fi             
+		HELP="You have selected to mount $ROOT as the root file system."
+		DEFAULT_ITEM="C"
+	fi			 
 
-        COMMAND=`$DIALOG --title "Initrd Menu" --nocancel --item-help \
-	    --default-item "$DEFAULT_ITEM" --menu "$HELP" 0 0 0 \
-                      "A"  "Automatically load modules"  "$M_HELP"  \
-                      "M"  "Manually load modules"       "$M_HELP"  \
-                      "C"  "Continue booting"            "$D_HELP"  \
-                      "R"  "Choose root device"          "$R_HELP"  \
-                      "S"  "Shell"                       "$S_HELP"`
+		COMMAND=`$DIALOG --title "Initrd Menu" --nocancel --item-help \
+		--default-item "$DEFAULT_ITEM" --menu "$HELP" 0 0 0 \
+		  "A"  "Automatically load modules" "$M_HELP"  \
+		  "M"  "Manually load modules"      "$M_HELP"  \
+		  "C"  "Continue booting"           "$D_HELP"  \
+		  "R"  "Choose root device"         "$R_HELP"  \
+		  "S"  "Shell"                      "$S_HELP"`
 
-    do
-        case $COMMAND in
-	    A) auto_load_modules ;;
-            M) load_modules ;;
-            S) shell ;;
-            R) select_root ;;
-            C) break ;;
-        esac
-    done
+	do
+		case $COMMAND in
+			A) auto_load_modules ;;
+			M) ( load_modules ) ;;
+			S) shell ;;
+			R) select_root ;;
+			C) break ;;
+		esac
+	done
 
 }
 
 
 main()
 {
-  while true ; do
-    if [ -z "$ROOT" ] && [ -z "$LUNAR_CD" ]; then
-        $DIALOG --msgbox "Unable to boot without a root." 0 0
-	main_menu $*
-    fi
+	while true ; do
+		if [ -z "$ROOT" ] && [ -z "$LUNAR_CD" ]; then
+			$DIALOG --msgbox "Unable to boot without a root." 0 0
+		main_menu $*
+		fi
 
-    if [ -z "$ROOT" ]; then
-        ROOT=$LUNAR_CD
-    fi
-    if [ -z "$VFSTYPE" ]; then
-        VFSTYPE=iso9660
-    fi
-    if [ -z "$OPTIONS" ]; then
-        OPTIONS="defaults,ro"
-    fi
+		if [ -z "$ROOT" ]; then
+			ROOT=$LUNAR_CD
+		fi
+		if [ -z "$VFSTYPE" ]; then
+			VFSTYPE=iso9660
+		fi
+		if [ -z "$OPTIONS" ]; then
+			OPTIONS="defaults,ro"
+		fi
 
-    if mount -n -t $VFSTYPE -o $OPTIONS $ROOT /mnt && [ -x /mnt/sbin/init ]; then
-        is_26 && pkill udevd || pkill devfsd
-        sleep 1
-        umount -n /dev
-	is_26 && umount -n /sys
-	umount -n /proc
-        pivot_root /mnt /mnt
-        exec chroot / /sbin/init
-    else
-        $DIALOG --msgbox "Unable to locate /sbin/init on $ROOT." 0 0
-        umount -n /mnt
-        main_menu $*
-    fi
-  done
+		if mount -n -t $VFSTYPE -o $OPTIONS $ROOT /mnt && [ -x /mnt/sbin/init ]; then
+			is_26 && pkill udevd || pkill devfsd
+			sleep 1
+			umount -n /dev
+			is_26 && umount -n /sys
+			umount -n /proc
+			pivot_root /mnt /mnt
+			exec chroot / /sbin/init
+		else
+			$DIALOG --msgbox "Unable to locate /sbin/init on $ROOT." 0 0
+			umount -n /mnt
+			main_menu $*
+		fi
+	done
 }
 
 
 skipinitrd()
 {
-    auto_load_modules fast
-    scan_cdroms
-    main $*
+	auto_load_modules fast
+	scan_cdroms
+	main $*
 }
 
 
@@ -234,13 +233,12 @@ mount -n -t proc proc /proc
 KERNEL=`uname -r`
 
 is_26 && (
-    mount -n -t sysfs sysfs /sys
-    mount -n -t ramfs none /dev
-    echo /sbin/udevsend > /proc/sys/kernel/hotplug
-    /sbin/udevstart
+	mount -n -t sysfs sysfs /sys
+	mount -n -t ramfs none /dev
+	/sbin/udevstart
 ) || (
-    mount -n -t devfs devfs /dev
-    devfsd /dev &
+	mount -n -t devfs devfs /dev
+	devfsd /dev &
 )
 
 # short timeout, we really need to be able to see debug info
@@ -257,17 +255,17 @@ IFS=$'\t\n'
 
 # fastboot or not?
 if cat /proc/cmdline | grep -q 'skipinitrd'; then
-    echo ""
-    echo " /--------------  fast boot in process  -----------------\\"
-    echo " |                                                       |"
-    echo " |  The initrd menu is being skipped. If something goes  |"
-    echo " |  wrong in this process, reboot with the ISO and use   |"
-    echo " |  the 'linux' or 'safe' boot options instead.          |"
-    echo " |                                                       |"
-    echo " \\-------------------------------------------------------/"
-    echo ""
-    skipinitrd $*
+	echo ""
+	echo " /--------------  fast boot in process  -----------------\\"
+	echo " |                                                       |"
+	echo " |  The initrd menu is being skipped. If something goes  |"
+	echo " |  wrong in this process, reboot with the ISO and use   |"
+	echo " |  the 'linux' or 'safe' boot options instead.          |"
+	echo " |                                                       |"
+	echo " \\-------------------------------------------------------/"
+	echo ""
+	skipinitrd $*
 else
-    main_menu $*
-    main $*
+	main_menu $*
+	main $*
 fi
