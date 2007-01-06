@@ -95,6 +95,9 @@ $(ISO_TARGET)/.init:
 	@echo "Creating BUILD root"
 	@scripts/init
 
+prepare:
+	@echo "preparing sources and packages"
+	@scripts/prepare
 
 clean:
 	umount BUILD/dev &> /dev/null || true
