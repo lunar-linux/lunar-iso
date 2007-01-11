@@ -112,6 +112,7 @@ clean:
 	rm -f kernels/safe kernels/safe.map
 
 dist: lunar-$(ISO_VERSION).iso
+	rm -f lunar-$(ISO_VERSION).iso.{bz2,md5,bz2.md5}
 	bzip2 -k lunar-$(ISO_VERSION).iso
 	md5sum lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.md5
 	md5sum lunar-$(ISO_VERSION).iso.bz2 > lunar-$(ISO_VERSION).iso.bz2.md5
