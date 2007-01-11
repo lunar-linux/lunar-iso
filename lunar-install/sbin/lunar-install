@@ -1072,6 +1072,7 @@ transfer()
 				zcat /proc/config.gz > $TARGET/usr/src/linux-$VERSION/.config
 				chroot_run make -C /usr/src/linux oldconfig
 				chroot_run make -C /usr/src/linux prepare
+				chroot_run make -C /usr/src/linux _modinst_
 			) > /dev/null
 
 			# transfer sources
