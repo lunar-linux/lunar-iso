@@ -32,7 +32,7 @@ for mod in $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list
 done
 
 # add core tools to the list:
-echo "$ISO_LUNAR_MODULE:$(lsh module_version ${ISO_LUNAR_MODULE}):installed:$ISO_DATE:" >> $ISO_SOURCE/aaa_base/packages
+echo "$ISO_LUNAR_MODULE:$ISO_DATE:installed:$(lsh module_version ${ISO_LUNAR_MODULE}):" >> $ISO_SOURCE/aaa_base/packages
 
 # delete .svn dirs from templates
 find $ISO_TARGET -type d -name ".svn" -exec rm -rf {} \; &> /dev/null
