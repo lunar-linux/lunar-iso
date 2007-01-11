@@ -1068,9 +1068,8 @@ transfer()
 				BUILD_DIRECTORY=$TARGET/usr/src
 				MOONBASE=$TARGET/$MOONBASE
 				is_26 && run_details linux-2.6 > /dev/null || run_details linux-2.4
-				ln -s linux-$VERSION $TARGET/usr/src/linux
-				default_pre_build
-				zcat /proc/config.gz > $TARGET/usr/src/linux/.config
+				run_pre_build
+				zcat /proc/config.gz > $TARGET/usr/src/linux-$VERSION/.config
 				chroot_run make -C /usr/src/linux oldconfig
 				chroot_run make -C /usr/src/linux prepare
 			) > /dev/null
