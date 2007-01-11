@@ -2,11 +2,14 @@
 
 export LC_ALL=C
 
+# set gcc optimization
 echo "CPU=$ISO_GCCARCH" >> $ISO_TARGET/etc/lunar/local/optimizations.GCC_3_4
 # do the parallel thingy?
 if [ -n "$ISO_MAKES" ]; then
   echo "MAKES=$ISO_MAKES" >> $ISO_TARGET/etc/lunar/local/optimizations.GNU_MAKE
 fi
+# don't ask about this when vim comes around:
+echo "LUNAR_ALIAS_X=XOrg7" > $ISO_TARGET/etc/lunar/local/config
 
 echo "+ Starting rebuild of all modules"
 . /etc/lunar/config
