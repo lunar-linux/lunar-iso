@@ -1065,11 +1065,14 @@ transfer()
 			# unpack a kernel source and preconfigure ir
 			percent_msg "Extracting kernel sources..."
 			(
-				BUILD_DIRECTORY=$TARGET/usr/src
-				MOONBASE=$TARGET/$MOONBASE
-				is_26 && run_details linux-2.6 > /dev/null || run_details linux-2.4
-				run_pre_build
-				zcat /proc/config.gz > $TARGET/usr/src/linux-$VERSION/.config
+				if is_26 ; then
+					echo ". /etc/lunar/config ; run_details linux-2.6 ; run_pre_build"
+				else
+					echo ". /etc/lunar/config ; run_details linux-2.4 ; run_pre_build"
+				fi > $ISO_TARGET/tmp/unpack_kernel.sh
+				chroot_run /bin/bash /tmp/unpack_kernel.sh
+				rm -f $ISO_TARGET/tmp/unpack_kernel.sh
+				is_26 && zcat /proc/config.gz > $TARGET/usr/src/linux-$VERSION/.config
 				chroot_run make -C /usr/src/linux oldconfig
 				chroot_run make -C /usr/src/linux prepare
 				chroot_run make -C /usr/src/linux _modinst_
