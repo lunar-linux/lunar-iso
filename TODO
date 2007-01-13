@@ -1,2 +1,2 @@
 * man lfirsttime bugs?
-* make oldconfig fails
+* make lilo/grub bootloaders optionally show up instead of always.
