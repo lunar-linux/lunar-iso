@@ -23,6 +23,12 @@ is_26()
 }
 
 
+pkg_avail()
+{
+	grep -q "^$1:" /.packages
+}
+
+
 msgbox()
 {
 	LINES=$(( ${#1} / 55 + 7 ))
@@ -1447,8 +1453,8 @@ install_kernels()
 install_bootloader() {
 	while true ; do
 		BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "L" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
-		"L" "lilo" "Install lilo as boot loader" \
-		"G" "grub" "Install grub as boot loader" \
+		$(if pkg_avail lilo ; then echo "L" ; echo "lilo" ; echo "Install lilo as boot loader"; fi) \
+		$(if pkg_avail grub ; then echo "G" ; echo "grub" ; echo "Install grub as boot loader"; fi) \
 		"N" "none" "Do not install a boot loader"`
 
 		if [ $? != 0 ] ; then
