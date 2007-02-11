@@ -1068,22 +1068,6 @@ transfer()
 				tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
 			)
 
-			# unpack a kernel source and preconfigure ir
-			percent_msg "Extracting kernel sources..."
-			(
-				if is_26 ; then
-					echo ". /etc/lunar/config ; run_details linux-2.6 ; run_pre_build"
-				else
-					echo ". /etc/lunar/config ; run_details linux-2.4 ; run_pre_build"
-				fi > $ISO_TARGET/tmp/unpack_kernel.sh
-				chroot_run /bin/bash /tmp/unpack_kernel.sh
-				rm -f $ISO_TARGET/tmp/unpack_kernel.sh
-				is_26 && zcat /proc/config.gz > $TARGET/usr/src/linux-$VERSION/.config
-				chroot_run make -C /usr/src/linux oldconfig
-				chroot_run make -C /usr/src/linux prepare
-				chroot_run make -C /usr/src/linux _modinst_
-			) > /dev/null
-
 			# transfer sources
 			percent_msg "Copying sources"
 			cp /var/spool/lunar/* $TARGET/var/spool/lunar/
@@ -1099,6 +1083,22 @@ transfer()
 			# more moonbase related stuff
 			percent_msg "Updating moonbase plugins"
 			chroot_run lsh update_plugins
+
+			# unpack a kernel source and preconfigure ir
+			percent_msg "Extracting kernel sources..."
+			(
+				if is_26 ; then
+					echo ". /etc/lunar/config ; SILENT=y ; run_details linux-2.6 ; run_pre_build"
+				else
+					echo ". /etc/lunar/config ; SILENT=y ; run_details linux-2.4 ; run_pre_build"
+				fi > $TARGET/tmp/unpack_kernel.sh
+				chroot_run /bin/bash /tmp/unpack_kernel.sh
+				rm -f $TARGET/tmp/unpack_kernel.sh
+				is_26 && zcat /proc/config.gz > $TARGET/usr/src/linux/.config
+				chroot_run make -C /usr/src/linux oldconfig
+				chroot_run make -C /usr/src/linux prepare
+				chroot_run make -C /usr/src/linux _modinst_
+			) > /dev/null
 
 			# pass through some of the configuration at this point:
 			percent_msg "Finishing up installation"
