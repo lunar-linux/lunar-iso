@@ -1277,8 +1277,10 @@ not expect any changes till you finish and reboot."
 
 	LANG=${LANG:-en_US}
 	LANG=$($DIALOG --title "Language Selection Menu" --default-item "$LANG" --menu "$HELP" 0 0 0 `show_languages`)
-	export LANG
-	E_OK=\\Z2
+	if [ $? == 0 ]; then
+		export LANG
+		E_OK=\\Z2
+	fi
 	DEFAULT=J
 }
 
