@@ -13,7 +13,7 @@ kernel modules before installing.
 
 To load these modules, type 02linux07 and load the modules from the initrd
 menu. If you know the name of the module you can also append the name of the
-module to the boot prompt: 02linux aacraid uhci_hcd07.
+module to the boot prompt: 02linux aacraid uhci-hcd ehci-hcd07.
 
 The installer will attempt to load some modules automatically.
 
