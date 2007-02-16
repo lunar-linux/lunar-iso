@@ -1013,7 +1013,7 @@ transfer()
 		# calculate the total so we can display progress
 		NUM=$(wc -l /.packages | awk '{print $1}')
 		# add the number of times we call percent_msg, subtract 2 for lilo/grub
-		(( NUM = NUM + 10 - 2 ))
+		(( NUM = NUM + 11 - 2 ))
 
 		cd $TARGET
 
@@ -1085,17 +1085,21 @@ transfer()
 			percent_msg "Updating moonbase plugins"
 			chroot_run lsh update_plugins
 
+			# just to make sure
+			percent_msg "Running ldconfig"
+			chroot_run ldconfig
+
 			# unpack a kernel source and preconfigure ir
 			percent_msg "Extracting kernel sources..."
 			(
 				if is_26 ; then
-					echo ". /etc/lunar/config ; SILENT=y ; run_details linux-2.6 ; run_pre_build"
+					chroot_run lsh eval 'SILENT=y ; run_details linux-2.6 ; run_pre_build'
+					cp /proc/config.gz $TARGET/usr/src/linux/
+					gunzip $TARGET/usr/src/linux/config.gz
+					mv $TARGET/usr/src/linux/config $TARGET/usr/src/linux/.config
 				else
-					echo ". /etc/lunar/config ; SILENT=y ; run_details linux-2.4 ; run_pre_build"
-				fi > $TARGET/tmp/unpack_kernel.sh
-				chroot_run /bin/bash /tmp/unpack_kernel.sh
-				rm -f $TARGET/tmp/unpack_kernel.sh
-				is_26 && zcat /proc/config.gz > $TARGET/usr/src/linux/.config
+					chroot_run lsh eval 'SILENT=y ; run_details linux-2.4 ; run_pre_build'
+				fi
 				chroot_run make -C /usr/src/linux oldconfig
 				chroot_run make -C /usr/src/linux prepare
 				chroot_run make -C /usr/src/linux _modinst_
