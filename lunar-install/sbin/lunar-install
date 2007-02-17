@@ -1094,9 +1094,9 @@ transfer()
 			(
 				if is_26 ; then
 					chroot_run lsh eval 'SILENT=y ; run_details linux-2.6 ; run_pre_build'
-					cp /proc/config.gz $TARGET/usr/src/linux/
-					gunzip $TARGET/usr/src/linux/config.gz
-					mv $TARGET/usr/src/linux/config $TARGET/usr/src/linux/.config
+					chroot_run cp /proc/config.gz /usr/src/linux/
+					chroot_run gunzip /usr/src/linux/config.gz
+					chroot_run mv /usr/src/linux/config /usr/src/linux/.config
 				else
 					chroot_run lsh eval 'SILENT=y ; run_details linux-2.4 ; run_pre_build'
 				fi
