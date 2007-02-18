@@ -1,3 +1,438 @@
+2007-02-17 04:30  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Another bugfix:
+	  we really can't rely on symlinks to work out-of-chroot... do
+	  everything in the chroot instead. *sigh*
+
+2007-02-16 18:56  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Final and last
+	  fix - 1.6.1 is done! (I think....)
+
+2007-02-16 15:50  sofar
+
+	* lunar-iso/trunk/isolinux/f4.txt: Updated version of memtest
+
+2007-02-15 21:33  sofar
+
+	* lunar-iso/trunk/isolinux/f2.txt: Update this to show 'uhci-hcd'
+	  with a dash instead of underscore since using an underscore
+	  doesn't work.
+
+2007-02-14 05:55  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Don't turn this
+	  item green if the user cancelled selection. Makes it consistent
+	  with other menus
+
+2007-02-12 00:29  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Bugfix -
+	  desynced packages files
+
+2007-02-11 23:39  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Major
+	  bugfixes... I'm finally getting near testing this code.
+
+2007-02-11 05:55  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base.x86_64: silly amd people
+	  enabling this by default...
+
+2007-02-11 05:52  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: i686 update of .config for
+	  2.6.20
+
+2007-02-11 02:23  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base.x86_64: New x86_64 base
+	  config for 2.6.20+ features
+
+2007-02-10 23:02  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Scan for
+	  available bootloaders
+
+2007-01-13 22:32  sofar
+
+	* lunar-iso/trunk/TODO: update with bootloader dilemma
+
+2007-01-13 22:30  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Fix unpacking of
+	  kernel sources. This was still broken - it's just really hard to
+	  get multiple commands run in the chroot without making a script.
+	  So lets just make a script and chroot run that instead.
+
+2007-01-11 18:50  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: This makes it
+	  install the /lib/modules/`version`/build and source symlinks.
+
+2007-01-11 18:18  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Fix kernel
+	  sources not being installed OK.
+
+2007-01-11 04:58  sofar
+
+	* lunar-iso/trunk/Makefile: clean up targets before dist-ing them
+
+2007-01-11 03:09  sofar
+
+	* lunar-iso/trunk/scripts/test: Another adjustment here, same bug.
+
+2007-01-11 03:06  sofar
+
+	* lunar-iso/trunk/scripts/rebuild: Just some random comments
+
+2007-01-11 03:06  sofar
+
+	* lunar-iso/trunk/scripts/aaa_base: part of the fix I just added
+
+2007-01-11 03:04  sofar
+
+	* lunar-iso/trunk/TODO, lunar-iso/trunk/scripts/test,
+	  lunar-iso/trunk/scripts/toolset: Fix "missing" lunar - the
+	  packages file had the wrong version number. ugh. Added test target
+	  to make sure it works.
+
+2007-01-11 00:18  sofar
+
+	* lunar-iso/trunk/TODO: Update with current bugs I spotted
+
+2007-01-06 19:32  sofar
+
+	* lunar-iso/trunk/scripts/isofs: toolset sits in /template/, not
+	  aaa_base
+
+2007-01-06 19:26  sofar
+
+	* lunar-iso/trunk/Makefile, lunar-iso/trunk/scripts/aaa_base,
+	  lunar-iso/trunk/scripts/isofs, lunar-iso/trunk/scripts/moonbase,
+	  lunar-iso/trunk/scripts/proper, lunar-iso/trunk/scripts/rebuild,
+	  lunar-iso/trunk/scripts/toolset: Rewrite how we handle the toolset
+	  a bit - prepare and use lsh to get module_version instead of
+	  ISO_DATE which is never the same anyway. backup toolset into
+	  aaa_base so that you can rebuild using the same toolset later over
+	  and over again and change the ISO_DATE. rename moonbase script to
+	  toolset. adj. Makefile
+
+2007-01-06 19:02  sofar
+
+	* lunar-iso/trunk/initrd/initrd.list-2.6,
+	  lunar-iso/trunk/initrd/template/sbin/init: add udevstart back,
+	  re-indent initrd init, remove udevcontrol. make
+	  /lib/modules/`uname -r` the ROOT of the tree you can go into for
+	  loading modules
+
+2007-01-06 18:42  sofar
+
+	* lunar-iso/trunk/initrd/initrd.list,
+	  lunar-iso/trunk/initrd/initrd.list-2.6: Update initrd lists: udev
+	  changes, discover no longer uses .lst old style format styles.
+
+2007-01-06 18:24  sofar
+
+	* lunar-iso/trunk/Makefile: Add prepare target.
+
+2007-01-06 18:23  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install,
+	  lunar-iso/trunk/scripts/initrd, lunar-iso/trunk/scripts/prepare,
+	  lunar-iso/trunk/scripts/proper, lunar-iso/trunk/scripts/rebuild:
+	  2006->2007, templetize initrd size, move broken rebuild detection
+	  code to end of rebuild script
+
+2007-01-06 18:21  sofar
+
+	* lunar-iso/trunk/isolinux/f1.txt, lunar-iso/trunk/isolinux/f2.txt,
+	  lunar-iso/trunk/isolinux/f3.txt, lunar-iso/trunk/isolinux/f4.txt,
+	  lunar-iso/trunk/isolinux/isolinux.cfg.in: 2006->2007, make
+	  isolinux.cfg template use insert word for final initrd size
+
+2007-01-03 22:46  sofar
+
+	* lunar-iso/trunk/scripts/initrd: Add ata, block, md dirs to initrd
+	  modules
+
+2006-12-29 18:17  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/build.x86_64: Don't pull in the
+	  x86_64 base changes as there is a new base.x86_64 now
+
+2006-12-29 18:16  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base.x86_64,
+	  lunar-iso/trunk/kernels/conf/2.6/x86_64,
+	  lunar-iso/trunk/scripts/kernels: Strike that, make a base x86_64
+	  .config instead of a patch, there's too many differences to
+	  automate this easily.
+
+2006-12-29 17:46  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/x86_64: More needed to disable
+	  x86 before starting the build
+
+2006-12-29 17:30  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/x86_64: Some more x86_64
+	  specifics
+
+2006-12-29 17:30  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: Rolled this through a i686
+	  box and re-enabled things I lost on my x86_64 system
+
+2006-12-29 17:08  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: Take out NFS support (it's
+	  broken with gcc-3.4.4+)
+
+2006-12-29 16:56  sofar
+
+	* lunar-iso/trunk/Makefile, lunar-iso/trunk/conf/config.in,
+	  lunar-iso/trunk/scripts/aaa_base, lunar-iso/trunk/scripts/rebuild,
+	  lunar-iso/trunk/template/etc/lunar/local/optimizations.GCC_3_4:
+	  Make the gcc optimization part of the config to facilitate
+	  building differently optimized iso's easily
+
+2006-12-29 16:49  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/x86_64: Add most x86_64 compat
+	  ia32 options in the kernel for later when we get 64+32bit env
+	  working
+
+2006-12-29 16:48  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: Finishing up 2.6.19.x
+	  config changes
+
+2006-12-29 16:15  sofar
+
+	* lunar-iso/trunk/scripts/kernels: Account for different arch code
+
+2006-12-29 16:12  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base,
+	  lunar-iso/trunk/kernels/conf/2.6/build.x86_64,
+	  lunar-iso/trunk/kernels/conf/2.6/x86_64: Still needs work but I
+	  need these changes on another machine.
+
+2006-12-29 16:03  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/build.x86_64: Adding x86_64
+	  version of the build
+
+2006-12-28 23:13  sofar
+
+	* lunar-iso/trunk/conf/extended.list: irqbalance needs gccmakedep
+	  now
+
+2006-12-28 20:49  sofar
+
+	* lunar-iso/trunk/scripts/dirs: account for links needed on x86_64
+
+2006-12-28 20:40  sofar
+
+	* lunar-iso/trunk/scripts/etc: there is no template lilo.conf
+	  anymore
+
+2006-12-28 20:34  sofar
+
+	* lunar-iso/trunk/conf/base.list-2.4,
+	  lunar-iso/trunk/conf/base.list-2.6,
+	  lunar-iso/trunk/conf/sources.list-2.4,
+	  lunar-iso/trunk/conf/sources.list-2.6: Move kernel-headers module
+	  to BASE modules instead of SOURCES
+
+2006-12-02 19:02  sofar
+
+	* lunar-iso/trunk/isolinux/isolinux.cfg,
+	  lunar-iso/trunk/isolinux/isolinux.cfg.in: I always modify this, so
+	  make it an .in file that needs to be copied over
+
+2006-12-02 18:59  sofar
+
+	* lunar-iso/trunk/scripts/initrd: Symlinks for x86_64 needed in the
+	  initrd.
+
+2006-12-02 18:53  sofar
+
+	* lunar-iso/trunk/Makefile, lunar-iso/trunk/conf/config.in: More
+	  fixes - make it know the sub-arch for the final name (so it shows
+	  i686 instead of i386) and lose the -subversion for the final
+	  release. Also pass ISO_ARCH around
+
+2006-12-02 18:48  sofar
+
+	* lunar-iso/trunk/scripts/kernels: KARCH fix
+
+2006-12-02 18:47  sofar
+
+	* lunar-iso/trunk/scripts/aaa_base: bugfix: don't overwrite lunar
+	  tarball with lunar-tools tarball due to globbing
+
+2006-12-02 18:07  sofar
+
+	* lunar-iso/trunk/Makefile, lunar-iso/trunk/conf/config.in: Minor
+	  changes - pass ISO_KARCH around, minor/major version numbers.
+
+2006-12-02 17:59  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: x86-64 fix:
+	  symlink /lib64 to /lib
+
+2006-12-02 17:57  sofar
+
+	* lunar-iso/trunk/conf/base.list: kbd completely replaces
+	  console-tools and console-data :) I didn't test this thorougly but
+	  everything on the iso installer seems to work after the change, so
+	  I'm making this the new permanent default.
+
+2006-12-02 17:55  sofar
+
+	* lunar-iso/trunk/conf/extended.list,
+	  lunar-iso/trunk/conf/sources.list: Remove xdelta (and thus glib-1)
+	  from the extended list. Stop supporting binary-only modem drivers
+	  alltogether too -> stop providing their (large) sources.
+
+2006-11-10 19:43  sofar
+
+	* lunar-iso/trunk/NEWS: Updates!
+
+2006-11-10 19:41  sofar
+
+	* lunar-iso/trunk/conf/sources.list-2.6: Get rid of these, they're
+	  horribly out of date.
+
+2006-11-10 19:38  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: Enable EFI boot for the new
+	  iso's
+
+2006-11-01 23:07  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: msgbox instead
+	  of messagebox
+
+2006-11-01 23:05  sofar
+
+	* lunar-iso/trunk/kernels/conf/2.6/base: 2.6.18+ need this
+
+2006-10-09 22:09  sofar
+
+	* lunar-iso/trunk/scripts/rebuild: workaround alias code for now -
+	  assume first mentioned alias is the preferred one
+
+2006-04-20 02:35  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: This should have
+	  gone into 1.6.0.... sigh
+
+2006-04-06 01:25  sofar
+
+	* lunar-iso/trunk/NEWS: finished for announcement
+
+2006-04-06 00:25  sofar
+
+	* lunar-iso/trunk/ChangeLog: updated
+
+2006-03-28 05:37  sofar
+
+	* lunar-iso/trunk/TODO: Yup, it's really all gone!
+
+2006-03-28 05:37  sofar
+
+	* lunar-iso/trunk/template/README: no longer need to rebuild
+	  kernel/install kernel headers!
+
+2006-03-28 05:36  sofar
+
+	* lunar-iso/trunk/template/etc/lunar/local/config: deprecated
+	  GCCVER.
+
+2006-03-28 05:36  sofar
+
+	* lunar-iso/trunk/template/etc/lilo.conf: generated on the fly now
+
+2006-03-28 05:35  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Fix timezone
+	  menu.
+
+2006-03-27 01:13  sofar
+
+	* lunar-iso/trunk/README: Haven't updated this in a while but noone
+	  reads it anyway :^P
+
+2006-03-27 01:04  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Backup old fstab
+	  if existent Remove trailing whitespaces
+
+2006-03-27 00:54  sofar
+
+	* lunar-iso/trunk/scripts/isofs: Add motd and motd.target to the
+	  list of templated files which need postprocessing in the last
+	  stage.
+
+2006-03-27 00:53  sofar
+
+	* lunar-iso/trunk/template/etc/motd,
+	  lunar-iso/trunk/template/motd.target: moving motds around
+
+2006-03-27 00:47  sofar
+
+	* lunar-iso/trunk/scripts/proper: More init.d scripts need to be
+	  removed from the iso.
+
+2006-03-27 00:44  sofar
+
+	* lunar-iso/trunk/TODO: updated
+
+2006-03-27 00:42  sofar
+
+	* lunar-iso/trunk/NEWS: Brief summary of the latest changes.
+
+2006-03-27 00:41  sofar
+
+	* lunar-iso/trunk/lunar-install/sbin/lunar-install: Add extraction
+	  and configuration of kernel source into the target Add extra
+	  module loading for modules that are not on the initrd when passed
+	  on the append line
+
+2006-03-26 20:16  sofar
+
+	* lunar-iso/trunk/initrd/template/sbin/init: rename skipinitrd flag
+	  to lose =0/=1 Add auto-module loading when modules passed on
+	  append line
+
+2006-03-26 20:10  sofar
+
+	* lunar-iso/trunk/isolinux/f1.txt, lunar-iso/trunk/isolinux/f2.txt,
+	  lunar-iso/trunk/isolinux/f3.txt, lunar-iso/trunk/isolinux/f4.txt,
+	  lunar-iso/trunk/isolinux/isolinux.bin,
+	  lunar-iso/trunk/isolinux/isolinux.cfg: New isolinux version 3.11 -
+	  hopefully fixes boot issues I've had update memtest version
+	  display to 1.65 update screens to reflect module loading changes
+	  update ramdisk size
+
+2006-03-25 17:36  sofar
+
+	* lunar-iso/trunk/template/motd: The iso itself gets a different
+	  motd.
+
+2006-03-25 02:10  sofar
+
+	* lunar-iso/trunk/scripts/aaa_base,
+	  lunar-iso/trunk/scripts/cachefill,
+	  lunar-iso/trunk/scripts/kernels, lunar-iso/trunk/scripts/memtest,
+	  lunar-iso/trunk/scripts/proper, lunar-iso/trunk/scripts/rebuild,
+	  lunar-iso/trunk/scripts/unpack: remote obsolete optimize() calls
+
 2006-03-24 05:41  sofar
 
 	* lunar-iso/trunk/scripts/aaa_base,

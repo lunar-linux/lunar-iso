@@ -1,3 +1,20 @@
+20070210 1.6.1 sofar
+	* Final release of 1.6.1 for both i686 and x86_64
+
+	- kernel src unpack bugfixes
+	- extra ldconfig step
+	- Updated memtest version to 1.70
+	- Fixed f4 display to show uhci-hcd instead of uhci_hcd etc.
+	- made bootloader code optional based on availability
+	- all packages refreshed
+
+
+20070110 1.6.1-rc2 sofar
+	* update release - release candidate 2
+
+	- all packages refreshed
+
+
 20061110 1.6.1rc1 sofar
        * update release - release candidate 1
 
