@@ -826,6 +826,9 @@ means that your root or boot filesystem should be ext2."
 
 make_lilo_conf()
 {
+	if ! pkg_avail lilo ; then
+		return
+	fi
 	if [ -e $TARGET/etc/lilo.conf ]; then
 		return
 	fi
@@ -849,6 +852,9 @@ make_lilo_conf()
 
 make_grub_conf()
 {
+	if ! pkg_avail grub ; then
+		return
+	fi
 	if [ -e $TARGET/boot/grub/menu.lst ] ; then
 		return
 	fi
@@ -870,6 +876,9 @@ make_grub_conf()
 
 install_grub()
 {
+	if ! pkg_avail grub ; then
+		return
+	fi
 	# grub lives on the "/" partition unless we have a separate
 	# "/boot" partition. Hence we use $BOOT to determine the grub location.
 	GRUB_PART=$(lsh map_device_to_grub $BOOT)
@@ -1394,13 +1403,13 @@ install_kernels()
 		local LINE
 		while read LINE; do
 		    (
-		    	unset MISSING
-		    	MODULE=$(echo $LINE | cut -d: -f2)
+			unset MISSING
+			MODULE=$(echo $LINE | cut -d: -f2)
 			for SOURCE in $(chroot_run lvu sources $MODULE) ; do
 				if [ ! -e /var/spool/lunar/$SOURCE ]; then
 					MISSING=yes
 				fi
-			done				
+			done
 			if [ -z "$MISSING" ]; then
 				echo $LINE | cut -d: -f1
 				echo $MODULE
@@ -1412,7 +1421,7 @@ install_kernels()
 
 	while true ; do
 		KCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "C" --item-help --menu "In order to succesfully run linux you need to install the linux kernel, the heart of the operating system. You can choose between compiling one yourself or select a precompiled modular kernel." 0 0 0 \
-		      "C" "Compile a kernel" "Custom configure and compile one of the linux kernels"\
+		  "C" "Compile a kernel" "Custom configure and compile one of the linux kernels"\
 		  "P" "Install a precompiled kernel" "Fast and safe: these kernels should work on almost all machines"`
 	
 		if [ $? != 0 ]; then
@@ -1427,7 +1436,18 @@ install_kernels()
 						echo "Press ENTER to go back to the menu"
 						read
 					else
-						sleep 2
+						msgbox "The kernel \"$CCOMMAND\" has been installed to your system."
+						if (( STEP == 8 )); then
+							(( STEP++ ))
+						fi
+						K_OK=\\Z2
+						R_OK=
+						U_OK=
+						H_OK=
+						V_OK=
+						G_OK=
+						A_OK=
+						break
 					fi
 				fi
 			;;
@@ -1438,21 +1458,22 @@ install_kernels()
 					cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
 					# let the plugin code handle the hard work
 					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
+
 					msgbox "The precompiled kernel \"$CCOMMAND\" has been installed to your system."
+					if (( STEP == 8 )); then
+						(( STEP++ ))
+					fi
+					K_OK=\\Z2
+					R_OK=
+					U_OK=
+					H_OK=
+					V_OK=
+					G_OK=
+					A_OK=
+					break
 				fi
 			;;
 		esac
-
-		if (( STEP == 8 )); then
-			(( STEP++ ))
-		fi
-		K_OK=\\Z2
-		R_OK=
-		U_OK=
-		H_OK=
-		V_OK=
-		G_OK=
-		A_OK=
 	done
 }
 
