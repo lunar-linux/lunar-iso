@@ -1022,7 +1022,7 @@ transfer()
 		# calculate the total so we can display progress
 		NUM=$(wc -l /.packages | awk '{print $1}')
 		# add the number of times we call percent_msg, subtract 2 for lilo/grub
-		(( NUM = NUM + 11 - 2 ))
+		(( NUM = NUM + 10 - 2 ))
 
 		cd $TARGET
 
@@ -1097,22 +1097,6 @@ transfer()
 			# just to make sure
 			percent_msg "Running ldconfig"
 			chroot_run ldconfig
-
-			# unpack a kernel source and preconfigure ir
-			percent_msg "Extracting kernel sources..."
-			(
-				if is_26 ; then
-					chroot_run lsh eval 'SILENT=y ; run_details linux-2.6 ; run_pre_build'
-					chroot_run cp /proc/config.gz /usr/src/linux/
-					chroot_run gunzip /usr/src/linux/config.gz
-					chroot_run mv /usr/src/linux/config /usr/src/linux/.config
-				else
-					chroot_run lsh eval 'SILENT=y ; run_details linux-2.4 ; run_pre_build'
-				fi
-				chroot_run make -C /usr/src/linux oldconfig
-				chroot_run make -C /usr/src/linux prepare
-				chroot_run make -C /usr/src/linux _modinst_
-			) > /dev/null
 
 			# pass through some of the configuration at this point:
 			percent_msg "Finishing up installation"
