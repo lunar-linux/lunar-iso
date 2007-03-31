@@ -1,10 +1,2 @@
-makedev
 setserial
 iptables
-pcmcia-cs
-hostap-driver
-mwavem
-dhcp
-wlan-ng-driver
-isdn4k-utils
-NFORCE
