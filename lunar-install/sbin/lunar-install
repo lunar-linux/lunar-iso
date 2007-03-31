@@ -1306,69 +1306,6 @@ editor_menu()
 }
 
 
-show_timezones()
-{
-	local ITEM
-	for ITEM in $(ls /usr/share/zoneinfo/$1 | grep -v zone.tab); do
-		if [ -n "$1" ]; then
-			echo "$1/$ITEM"
-		else
-			echo "$ITEM"
-		fi
-		if [ -d $ITEM ]; then
-			echo "Directory"
-		else
-			echo "Timezone"
-		fi
-	done
-}
-
-
-timezone()
-{
-	TITLE="Time Zone Selection Menu"
-	HELP="Select timezone or directory"
-
-	while true; do
-		ZONE=`$DIALOG --title "$TITLE"              \
-		              --default-item "${ZONE:-GMT}" \
-		              --menu                        \
-			      "$HELP"                       \
-			      0 0 0                         \
-			      $(show_timezones $ZONE)`
-
-		if [ $? != 0 ]; then
-			break
-		elif [ -f "/usr/share/zoneinfo/$ZONE" ]; then
-			rm -f $TARGET/etc/localtime
-			ln -sf /usr/share/zoneinfo/$ZONE $TARGET/etc/localtime
-
-			TITLE="GMT or Local"
-			HELP="Does the hardware clock store time in GMT or local?"
-
-			CLOCK=${CLOCK:-Local}
-			CLOCK=`$DIALOG --title "$TITLE"      \
-			           --default-item "$CLOCK"   \
-			           --menu "$HELP"     \
-			           0 0 0              \
-			           "GMT" ""           \
-			           "Local" ""`       &&
-			case $CLOCK in
-				GMT) HWCLOCK="--utc" ;;
-				Local) HWCLOCK="--localtime" ;;
-			esac
-			(
-				echo "#!/bin/sh"
-				echo "/sbin/hwclock --hctosys $HWCLOCK"
-			) > $TARGET/etc/init.d/localtime
-			chmod a+x $TARGET/etc/init.d/localtime
-			ln -s ../init.d/localtime $TARGET/etc/rcS.d/S15localtime
-			break
-		fi
-	done
-}
-
-
 install_kernels()
 {
 	list_precompiled_kernels()
@@ -1499,15 +1436,6 @@ install_bootloader() {
 		K_OK=
 		return
 	done
-}
-
-make_server_keys()  {
-	echo ""
-	echo "Generating SSH server keys..."
-	chroot_run make -C /etc/ssh server-keys
-	echo ""
-	echo "SSH server keys were created."
-	sleep 2
 }
 
 
@@ -1728,8 +1656,8 @@ cd-rom tray and reboot. See you at the login prompt!"
 	  U)  chroot_run luser     ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; U_OK=\\Z2 ;;
 	  H)  chroot_run lnet      ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
 	  V)  chroot_run lservices ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
-	  G)  make_server_keys     ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; G_OK=\\Z2 ;;
-	  A)  timezone             ; if (( STEP == 14 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
+	  G)  chroot_run make -C /etc/ssh server-keys ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; G_OK=\\Z2 ;;
+	  A)  chroot_run ltime     ; if (( STEP == 14 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
 
 	  Z)  goodbye                ;;
 	esac
