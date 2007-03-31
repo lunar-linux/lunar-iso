@@ -6,10 +6,10 @@
 # copy this file to 'config' and edit your settings as needed
 
 # the ISO major version number
-ISO_MAJOR = 1.6.1
+ISO_MAJOR = 1.6.2
 
 # minor version (pre, rc, etc). leave empty for final release
-ISO_MINOR = rc2
+ISO_MINOR = alpha
 
 ifeq (,$(ISO_MINOR))
   ISO_VERSION = $(ISO_MAJOR)-$(ISO_ARCH)
@@ -18,10 +18,10 @@ else
 endif
 
 # the ISO codename (i.e. Gen. P. Fault)
-ISO_CODENAME = Moose Drool
+ISO_CODENAME = Unnamed
 
 # the release/offical date tag - must be in the form of YYYYMMDD
-ISO_DATE = 20061228
+ISO_DATE = 20070330
 
 # the iso BUILD arch:
 ISO_BUILD = $(ISO_ARCH)-pc-linux-gnu
@@ -38,9 +38,9 @@ ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
 ## for 2.6 kernels - read this:
 # the kernel version used on the ISO
-ISO_KVER = 2.6.19
+ISO_KVER = 2.6.20
 # the patch LEVEL used (from kernel.org)
-ISO_PVER = 2.6.19.1
+ISO_PVER = 2.6.20.4
 
 # which lunar core tools do we want on the ISO
 ISO_LUNAR_MODULE = lunar
