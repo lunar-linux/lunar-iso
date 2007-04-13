@@ -292,6 +292,7 @@ menu_list_targets()
 				*ext2*) PTYPE="(ext2)" ;;
 				*XFS*) PTYPE="(XFS)" ;;
 				*Minix*) PTYPE="(minix)" ;;
+				*Reiser*) PTYPE="(reiserfs)" ;;
 				*) PTYPE="(unknown)" ;;
 			esac
 	
