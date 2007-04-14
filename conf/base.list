@@ -1,4 +1,5 @@
 glibc
+timezone-data
 expat
 openssl
 discover
