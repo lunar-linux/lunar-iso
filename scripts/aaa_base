@@ -57,16 +57,10 @@ find $ISO_TARGET/{bin,boot,etc,home,lib,mnt,opt,root,sbin,srv,usr,var} | sort | 
 	-e "^/var/lock/" \
 	-e "^/var/lib/" \
 	-e "^/var/run/"  > $ISO_TARGET/.present
-# add the kernel includes as well
-find $ISO_TARGET/usr/include/{linux,asm} | sed "s:^$ISO_TARGET::g" >> $ISO_TARGET/.present
 # add the install logs
 cat $ISO_TARGET/var/log/lunar/install/* | sort | uniq > $ISO_TARGET/.tracked
 diff -U0 $ISO_TARGET/.tracked $ISO_TARGET/.present | grep '^\+[^+]' | sed 's/^+//g' > $ISO_TARGET/.aaa_base.list
-echo "/etc/lunar/local/optimizations.CCACHE" >> $ISO_TARGET/.aaa_base.list
-echo "/etc/lunar/local/optimizations.GCC_3_4" >> $ISO_TARGET/.aaa_base.list
-echo "/etc/lunar/local/optimizations.GNU_LD" >> $ISO_TARGET/.aaa_base.list
-echo "/etc/lunar/local/optimizations.GNU_MAKE" >> $ISO_TARGET/.aaa_base.list
-echo "/etc/lunar/local/optimizations.WRAPPERS" >> $ISO_TARGET/.aaa_base.list
+for n in /etc/lunar/local/optimizations.* ; do echo $n >> $ISO_TARGET/.aaa_base.list ; done
 
 # make the tarball
 chroot $ISO_TARGET tar cjf /var/cache/lunar/aaa_base.tar.bz2 -T .aaa_base.list --no-recursion
