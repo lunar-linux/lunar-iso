@@ -92,6 +92,10 @@ $(ISO_TARGET)/.dirs:
 
 init: $(ISO_TARGET)/.init
 $(ISO_TARGET)/.init:
+	@if [ -d BUILD ] ; then \
+		echo "BUILD directory already exists!"; \
+		false; \
+	fi
 	@echo "Creating BUILD root"
 	@scripts/init
 
