@@ -1342,9 +1342,9 @@ install_kernels()
 	}
 
 	while true ; do
-		KCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "C" --item-help --menu "In order to succesfully run linux you need to install the linux kernel, the heart of the operating system. You can choose between compiling one yourself or select a precompiled modular kernel." 0 0 0 \
-		  "C" "Compile a kernel" "Custom configure and compile one of the linux kernels"\
-		  "P" "Install a precompiled kernel" "Fast and safe: these kernels should work on almost all machines"`
+		KCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "P" --item-help --menu "In order to succesfully run linux you need to install the linux kernel, the heart of the operating system. You can choose between compiling one yourself or select a precompiled modular kernel." 0 0 0 \
+		  "P" "Install a precompiled kernel" "Fast and safe: these kernels should work on almost all machines" \
+		  "C" "Compile a kernel" "Custom configure and compile one of the linux kernels"`
 	
 		if [ $? != 0 ]; then
 			return
@@ -1378,6 +1378,7 @@ install_kernels()
 					$(list_precompiled_kernels)`
 				if [ -f "/kernels/$CCOMMAND.tar.bz2" ]; then
 					cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
+					ln -s /usr/src/linux-$CCOMMAND $TARGET/usr/src/linux
 					# let the plugin code handle the hard work
 					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
 
@@ -1402,9 +1403,9 @@ install_kernels()
 
 install_bootloader() {
 	while true ; do
-		BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "L" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
-		$(if pkg_avail lilo ; then echo "L" ; echo "lilo" ; echo "Install lilo as boot loader"; fi) \
+		BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "G" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
 		$(if pkg_avail grub ; then echo "G" ; echo "grub" ; echo "Install grub as boot loader"; fi) \
+		$(if pkg_avail lilo ; then echo "L" ; echo "lilo" ; echo "Install lilo as boot loader"; fi) \
 		"N" "none" "Do not install a boot loader"`
 
 		if [ $? != 0 ] ; then
