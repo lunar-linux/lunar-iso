@@ -28,6 +28,7 @@ done
 echo "+ cleaning temporary and unneeded files"
 rm -rf $ISO_TARGET/var/log/lunar/*/* > /dev/null
 rm -f $ISO_TARGET/var/log/ccache > /dev/null
+rm -rf $ISO_TARGET/root/.ccache > /dev/null
 rm -rf $ISO_TARGET/usr/share/locale/
 rm -rf $ISO_TARGET/usr/share/{info,man,doc}/* > /dev/null
 rm -rf $ISO_TARGET/usr/share/vim/vim63/doc
