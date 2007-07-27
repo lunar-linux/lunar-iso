@@ -8,7 +8,6 @@ libXdmcp
 xcb-proto
 libxslt
 libpthread-stubs
-db
 libICE
 kbproto
 libxcb
