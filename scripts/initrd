@@ -49,38 +49,38 @@ transfer()
 
 # bare minimum of device nodes
 echo "+ filling /dev"
-mkdir -p BUILD/dev
+mkdir -p BUILD/dev &&
 
 if [ "${ISO_KSUFFIX}" = "2.4" ]; then
-   cp -a --no-dereference $ISO_TARGET/etc/makedev.d/* BUILD/etc/makedev.d/
-   cp template/etc/makedev.d/small BUILD/etc/makedev.d/generic
-   $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev generic
-   $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev console
-   $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev tty
-   ( cd BUILD/dev ; rm -f tty[a-zA-Z]* hd[i-z]* s[dg][i-z]* fd[2-9]* fd[0-1][a-zA-Z]* sd[a-z][a-z]* )
-   mkdir BUILD/dev/vc
+   cp -a --no-dereference $ISO_TARGET/etc/makedev.d/* BUILD/etc/makedev.d/ &&
+   cp template/etc/makedev.d/small BUILD/etc/makedev.d/generic &&
+   $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev generic &&
+   $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev console &&
+   $ISO_TARGET/dev/MAKEDEV -c BUILD/etc/makedev.d/ -d BUILD/dev tty &&
+   ( cd BUILD/dev && rm -f tty[a-zA-Z]* hd[i-z]* s[dg][i-z]* fd[2-9]* fd[0-1][a-zA-Z]* sd[a-z][a-z]* ) &&
+   mkdir BUILD/dev/vc &&
    for node in BUILD/dev/tty* ; do
      ln -s $node $(echo $node | sed 's:tty:vc/:')
-   done
+   done &&
    # strip it down even more
-   rm -rf BUILD/etc/makedev.d/
+   rm -rf BUILD/etc/makedev.d/ &&
 
    rm -f BUILD/dev/install-devices.sh
 
 else
   (
-      cd BUILD/dev
-      mknod -m 0600 console c 5 1
-      mknod -m 0666 null    c 1 3
-      mknod -m 0600 ram0    b 1 0
-      ln -s ram0 ram
+      cd BUILD/dev &&
+      mknod -m 0600 console c 5 1 &&
+      mknod -m 0666 null    c 1 3 &&
+      mknod -m 0600 ram0    b 1 0 &&
+      ln -s ram0 ram &&
       mknod -m 0600 ram1    b 1 1
   )
 fi
 
 # we also generate aaa_dev.tar.bz2 now
-mkdir -p $ISO_SOURCE/aaa_dev
-tar cj -C BUILD -f $ISO_SOURCE/aaa_dev/aaa_dev.tar.bz2 dev/
+mkdir -p $ISO_SOURCE/aaa_dev &&
+tar cj -C BUILD -f $ISO_SOURCE/aaa_dev/aaa_dev.tar.bz2 dev/ &&
 
 # compile the initrd image
 echo "+ installing initrd kernels"
@@ -112,33 +112,34 @@ done
 chown -R root:root BUILD/*
   
 echo "+ running ldconfig"
-chroot BUILD /sbin/ldconfig
-rm -f BUILD/etc/mtab
-ln -s /proc/mounts BUILD/etc/mtab
+chroot BUILD /sbin/ldconfig &&
+rm -f BUILD/etc/mtab &&
+ln -s /proc/mounts BUILD/etc/mtab &&
 
 # calculate the size of the initrd image
-SIZE=$(du -kcs BUILD | tail -1 | cut -f1)
-echo "+ estimated $SIZE"
+SIZE=$(du -kcs BUILD | tail -1 | cut -f1) &&
+echo "+ estimated $SIZE" &&
 # sometimes the size is way off (?) and needs manual adjustment
-# (( SIZE = SIZE + 1 ))
-echo "+ used size $SIZE"
+# (( SIZE = SIZE + 1 )) &&
+echo "+ used size $SIZE" &&
 # and write it to the isolinux cfg
-sed "s/INITRDSIZE/$SIZE/g" $ISO_SOURCE/isolinux/isolinux.cfg.in > $ISO_SOURCE/isolinux/isolinux.cfg
+sed "s/INITRDSIZE/$SIZE/g" $ISO_SOURCE/isolinux/isolinux.cfg.in > $ISO_SOURCE/isolinux/isolinux.cfg &&
 
-dd if=/dev/zero of=initrd.raw bs=1024 count=$SIZE
-losetup /dev/loop/0 initrd.raw
-mkfs.ext2 -b 1024 -m 0 -i 1024 -N 1024 /dev/loop/0
-mkdir BUILD.mnt
-mount /dev/loop/0 BUILD.mnt
-cp -a BUILD/* BUILD.mnt/
+dd if=/dev/zero of=initrd.raw bs=1024 count=$SIZE &&
+losetup /dev/loop/0 initrd.raw &&
+mkfs.ext2 -b 1024 -m 0 -i 1024 -N 512 /dev/loop/0 &&
+mkdir BUILD.mnt &&
+mount /dev/loop/0 BUILD.mnt &&
+cp -a BUILD/* BUILD.mnt/ &&
 df -h BUILD.mnt/
 
 umount BUILD.mnt || exit 1
+
 tune2fs -l /dev/loop/0 | grep -e 'Free'
 losetup -d /dev/loop/0
 
 [ -f initrd ] && rm initrd
-gzip -c initrd.raw > initrd  
+gzip -c initrd.raw > initrd
 
 rm -rf initrd.raw BUILD.mnt
 # BUILD
