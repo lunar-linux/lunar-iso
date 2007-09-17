@@ -1,3 +1,5 @@
 * man lfirsttime bugs?
 * make lilo/grub bootloaders optionally show up instead of always.
 * make lnet put own hostname in /etc/hosts !
+* make iso always install linux-2.6 for automatic kernel updates
+* add microcode update tools
