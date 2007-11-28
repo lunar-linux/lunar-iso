@@ -67,6 +67,8 @@ done
 chroot $ISO_TARGET /sbin/lin -c openssh
 # e2fsprogs nabs /etc/mtab
 chroot $ISO_TARGET /sbin/lin -c e2fsprogs
+# we don't want vi linked against libX11
+chroot $ISO_TARGET /sbin/lin -c vim --opts --without-x
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          REBUILD FINISHED                            +"
