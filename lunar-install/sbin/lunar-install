@@ -571,36 +571,6 @@ enum_discs()
 }
 
 
-make_raidtab()
-{
-	NAME=$(echo $1 | cut -d: -f1)
-	LEVEL=$(echo $1 | cut -d: -f2)
-	DISCS=$(echo $1 | cut -d: -f3)
-	SPARE=$(echo $1 | cut -d: -f4)
-	CHUNK=$(echo $1 | cut -d: -f5)
-	DISCS_A=( $(for DISC in $(echo $DISCS | sed 's/,/\t/g') ; do echo $DISC ; done) )
-	SPARE_A=( $(for DISC in $(echo $SPARE | sed 's/,/\t/g') ; do echo $DISC ; done) )
-	echo "raiddev /dev/$NAME"
-	echo "	raid-level		$LEVEL"
-	if [ "$LEVEL" == "5" ]; then
-		echo "	parity-algorithm	left-symmetric"
-	fi
-	echo "	nr-raid-disks		${#DISCS_A[@]}"
-	echo "	nr-spare-disks		${#SPARE_A[@]}"
-	echo "	chunk-size		$CHUNK"
-	echo "	persistent-superblock	1"
-	echo ""
-	for (( N=0 ; N<${#DISCS_A[@]} ; N++ )); do
-		echo "	device			${DISCS_A[$N]}"
-		echo "	raid-disk		$N"
-	done
-	for (( N=0 ; N<${#SPARE_A[@]} ; N++ )); do
-		echo "	device			${SPARE_A[$N]}"
-		echo "	spare-disk		$N"
-	done
-	echo ""
-}
-
 list_raid_arrays()
 {
 	for RAIDARRAY in ${RAIDARRAYS[@]}; do
@@ -647,11 +617,9 @@ raid_setup()
 					LEVEL=$(echo $RAIDARRAY | cut -d: -f2)
 					DISCS=$(echo $RAIDARRAY | cut -d: -f3)
 					SPARE=$(echo $RAIDARRAY | cut -d: -f4)
-					CHUNK=$(echo $RAIDARRAY | cut -d: -f5)
 					RRCHOICE=`$DIALOG --cancel-label "Exit" --menu "Select an option" 0 0 0 \
 						"Add disc" "Add a disk to the array" \
 						"Add spare" "Add a spare disk to the array" \
-						"chunksize" "Change chunk size ( $CHUNK kB )" \
 						$([ -n "$DISCS" ] && enum_discs $DISCS "RAID array member") \
 						$([ -n "$SPARE" ] && enum_discs $SPARE "Spare disc") \
 						"start" "Initialize and start the array" \
@@ -672,55 +640,45 @@ raid_setup()
 								msgbox "The partition type of this device is not 0xFD (Linux RAID Autodetect). You should correct this in the partition table with a partitioning tool, otherwise linux will not automatically enable this RAID array at boot."
 							fi
 						fi
-					elif [ "$RRCHOICE" == "chunksize" ] ; then
-						CHUNK=`inputbox "Enter chunksize in kB" "$CHUNK"`
 					elif [ "$RRCHOICE" == "start" ] ; then
-						# initialize and start this array
-						RAIDTAB=/tmp/raidtab.$ARRAYNAME
-						make_raidtab ${RAIDARRAYS[$N]} > $RAIDTAB
-						# udev fails to create these devices
+						# udev might fail to create these devices
 						if [ ! -b /dev/md/${ARRAYNAME/md/} ]; then
 							mkdir -p /dev/md
 							mknod -m 660 /dev/md/${ARRAYNAME/md/} b 9 ${$ARRAYNAME/md/}
 							chgrp disc /dev/md/${ARRAYNAME/md/}
 							ln -s md/${ARRAYNAME/md/} /dev/$ARRAYNAME
 						fi
-						# note we do not pass -f to force creation here
-						mkraid -c $RAIDTAB /dev/$ARRAYNAME
-						sleep 1
+						# create and start the array here in a single step
+						DISCS_A=( $(for DISC in $(echo $DISCS | sed 's/,/\t/g') ; do echo $DISC ; done) )
+						SPARE_A=( $(for DISC in $(echo $SPARE | sed 's/,/\t/g') ; do echo $DISC ; done) )
+						# note we do not force creation here
+						mdadm --create --level $LEVEL -n ${#DISCS_A[@]} -x ${#SPARE_A[@]} /dev/$ARRAYNAME ${DISCS_A[@]} ${SPARE_A[@]}
+						sleep 2
 						if ! grep -qw "^$ARRAYNAME" /proc/mdstat ; then
 						
 							sleep 5
-							msgbox "Initialization and starting of the RAID array failed. You should inspect $RAIDTAB for errors and try manually to start the array before using it."
+							msgbox "Initialization and starting of the RAID array failed. You should inspect the output for errors and try manually to start the array before using it."
 						else
 							msgbox "Initialization of $ARRAYNAME succeeded. You can now use this device as a normal, unformatted partition."
 							block_devices free $ARRAYNAME
 							break
-						fi						
+						fi
 					else
-						# hammer, hit:
+						# remove disc from the raid array
 						DISCS=$(echo $DISCS | sed -e "s:\\(^\\|,\\)$RRCHOICE\\(,\\|$\\):,:;s:^,::;s:,$::")
 						SPARE=$(echo $SPARE | sed -e "s:\\(^\\|,\\)$RRCHOICE\\(,\\|$\\):,:;s:^,::;s:,$::")
 						msgbox "Deleted $RRCHOICE from this RAID array."
 						block_devices free $RRCHOICE
 					fi
 					# recombine the array options
-					RAIDARRAYS[$N]="$ARRAYNAME:$LEVEL:$DISCS:$SPARE:$CHUNK"
+					RAIDARRAYS[$N]="$ARRAYNAME:$LEVEL:$DISCS:$SPARE"
 				done
 				;;
 			Create)
 				ARRAY="md${#RAIDARRAYS[@]}"
 				LEVEL=$(get_raid_level)
 				if [ -n "$LEVEL" ]; then
-					case $LEVEL in
-						5)
-							CHUNKSIZE=128
-							;;
-						*)
-							CHUNKSIZE=32
-							;;
-					esac
-					RAIDARRAYS[${#RAIDARRAYS[@]}]="$ARRAY:$LEVEL:::$CHUNKSIZE"
+					RAIDARRAYS[${#RAIDARRAYS[@]}]="$ARRAY:$LEVEL::"
 					block_devices add "/dev/$ARRAY:other:used"
 				fi
 				;;
@@ -1135,12 +1093,6 @@ transfer()
 			echo -e "$FSTAB" >> etc/fstab
 			make_lilo_conf
 			make_grub_conf
-			if [ -n "${RAIDARRAYS[@]}" ]; then
-				echo "Creating /etc/raidtab"
-				for (( N=0 ; N < ${#RAIDARRAYS[@]} ; N++ )) ; do
-					make_raidtab ${RAIDARRAYS[$N]} >> $TARGET/etc/raidtab
-				done
-			fi
 
 			# some more missing files:
 			cp /etc/lunar.release $TARGET/etc/
