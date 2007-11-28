@@ -16,7 +16,6 @@
       KDE_PREFIX=/usr
           KDEDIR=/usr
            QTDIR=/usr/lib
- BUILD_DIRECTORY=/var/build
    AUTORESURRECT=off
      KEEP_SOURCE=off
          VERBOSE=off
