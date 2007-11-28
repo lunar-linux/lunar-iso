@@ -1,7 +1,6 @@
 Python
 libxml2
 tcl
-indent
 libpthread-stubs
 perl
 m4
@@ -20,6 +19,7 @@ XML-Parser
 dbus
 dbus-glib
 hal
+hal-info
 tiff
 shared-mime-info
 gamin
