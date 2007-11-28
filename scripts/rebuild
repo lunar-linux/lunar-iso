@@ -3,7 +3,7 @@
 export LC_ALL=C
 
 # set gcc optimization
-echo "CPU=$ISO_GCCARCH" >> $ISO_TARGET/etc/lunar/local/optimizations.GCC_3_4
+echo "CPU=$ISO_GCCARCH" >> $ISO_TARGET/etc/lunar/local/optimizations.GCC_4_2
 # do the parallel thingy?
 if [ -n "$ISO_MAKES" ]; then
   echo "MAKES=$ISO_MAKES" >> $ISO_TARGET/etc/lunar/local/optimizations.GNU_MAKE
