@@ -82,6 +82,8 @@ $(ISO_TARGET)/.unpack:
 
 cachefill: dirs $(ISO_TARGET)/.cachefill
 $(ISO_TARGET)/.cachefill:
+	@echo "Resolving and testing dependencies"
+	@scripts/precheck
 	@echo "Fetching cache tarballs and sources"
 	@scripts/cachefill
 
