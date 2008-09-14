@@ -21,7 +21,9 @@ else
   ISO_VERSION = $(ISO_MAJOR)-$(ISO_MINOR)-$(ISO_ARCH)
 endif
 
-# the ISO codename (i.e. Gen. P. Fault)
+# the ISO codename (i.e. Lacus Autumni)
+# Codename scheme: http://en.wikipedia.org/wiki/List_of_maria_on_the_Moon
+# Rotate between lacus, mare and palus for each release to avoid confusion
 ISO_CODENAME = Unnamed
 
 # the release/offical date tag - must be in the form of YYYYMMDD
