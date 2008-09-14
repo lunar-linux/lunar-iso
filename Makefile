@@ -60,6 +60,11 @@ $(ISO_SOURCE)/aaa_base/aaa_base.tar.bz2:
 	@echo "Creating aaa_base.tar.bz2"
 	@scripts/aaa_base
 
+prebuild: prepare $(ISO_TARGET)/.prebuild
+$(ISO_TARGET)/.prebuild:
+	@echo "Running prebuild process"
+	@scripts/prebuild
+
 rebuild: etc $(ISO_TARGET)/.rebuild
 $(ISO_TARGET)/.rebuild:
 	@echo "Starting rebuild process"
@@ -70,7 +75,7 @@ $(ISO_TARGET)/.etcf:
 	@echo "Copying miscfiles"
 	@scripts/etc
 
-toolset: $(ISO_SOURCE)/template/moonbase.tar.bz2 $(ISO_SOURCE)/template/$(ISO_LUNAR_MODULE).tar.bz2
+toolset: prebuild $(ISO_SOURCE)/template/moonbase.tar.bz2 $(ISO_SOURCE)/template/$(ISO_LUNAR_MODULE).tar.bz2
 $(ISO_SOURCE)/template/moonbase.tar.bz2 $(ISO_SOURCE)/template/$(ISO_LUNAR_MODULE).tar.bz2:
 	@echo "Getting a proper moonbase"
 	@scripts/toolset
@@ -108,8 +113,10 @@ prepare:
 clean:
 	umount BUILD/dev &> /dev/null || true
 	umount BUILD/proc &> /dev/null || true
+	umount BUILD/sys &> /dev/null || true
 	rm -rf BUILD
 	rm -rf initrd/BUILD initrd/initrd
+	rm -rf spool cache
 	rm -rf aaa_base aaa_dev
 	rm -rf memtest
 	rm -rf kernels/TAR kernels/*.tar.bz2 kernels/.kernels kernels/.initrd_kernels

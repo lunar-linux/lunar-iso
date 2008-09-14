@@ -1,10 +1,12 @@
 bin/basename
 bin/bash
 bin/cat
+bin/cut
 bin/echo
 bin/grep
 bin/ls
 bin/mkdir
+bin/mknod
 bin/mount
 bin/more
 bin/pgrep

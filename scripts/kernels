@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mv /etc/localtime /etc/localtime-
-ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+#mv /etc/localtime /etc/localtime-
+#ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
 echo "+ Starting compile of kernels"
 . /etc/lunar/config
@@ -90,7 +90,7 @@ build_kernel()
 {
 	echo "+ building $VERSION$1"
 	cd $ISO_SOURCE/kernels/linux-$VERSION
-	yes n | make oldconfig &&
+	echo | make oldconfig &&
 	if [ "${ISO_KSUFFIX}" = "2.4" ]; then
 		make dep || exit 1
 	fi &&
@@ -161,5 +161,5 @@ fi
 mv $ISO_SOURCE/kernels/.kernels-tmp $ISO_SOURCE/kernels/.kernels
 mv $ISO_SOURCE/kernels/.initrd_kernels-tmp $ISO_SOURCE/kernels/.initrd_kernels
 
-rm -f /etc/localtime
-mv /etc/localtime- /etc/localtime
+#rm -f /etc/localtime
+#mv /etc/localtime- /etc/localtime

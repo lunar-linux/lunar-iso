@@ -2,6 +2,13 @@
 
 . /etc/lunar/config
 
+echo "+ Checking if cdrtools is installed"
+if ! lsh module_installed cdrtools; then
+  echo "Cdrtools missing: installing..."
+  lin -c cdrtools
+  lsh module_installed cdrtools || exit 1
+fi
+
 echo "+ tagging release version"
 echo "Lunar Linux $ISO_CNAME" > $ISO_TARGET/etc/lunar.release
 echo "lunar" > $ISO_TARGET/etc/hostname
@@ -47,13 +54,16 @@ cp $ISO_SOURCE/template/README $ISO_TARGET
 echo "+ copying motd"
 cp $ISO_SOURCE/template/motd $ISO_TARGET/etc/
 cp $ISO_SOURCE/template/motd.target $ISO_TARGET/etc/
+echo "+ copying initd disable list"
+cp $ISO_SOURCE/conf/initd.disable.list $ISO_TARGET/.initd.disable.list
 
 for file in $ISO_TARGET/isolinux/{f{1,2,3,4}.txt,boot.cat,isolinux.{bin,cfg}} $ISO_TARGET/etc/motd $ISO_TARGET/etc/motd $ISO_TARGET/sbin/lunar-install $ISO_TARGET/README $ISO_TARGET/etc/motd $ISO_TARGET/etc/motd.target ; do
   sed -i -e "s:%VERSION%:${ISO_VERSION}:g" \
          -e "s:%CODENAME%:${ISO_CODENAME}:g" \
          -e "s:%DATE%:${ISO_DATE}:g" \
          -e "s:%KERNEL%:${ISO_PVER}:g" \
-	 -e "s:%CNAME%:${ISO_CNAME}:g" $file
+	 -e "s:%CNAME%:${ISO_CNAME}:g" \
+	 -e "s:%COPYRIGHTYEAR%:${ISO_DATE:0:4}:g" $file
 done
 
 # reverse approach this:

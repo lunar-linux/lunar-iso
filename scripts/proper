@@ -70,9 +70,6 @@ done
 echo "+ stripping binaries"
 find $ISO_TARGET -name "lib*.so*" -exec strip {} \; 2> /dev/null
 
-echo "+ archiving locale"
-cp $ISO_TARGET/var/lib/lunar/moonbase/*/glibc/locales $ISO_TARGET/etc/lunar/local/
-
 # moonbase
 echo "+ archiving moonbase"
 if [ -d $ISO_TARGET/var/lib/lunar/moonbase ] ; then (

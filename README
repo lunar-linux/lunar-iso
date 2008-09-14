@@ -47,11 +47,12 @@ The same goes for the sources, they end up in spool/
 
 Here's a brief explanation of the make targets:
 
+prepare		download all the required sources
 init		setup the buildroot
 dirs		make LSB dirs and a few more needed
-moonbase	fetch a copy of moonbase.tar.bz2 and install it
+toolset		fetch a copy of moonbase.tar.bz2 and install it
 unpack		extract the cache tar.bz2's
-etcf		copy the template files that are not provided by modules
+etc		copy the template files that are not provided by modules
 rebuild		rebuild all modules at least once
 aaa_base	create a tarball with required but untracked files
 aaa_dev		create static device nodes needed by iso and initrd

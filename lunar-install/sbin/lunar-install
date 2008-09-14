@@ -6,6 +6,7 @@
 # portions Copyright 2002 by rodzilla                       #
 # portions Copyright 2003-2004 by tchan, kc8apf             #
 # portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008 by Stefan Wold                    #
 #                                                           #
 #############################################################
 #                                                           #
@@ -245,8 +246,12 @@ block_devices()
 list_block_devices()
 {(
 	export IFS=$' \t\n'
-	local DEVICE FDEVICE
-	for DEVICE in $(tail +3 /proc/partitions | awk '{print $4}') ; do
+	local DEVICE FDEVICE PDEVICE
+
+    # Grab protected device when booting iso from other media then cdrom
+    PDEVICE=$(basename `grep '/mnt/device' /proc/mounts  | cut -d' ' -f1` 2> /dev/null)
+
+	for DEVICE in $(tail +3 /proc/partitions | awk '{print $4}' | grep -v -e ${PDEVICE:-^$} -e loop); do
 		FDEVICE=$(lsh unmap_device /dev/$DEVICE)
 		# if the device node ends with [0-9] then it's never a disc
 		if [[ $DEVICE =~ '[0-9]$' ]]; then
@@ -295,7 +300,7 @@ menu_list_targets()
 				*Reiser*) PTYPE="(reiserfs)" ;;
 				*) PTYPE="(unknown)" ;;
 			esac
-	
+
 			for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do
 				if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$DEVICE" ]; then
 					FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
@@ -303,7 +308,7 @@ menu_list_targets()
 					FSTYPE=${FSTYPE/none/swap}
 					echo "$FSTYPE partition, size $FSIZE"
 					continue 2
-				fi		
+				fi
 			done
 			echo "unassigned, size $FSIZE, $PTYPE"
 		fi
@@ -380,7 +385,7 @@ menu_get_filesystem()
 {
 	TITLE="Filesystem Selection Menu"
 	HELP="Please select a filesystem. A '*' means that this is a journalling filesystem, which provides better data security against system crashes etc."
-	
+
 	EXT3="Third Extended file system (*)"
 	EXT2="Second Extended file system"
 	REISER="Reiserfs file system (*)"
@@ -456,7 +461,7 @@ partition_discs()
 			        "fdisk"   "$FDISK"                           \
 			        "parted"  "$PARTED"`
 		;;
-	esac &&	
+	esac &&
 	PROMPT="Are you certain that you want to run $PROG on $DISC? (This will erase any partition selection you might have already performed)" &&
 	if confirm "$PROMPT"; then
 		unset PARTITIONS
@@ -644,7 +649,7 @@ raid_setup()
 						# udev might fail to create these devices
 						if [ ! -b /dev/md/${ARRAYNAME/md/} ]; then
 							mkdir -p /dev/md
-							mknod -m 660 /dev/md/${ARRAYNAME/md/} b 9 ${$ARRAYNAME/md/}
+							mknod -m 660 /dev/md/${ARRAYNAME/md/} b 9 ${ARRAYNAME/md/}
 							chgrp disc /dev/md/${ARRAYNAME/md/}
 							ln -s md/${ARRAYNAME/md/} /dev/$ARRAYNAME
 						fi
@@ -655,7 +660,7 @@ raid_setup()
 						mdadm --create --level $LEVEL -n ${#DISCS_A[@]} -x ${#SPARE_A[@]} /dev/$ARRAYNAME ${DISCS_A[@]} ${SPARE_A[@]}
 						sleep 2
 						if ! grep -qw "^$ARRAYNAME" /proc/mdstat ; then
-						
+
 							sleep 5
 							msgbox "Initialization and starting of the RAID array failed. You should inspect the output for errors and try manually to start the array before using it."
 						else
@@ -808,6 +813,10 @@ make_lilo_conf()
 		is_26 || echo "append=\"devfs=nomount\""
 		echo "read-only"
 		echo ""
+        	if [ ! echo $BOOT | grep -qw md ]; then
+                	BOOTDISCS=$(mdadm --detail $BOOT | tail -n2 | awk '{print $7}')
+                	echo "raid-extra-boot=$(echo $BOOTDISCS | sed s@\ @,@g)"
+        	fi
 		echo "boot=$DISC"
 		echo "root=$ROOT"
 		echo ""
@@ -849,7 +858,7 @@ install_grub()
 	GRUB_PART=$(lsh map_device_to_grub $BOOT)
 	# and we go straight to the MBR
 	GRUB_MBR=$(echo $GRUB_PART | cut -d, -f1)
-	
+
 	(
 		echo "root ($GRUB_PART)"
 		echo "setup ($GRUB_MBR)"
@@ -906,7 +915,7 @@ transfer()
 	msgbox "You should now be ready to install lunar to your system. Lunar will now create filesystems if needed, make a swapfile if it was selected, and install all lunar packages to the newly setup system. Make sure you are done with partitioning and filesystem selection."
 	if confirm "Are you ready to install lunar?" ;  then
 		clear
-	
+
 		ORDER=$(for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do echo ${PARTITIONS[$N]} | cut -d: -f2 ; done | sort)
 
 		for MOUNTPOINT in $ORDER; do
@@ -920,6 +929,11 @@ transfer()
 					CHECK=$(echo ${PARTITIONS[$N]} | cut -d: -f6)
 					FORCE=$(echo ${PARTITIONS[$N]} | cut -d: -f7)
 					FORMAT=$(echo ${PARTITIONS[$N]} | cut -d: -f8)
+					# handle /tmp, TODO: Automatic fstab scanning for all mountpints
+					if [ "$MOUNTPOINT" == "/tmp" ]; then
+					    TMP_TMPFS_NO=1
+					fi
+
 					# handle swap
 					if [ "$FSYS" == "swap" ]; then
 						echo "Setting up swap on $PART..."
@@ -1090,6 +1104,10 @@ transfer()
 				cp etc/fstab etc/fstab-
 			fi
 
+			if [ -n "$TMP_TMPFS_NO" ]; then
+			    sed -i 's;^tmpfs.*/tmp;#&;' etc/fstab
+			fi
+
 			echo -e "$FSTAB" >> etc/fstab
 			make_lilo_conf
 			make_grub_conf
@@ -1098,17 +1116,24 @@ transfer()
 			cp /etc/lunar.release $TARGET/etc/
 			echo "    LUNAR_MODULE=lunar" > $TARGET/etc/lunar/local/config
 			cp /etc/lunar/local/.config* $TARGET/etc/lunar/local/
-	
+
 			# initialize the new machine:
 			touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
 			chmod 0644 $TARGET/var/log/{utmp,wtmp,lastlog}
 			chmod 0600 $TARGET/var/log/btmp
-	
+
+            # disable some services
+            if [ -e /.initd.disable.list ]; then
+              while read INITD; do
+                chroot_run /sbin/chkconfig --del $INITD
+              done < /.initd.disable.list
+            fi
+
 		# really we are done now ;^)
 		) | $DIALOG --title " Installing Lunar-Linux " --gauge "" 10 70 0
 
 		cd /
-		
+
 		if (( STEP == 6 )); then
 			(( STEP++ ))
 		fi
@@ -1187,7 +1212,7 @@ show_consolefonts()
 {
 	FONTDIR="/usr/share/consolefonts"
 	cd $FONTDIR
-	FONTS=`ls *.gz | sed "s/\.psf\.gz//"`
+	FONTS=`ls *.{psf,psfu}.gz | sed -r "s/\.psfu?\.gz//"`
 
 	for FONT in $FONTS; do
 		echo $FONT
@@ -1213,11 +1238,15 @@ font_menu()
 
 show_languages()
 {
-	while read L D; do
-		echo "$L" | cut -d/ -f1
-		echo "$D"
-		shift 2
-	done < /etc/lunar/local/locales
+	local IFS
+	IFS=$' \t\n'
+	locale -a -v | egrep "(locale:|language \||territory \|)" |
+	sed -r 's;archive:.*|locale:|language \| |territory \|;;g' |
+	awk '{printf $0 ; printf " "} NR % 3 == 0 {print " "}' |
+	while read locale language territory; do
+		echo "$locale"
+		echo "$language ($territory)"
+        done
 }
 
 
@@ -1303,7 +1332,7 @@ install_kernels()
 		KCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "P" --item-help --menu "In order to succesfully run linux you need to install the linux kernel, the heart of the operating system. You can choose between compiling one yourself or select a precompiled modular kernel." 0 0 0 \
 		  "P" "Install a precompiled kernel" "Fast and safe: these kernels should work on almost all machines" \
 		  "C" "Compile a kernel" "Custom configure and compile one of the linux kernels"`
-	
+
 		if [ $? != 0 ]; then
 			return
 		fi
@@ -1449,7 +1478,7 @@ to make sure that applications running are using the correct
 time zone information and adjust daylight savings."
 		SH[15]="You are done! you should remove the ISO from the
 cd-rom tray and reboot. See you at the login prompt!"
-	
+
 		B_LABEL="One step back"
 		B_HELP="Go back one step in the installation procedure"
 		F_LABEL="One step forward"
@@ -1488,7 +1517,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 		K_LABEL="Install kernel(s)"
 		K_HELP="Install kernel(s) on the new installation"
 		K_OK="\\Z1"
-	
+
 		R_LABEL="Set root password"
 		R_HELP="Set root password needed to access this system (the default password is empty)"
 		R_OK="\\Z1"

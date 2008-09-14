@@ -19,23 +19,57 @@ export BOOTLOADER=none
 
 mkdir -p $ISO_TARGET/usr/src/
 
-mount -t proc proc $ISO_TARGET/proc
+# Lets get a full-featured environment FIXME: No failsafes!
+function mount_system_fs ()
+{
+  echo "$ISO_TARGET"
+  for mpoint in proc sys dev ; do
+    mount --bind /${mpoint} $ISO_TARGET/${mpoint} &> /dev/null
+  done
+}
+
+function umount_system_fs ()
+{
+  for mpoint in proc sys dev ; do
+    if ! umount $ISO_TARGET/${mpoint} &> /dev/null ; then
+      umount -l -f $ISO_TARGET/${mpoint} &> /dev/null
+    fi
+  done
+}
+
+# iptables needs the current kernel sources
+function compile_iptables ()
+{
+  echo "Setting up kernel directory"
+  mkdir -p $ISO_TARGET/usr/src/linux
+  mount --bind /usr/src/linux $ISO_TARGET/usr/src/linux
+
+  echo "Compiling iptables"
+  chroot $ISO_TARGET /sbin/lin -c iptables
+
+  echo "Resetting kernel directory"
+  umount $ISO_TARGET/usr/src/linux
+  rm -rf $ISO_TARGET/usr/src/linux
+}
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          STARTING CONFIGURING MODULES                +"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo ""
 
-for mod in $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list) ; do
-  yes '' | NEVER_ASK=y chroot $ISO_TARGET /sbin/lin --deps $mod
+mount_system_fs &&
+
+# We have no dependency cache or status file
+echo "Creating preliminary dependency index and cache"
+chroot $ISO_TARGET lsh create_module_index
+chroot $ISO_TARGET lsh create_depends_cache
+#exit 0
+# glibc is special
+chroot $ISO_TARGET /sbin/lin --deps --reconfigure glibc
+
+for mod in $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list | grep -v glibc | grep -v perl) ; do
+  yes '' | NEVER_ASK=y chroot $ISO_TARGET /sbin/lin --deps --reconfigure $mod
 done
-
-umount $ISO_TARGET/proc &> /dev/null
-chroot $ISO_TARGET lin makedev
-mount -t proc proc $ISO_TARGET/proc
-
-chroot $ISO_TARGET /dev/install-devices.sh
-chroot $ISO_TARGET rm -rf /var/build/makedev-*
 
 case ${ISO_KSUFFIX} in
 	2.4)
@@ -46,7 +80,7 @@ case ${ISO_KSUFFIX} in
 		;;
 esac
 
-chroot $ISO_TARGET lin kernel-headers-${ISO_KSUFFIX}
+chroot $ISO_TARGET /sbin/lin kernel-headers-${ISO_KSUFFIX}
 
 # install core tools manually, since we can't download
 
@@ -57,11 +91,23 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo ""
 
 # perl is notoriously problematic and needs to be built before glibc
-chroot $ISO_TARGET lin perl
+chroot $ISO_TARGET /sbin/lin -c perl
+chroot $ISO_TARGET /sbin/lin -c glibc
+chroot $ISO_TARGET /sbin/lin -c gcc
 
-for mod in $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list) ; do
-  chroot $ISO_TARGET /sbin/lin -c $mod
+# Compile everything but iptables (see next paragraph)
+for mod in `lsh sort_by_dependency $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list | grep -v iptables)` ; do
+  if [ "$mod" == "glibc" ]; then
+    # Remove bits/syscall.h or it will be missing on the iso
+    rm -f $ISO_TARGET/usr/include/bits/syscall.h
+    chroot $ISO_TARGET /sbin/lin -c $mod
+  else
+    chroot $ISO_TARGET /sbin/lin -c $mod
+  fi
 done
+
+# We need to setup a special environment for iptables to compile in
+compile_iptables &&
 
 # openssh installs ssh keys so these are now tracked in the module :^(
 chroot $ISO_TARGET /sbin/lin -c openssh
@@ -78,7 +124,6 @@ echo "Broken compiles:"
 (cd $ISO_TARGET/usr/src/ && ls -1)
 echo ""
 
-umount $ISO_TARGET/proc
+umount_system_fs &&
 
 touch $ISO_TARGET/.rebuild
-

@@ -1,3 +1,60 @@
+20080914 1.6.4-alpha3 ratler
+    * Alpha release 3
+
+    - Fixed issue with packages showing up twice in state/lunar/packages
+    - udev should now install fine inside the BUILD chroot
+    - Remove bits/syscall.h before lin -c glibc since glibc does a file
+      and compare check during make install that decide it's unchanged
+      and not installing it
+    - scripts/aaa_base: Removed explicit kernel-headers-X.X from packages
+      file generation, kernel-headers are already listed in base.list-X.X
+    - Auto-generate copyright year for isolinux files
+    - Added rootdelay=10 to kernel options for isolinux, let usb settle
+      before probing for devices containing the installation
+    - Kernel config bumped to 2.6.26.5
+    - Initrd:
+       - Support booting installation from any media. For example you can
+         put syslinux on a usb stick and copy initrd and kernel from the
+         iso, and then put the iso it self on the usb-stick and boot away.
+         It's also possible to put the .iso in the root of any mountable 
+         partition (a script will be available later to bootstrap this)
+       - No more udev/rules.d template, instead take rules.d from the installed
+         udev and wash them to make them work properly with the initrd
+    - Installer:
+       - Disable staticly defined mount point in fstab that match a user 
+         defined mount point during partition selection (currently only /tmp)
+       - Further improvements to the language menu to also include territory 
+         for each encoding
+       - Detect protected device (won't show up in the partition selection),
+         this is the device where the .iso reside for the alternative installation
+         method
+       - Added initd.disable.list file in conf/ that contain services that should
+         be disabled by default
+       - Added grub and md fixes from ElAngelo
+
+20080909 1.6.4-alpha2 ratler
+	* Alpha 1 & 2 release
+
+	- Updated initrd to support new udev
+	- Added udev rules.d files to template (Will automate this later)
+	- Updated font selection code in the installer
+    - Rewrote language menu in the installer, gather locales
+      from the current glibc install
+    - Module changes:
+        - vixie-cron -> cronie
+        - links2 -> links
+
+Unreleased moe
+	* Testing ISO
+
+	- Added make target precheck (to download all required sources)
+	- Added make target prebuild (to generate all build caches)
+	- Removed a couple of outdated packages
+        - Replaced iputils with inetutils (no docbook on the ISO)
+        - scripts/rebuild: Use mount --bind
+        - scripts/rebuild: Removed makedev
+        - scripts/rebuild: Added dependency cache generation
+
 20070210 1.6.1 sofar
 	* Final release of 1.6.1 for both i686 and x86_64
 

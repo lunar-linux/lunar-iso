@@ -1,7 +1,7 @@
 
 Lunar-%VERSION%.iso, 0c%CODENAME% (%DATE%)07, kernel %KERNEL%
 
-0eWelcome07 to 05Lunar Linux07 Copyright (C) 2007 by the
+0eWelcome07 to 05Lunar Linux07 Copyright (C) %COPYRIGHTYEAR% by the
 09Lunar-Linux team <maintainer@lunar-linux.org>07
 All Rights Reserved.
 

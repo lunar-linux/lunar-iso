@@ -1,17 +1,21 @@
-etc/udev/rules.d/05-udev-early.rules
-etc/udev/rules.d/75-persistent-net-generator.rules
-etc/udev/rules.d/95-udev-late.rules
-etc/udev/rules.d/50-udev.rules
-etc/udev/rules.d/60-cdrom_id.rules
-etc/udev/rules.d/60-persistent-storage.rules
-etc/udev/rules.d/60-persistent-input.rules
-etc/udev/rules.d/75-cd-aliases-generator.rules
-etc/udev/scripts.d/raid-devfs.sh
-etc/udev/udev.conf
 lib/module-init-tools/bin/lsmod     sbin/
 lib/module-init-tools/sbin/depmod   sbin/
 lib/module-init-tools/sbin/insmod   sbin/
 lib/module-init-tools/sbin/modprobe sbin/
 lib/module-init-tools/sbin/rmmod    sbin/
-sbin/udevstart
+lib/udev/firmware.sh
+lib/udev/rule_generator.functions
+lib/udev/cdrom_id
+lib/udev/scsi_id
+lib/udev/usb_id
+lib/udev/ata_id
+lib/udev/create_floppy_devices
+lib/udev/vol_id
+lib/udev/path_id
+lib/udev/edd_id
+lib/udev/write_net_rules
+lib/udev/write_cd_rules
+lib/udev/fstab_import
+lib/udev/collect
+sbin/udevadm
 sbin/udevd

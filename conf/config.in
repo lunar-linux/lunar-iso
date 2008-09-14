@@ -5,6 +5,10 @@
 
 # copy this file to 'config' and edit your settings as needed
 
+# Which arch are we compiling for? Hint: i868 or x86-64
+
+ISO_ARCH = i686
+
 # the ISO major version number
 ISO_MAJOR = 1.6.2
 

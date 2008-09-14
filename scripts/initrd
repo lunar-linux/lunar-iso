@@ -2,6 +2,11 @@
 
 . /etc/lunar/config
 
+if [ -e /proc/modules ] && ! grep -qs "loop" /proc/devices; then
+  modprobe loop
+  grep -qs loop /proc/devices || echo "Bailing out, "loop" driver is missing"
+fi
+
 cd $ISO_SOURCE/initrd
 
 umount $ISO_TARGET/dev &> /dev/null
@@ -14,7 +19,7 @@ rm -rf BUILD
 # template first
 cp -a --no-dereference template BUILD
 find BUILD -type d -name '.svn' -exec rm -rf {} \; >/dev/null 2>&1
-mkdir -p BUILD/{mnt,proc,var/lib/discover,usr}
+mkdir -p BUILD/{mnt/cdrom,mnt/device,proc,var/lib/discover,usr}
 if [ "$ISO_KSUFFIX" == "2.6" ]; then
 	mkdir BUILD/sys
 fi
@@ -44,6 +49,15 @@ transfer()
 	cat $ISO_SOURCE/initrd/initrd.list-$ISO_KSUFFIX | transfer
 	$ISO_SOURCE/scripts/ldd-gather $ISO_SOURCE/initrd/initrd.list | transfer
 	$ISO_SOURCE/scripts/ldd-gather $ISO_SOURCE/initrd/initrd.list-$ISO_KSUFFIX | transfer
+)
+
+echo "+ copying and setting up udev rules"
+(
+  cd $ISO_TARGET
+  cp --no-dereference -r etc/udev $ISO_SOURCE/initrd/BUILD/etc/
+  for i in $ISO_SOURCE/initrd/BUILD/etc/udev/rules.d/*; do
+    sed -i 's;GROUP=".*";;g' $i
+  done
 )
 
 
@@ -91,8 +105,11 @@ for KERNEL in linux safe ; do
     cd TMP
     tar xjf $ISO_SOURCE/kernels/TAR/$KVER.tar.bz2
     mkdir -p $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
+    mkdir -p $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/fs/
     echo "+ cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{block,md,ata,ide,scsi,usb/host} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/"
     cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{block,md,ata,ide,scsi,usb/host} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
+    echo "+ cp -a --no-dereference lib/modules/$KVER/kernel/drivers/fs/{nls,fat,vfat,reiserfs,xfs,ext4} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/fs/"
+    cp -a --no-dereference lib/modules/$KVER/kernel/fs/{nls,fat,vfat,reiserfs,xfs,ext4} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/fs/
     echo "+ cp lib/modules/$KVER/modules.* $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/"
     cp lib/modules/$KVER/* $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/
     echo "+ depmod -b $ISO_SOURCE/initrd/BUILD -a -F $ISO_SOURCE/kernels/$KERNEL.map $KVER"
@@ -110,7 +127,7 @@ for ITEM in $(find BUILD -type d -name ".svn" | tac); do
 done
 
 chown -R root:root BUILD/*
-  
+
 echo "+ running ldconfig"
 chroot BUILD /sbin/ldconfig &&
 rm -f BUILD/etc/mtab &&
@@ -127,7 +144,7 @@ sed "s/INITRDSIZE/$SIZE/g" $ISO_SOURCE/isolinux/isolinux.cfg.in > $ISO_SOURCE/is
 
 dd if=/dev/zero of=initrd.raw bs=1024 count=$SIZE &&
 losetup /dev/loop/0 initrd.raw &&
-mkfs.ext2 -b 1024 -m 0 -i 1024 -N 512 /dev/loop/0 &&
+mkfs.ext2 -b 1024 -m 0 -i 1024 -N 768 /dev/loop/0 &&
 mkdir BUILD.mnt &&
 mount /dev/loop/0 BUILD.mnt &&
 cp -a BUILD/* BUILD.mnt/ &&

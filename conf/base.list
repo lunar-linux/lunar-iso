@@ -46,7 +46,6 @@ reiserfsprogs
 shadow
 jfsutils
 bash_static
-raidtools
 findutils
 pciutils
 hdparm
@@ -57,7 +56,6 @@ rsync
 zile
 ntfsprogs
 dosfstools
-tnftp
 dhcpcd
 wipe
 dmidecode
