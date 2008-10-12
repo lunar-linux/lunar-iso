@@ -5,7 +5,7 @@
 
 # copy this file to 'config' and edit your settings as needed
 
-# Which arch are we compiling for? Hint: i868 or x86-64
+# Which arch are we compiling for? Hint: i868 or x86_64
 
 ISO_ARCH = i686
 

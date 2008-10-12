@@ -254,7 +254,7 @@ list_block_devices()
 	for DEVICE in $(tail +3 /proc/partitions | awk '{print $4}' | grep -v -e ${PDEVICE:-^$} -e loop); do
 		FDEVICE=$(lsh unmap_device /dev/$DEVICE)
 		# if the device node ends with [0-9] then it's never a disc
-		if [[ $DEVICE =~ '[0-9]$' ]]; then
+		if [[ $DEVICE =~ [0-9]$ ]]; then
 			# partitions always sit on a disc - which is also listed
 			if grep -qw "${DEVICE/[0-9]*/}" /proc/partitions ; then
 				echo $FDEVICE:part
@@ -303,10 +303,10 @@ menu_list_targets()
 
 			for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do
 				if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$DEVICE" ]; then
-					FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
-					MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
+					FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
+					MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
 					FSTYPE=${FSTYPE/none/swap}
-					echo "$FSTYPE partition, size $FSIZE"
+					echo "$MNTPNT partition, size $FSIZE, [$FSTYPE]"
 					continue 2
 				fi
 			done
@@ -718,11 +718,11 @@ menu_select_partitions()
 			continue
 		fi &&
 
-		case "$FSYS" in
-		xfs|jfs|reiserfs)
-			msgbox "Selecting XFS, JFS or reiserfs for your root and/or boot filesystem *requires* you to compile a kernel later on with XFS, JFS or reiserfs built in to the kernel. The default pre-compiled lunar-linux kernel will NOT work in your case!"
-			;;
-		esac
+		#case "$FSYS" in
+		#xfs|jfs|reiserfs)
+		#	msgbox "Selecting XFS, JFS or reiserfs for your root and/or boot filesystem *requires* you to compile a kernel later on with XFS, JFS or reiserfs built in to the kernel. The default pre-compiled lunar-linux kernel will NOT work in your case!"
+		#	;;
+		#esac
 
 		MNTPNT=$(get_mount_point $FSYS) &&
 
@@ -813,11 +813,13 @@ make_lilo_conf()
 		is_26 || echo "append=\"devfs=nomount\""
 		echo "read-only"
 		echo ""
-        	if [ ! echo $BOOT | grep -qw md ]; then
-                	BOOTDISCS=$(mdadm --detail $BOOT | tail -n2 | awk '{print $7}')
-                	echo "raid-extra-boot=$(echo $BOOTDISCS | sed s@\ @,@g)"
-        	fi
-		echo "boot=$DISC"
+		if echo $BOOT | grep -q md ; then
+		    echo "boot=$BOOT"
+		    BOOTDISCS=$(mdadm --detail $BOOT | tail -n2 | awk '{print $7}')
+		    echo "raid-extra-boot=$(echo $BOOTDISCS | sed -e 's@[0-9]@@g' -e 's@\ @,@g')"
+		else
+		    echo "boot=$DISC"
+		fi
 		echo "root=$ROOT"
 		echo ""
 	) > $TARGET/etc/lilo.conf
@@ -929,6 +931,7 @@ transfer()
 					CHECK=$(echo ${PARTITIONS[$N]} | cut -d: -f6)
 					FORCE=$(echo ${PARTITIONS[$N]} | cut -d: -f7)
 					FORMAT=$(echo ${PARTITIONS[$N]} | cut -d: -f8)
+
 					# handle /tmp, TODO: Automatic fstab scanning for all mountpints
 					if [ "$MOUNTPOINT" == "/tmp" ]; then
 					    TMP_TMPFS_NO=1
@@ -951,13 +954,18 @@ transfer()
 					fi
 					# again, weed out swap first
 					if [ "$FSYS" == "swap" ]; then
-						if swapon $PART; then
-							FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
-							swapoff $PART
-						else
-							sleep 3
-							msgbox "Problem mounting swap on $PART. Installation will continue."
-						fi
+                        # We need to check that the swap device wasn't added already
+                        # or we end up with double entries in fstab if more than one
+                        # swap device was added
+                        if ! echo $FSTAB | grep -q $PART; then
+						    if swapon $PART; then
+							    FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+							    swapoff $PART
+						    else
+							    sleep 3
+							    msgbox "Problem mounting swap on $PART. Installation will continue."
+						    fi
+                        fi
 					# then try to mount normal FS's
 					else
 						if [ ! -d $TARGET$MOUNTPOINT ] ; then
@@ -1062,7 +1070,7 @@ transfer()
 
 			# setup list of installed packages etc.
 			percent_msg "Updating administrative files"
-			echo "moonbase:%DATE%:installed:%DATE%:37M" >> $TARGET/var/state/lunar/packages
+			echo "moonbase:%DATE%:installed:%DATE%:37000KB" >> $TARGET/var/state/lunar/packages
 			cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
 			cp /var/state/lunar/depends        $TARGET/var/state/lunar/
 			cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
@@ -1238,15 +1246,10 @@ font_menu()
 
 show_languages()
 {
-	local IFS
-	IFS=$' \t\n'
-	locale -a -v | egrep "(locale:|language \||territory \|)" |
-	sed -r 's;archive:.*|locale:|language \| |territory \|;;g' |
-	awk '{printf $0 ; printf " "} NR % 3 == 0 {print " "}' |
-	while read locale language territory; do
-		echo "$locale"
-		echo "$language ($territory)"
-        done
+  while read locale language; do
+    echo "$locale"
+    echo "$language"
+  done < /.locale_list
 }
 
 
@@ -1366,6 +1369,12 @@ install_kernels()
 				if [ -f "/kernels/$CCOMMAND.tar.bz2" ]; then
 					cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
 					ln -s /usr/src/linux-$CCOMMAND $TARGET/usr/src/linux
+
+                    # Register the kernel module as installed
+                    if ! grep -q "^linux-2.6" $TARGET/var/state/lunar/packages; then
+                      echo "linux-2.6:%DATE%:installed:$CCOMMAND:37000KB" >> $TARGET/var/state/lunar/packages
+                    fi
+
 					# let the plugin code handle the hard work
 					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
 

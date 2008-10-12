@@ -1,0 +1,24 @@
+#!/bin/bash
+
+gen_language_list()
+{
+  chroot $ISO_TARGET locale -a -v | egrep "(locale:|language \||territory \|)" |
+  sed -r 's;archive:.*|locale:|language \| |territory \|;;g' |
+  awk '{printf $0 ; printf " "} NR % 3 == 0 {print " "}' |
+  while read locale language territory; do
+	echo -e "$locale\t$language ($territory)" >> $ISO_TARGET/.locale_list
+  done
+}
+
+if [ -e $ISO_TARGET/usr/lib/locale/locale-archive ]; then
+  gen_language_list
+  mkdir -p $ISO_SOURCE/locale
+  mv $ISO_TARGET/usr/lib/locale/locale-archive $ISO_SOURCE/locale/
+elif [ -e $ISO_SOURCE/locale/locale-archive ]; then
+  mv $ISO_SOURCE/locale/locale-archive $ISO_TARGET/usr/lib/locale/
+  gen_language_list
+  mv $ISO_TARGET/usr/lib/locale/locale-archive $ISO_SOURCE/locale/
+else
+  echo "+++ WARNING: Can not generate language list, locale-archive missing!"
+  exit 1
+fi

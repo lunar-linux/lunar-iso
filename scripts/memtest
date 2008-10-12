@@ -1,6 +1,8 @@
 #!/bin/bash
 
 . /etc/lunar/config
+
+[ "$ISO_KARCH" == "x86_64" ] && exit 0
 unset VERBOSE
 
 BUILD_DIRECTORY=${ISO_SOURCE}/memtest

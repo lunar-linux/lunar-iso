@@ -1,0 +1,23 @@
+
+Lunar-%VERSION%.iso, 0c%CODENAME% (%DATE%)07, kernel %KERNEL%
+
+0eWelcome07 to 05Lunar Linux07 Copyright (C) %COPYRIGHTYEAR% by the
+09Lunar-Linux team <maintainer@lunar-linux.org>07
+All Rights Reserved.
+
+Loading additional drivers
+
+When you need special drivers to install on special IDE hardware or SCSI
+cards, or other input devices such as USB, you will need to load certain
+kernel modules before installing.
+
+To load these modules, type 02linux07 and load the modules from the initrd
+menu. If you know the name of the module you can also append the name of the
+module to the boot prompt: 02linux aacraid uhci-hcd ehci-hcd07.
+
+The installer will attempt to load some modules automatically.
+
+
+type 02linux07 followed by optional kernel parameters to use this boot option
+
+                             0aF107 install  02F202 modules  0aF307 safe

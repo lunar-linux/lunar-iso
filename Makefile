@@ -27,10 +27,15 @@ export ISO_SOURCE ISO_TARGET ISO_MAJOR ISO_MINOR ISO_VERSION ISO_CODENAME \
 
 all: iso
 
-iso: initrd proper $(ISO_TARGET)/.iso
+iso: initrd proper locale $(ISO_TARGET)/.iso
 $(ISO_TARGET)/.iso:
 	@echo "Generating ISO"
 	@scripts/isofs
+
+locale: $(ISO_TARGET)/.locale_list
+$(ISO_TARGET)/.locale_list:
+	@echo "Generating locale list"
+	@scripts/gen_locale_list
 
 proper: aaa_dev aaa_base $(ISO_TARGET)/.proper
 $(ISO_TARGET)/.proper:
@@ -123,6 +128,7 @@ clean:
 	rm -f template/moonbase.tar.bz2
 	rm -f kernels/linux kernels/linux.map
 	rm -f kernels/safe kernels/safe.map
+	rm -rf locale
 
 dist: lunar-$(ISO_VERSION).iso
 	rm -f lunar-$(ISO_VERSION).iso.{bz2,md5,bz2.md5}

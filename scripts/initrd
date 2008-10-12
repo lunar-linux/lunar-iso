@@ -24,8 +24,8 @@ if [ "$ISO_KSUFFIX" == "2.6" ]; then
 	mkdir BUILD/sys
 fi
 if [ "$ISO_KARCH" == "x86_64" ]; then
-        ln -sf /lib BUILD/lib64
-        ln -sf /usr/lib BUILD/usr/lib64
+        ln -sf lib BUILD/lib64
+        ln -sf lib BUILD/usr/lib64
 fi
 
 echo "+ copying binaries and required files"
@@ -38,6 +38,7 @@ transfer()
 			cp --no-dereference "$ISO_TARGET/$ITEM" "$ISO_SOURCE/initrd/BUILD/$DIR"
 		else
 	    	mkdir -p "$ISO_SOURCE/initrd/BUILD/$(dirname $ITEM)"
+	    	echo "+ cp --no-dereference \"$ISO_TARGET/$ITEM\" \"$ISO_SOURCE/initrd/BUILD/$(dirname $ITEM)\""
 	    	cp --no-dereference "$ISO_TARGET/$ITEM" "$ISO_SOURCE/initrd/BUILD/$(dirname $ITEM)"
 		fi
 	done
@@ -140,7 +141,11 @@ echo "+ estimated $SIZE" &&
 # (( SIZE = SIZE + 1 )) &&
 echo "+ used size $SIZE" &&
 # and write it to the isolinux cfg
-sed "s/INITRDSIZE/$SIZE/g" $ISO_SOURCE/isolinux/isolinux.cfg.in > $ISO_SOURCE/isolinux/isolinux.cfg &&
+if [ "$ISO_KARCH" == "x86_64" ]; then
+    sed "s/INITRDSIZE/$SIZE/g" $ISO_SOURCE/isolinux/isolinux.cfg.in.$ISO_KARCH > $ISO_SOURCE/isolinux/isolinux.cfg
+else
+    sed "s/INITRDSIZE/$SIZE/g" $ISO_SOURCE/isolinux/isolinux.cfg.in > $ISO_SOURCE/isolinux/isolinux.cfg
+fi &&
 
 dd if=/dev/zero of=initrd.raw bs=1024 count=$SIZE &&
 losetup /dev/loop/0 initrd.raw &&

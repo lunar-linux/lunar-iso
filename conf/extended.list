@@ -1,8 +1,6 @@
-perl
 m4
 autoconf
 gettext
-freetype2
 chkconfig
 bison
 yawl

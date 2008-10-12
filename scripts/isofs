@@ -39,9 +39,19 @@ mkdir $ISO_TARGET/isolinux
 cp $ISO_SOURCE/initrd/initrd $ISO_TARGET/isolinux/
 cp $ISO_SOURCE/kernels/linux $ISO_TARGET/isolinux/
 cp $ISO_SOURCE/kernels/safe $ISO_TARGET/isolinux/
-cp $ISO_SOURCE/memtest/memtest $ISO_TARGET/isolinux/
+if [ "$ISO_KARCH" != "x86_64" ]; then
+    cp $ISO_SOURCE/memtest/memtest $ISO_TARGET/isolinux/
+fi
 
-cp $ISO_SOURCE/isolinux/{f{1,2,3,4}.txt,boot.cat,isolinux.{bin,cfg},generate-iso.sh,README} $ISO_TARGET/isolinux/
+if [ "$ISO_KARCH" == "x86_64" ]; then
+    for i in $ISO_SOURCE/isolinux/*.$ISO_KARCH; do
+	echo "+ cp $i $ISO_TARGET/isolinux/${i//.$ISO_KARCH}"
+	cp $i $ISO_TARGET/isolinux/$(basename ${i%\.$ISO_KARCH})
+    done
+    cp $ISO_SOURCE/isolinux/{boot.cat,generate-iso.sh,README,isolinux.{bin,cfg}} $ISO_TARGET/isolinux/
+else
+    cp $ISO_SOURCE/isolinux/{f{1,2,3,4}.txt,boot.cat,isolinux.{bin,cfg},generate-iso.sh,README} $ISO_TARGET/isolinux/
+fi
 
 echo "+ copying package listing"
 cp $ISO_SOURCE/aaa_base/packages $ISO_TARGET/.packages

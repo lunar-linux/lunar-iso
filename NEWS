@@ -1,3 +1,45 @@
+20081012 1.6.4-beta1 ratler
+    * Beta 1 release!
+
+    * Modules
+    - Kernel bumped to 2.6.27
+    - All packages refreshed
+    - freetype2 removed
+
+    * Installer
+    - Fixed issue with swap partitions showing up twice in fstab
+      if you add more than one
+    - Fixed issue with block device list, Bash 3.2 changed behavior 
+      in =~ operator, the regex can no longer be quoted
+    - Modified a small problem in transfer() where some variables got
+      assigned with the wrong values. Also added a feature to list
+      what filesystem type you choosed for the assigned partition
+    - Disabled the dialog that tell the user to rebuild the kernel for
+      xfs, jfs and reiserfs since the kernel now includes them by default
+    - More software raid fixes from ElAngelo
+    - We now disable /tmp on tmpfs if the user add a /tmp partition
+    - Precompiled kernels will now get registered as installed
+    - Simplified the language menu. This time the iso process will
+      create a file on the iso that contain a language list
+    - perl moved from extended.list -> base.list, needed for vim to work
+      on the iso
+    - As mentioned the default kernel config now compile xfs, jfs and reiserfs
+      as builtin
+
+    * Script changes
+    - isofs
+      - Disable memtest on x86_64 (doesn't build or work anyway)
+      - New isolinux templates for x86_64, needed since memtest is gone
+    - rebuild
+      - Make sure we copy the kernel config for the correct arch to the ISO
+    - initrd
+      - Fixed lib64 symlink issue, could cause issues with the running system
+    - memtest
+      - exit 0 if x86_64
+    - gen_locale_list
+      - New script to generate a language list from the locale-archive in $ISO_TARGET
+    
+
 20080914 1.6.4-alpha3 ratler
     * Alpha release 3
 

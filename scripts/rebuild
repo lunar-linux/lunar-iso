@@ -76,7 +76,11 @@ case ${ISO_KSUFFIX} in
 		cp kernels/conf/${ISO_KSUFFIX}/base $ISO_TARGET/etc/lunar/local/.config
 		;;
 	2.6)
-		cp kernels/conf/${ISO_KSUFFIX}/base $ISO_TARGET/etc/lunar/local/.config.2.6.stable
+        if [ "$ISO_KARCH" == "x86_64" ]; then
+		  cp kernels/conf/${ISO_KSUFFIX}/base.$ISO_KARCH $ISO_TARGET/etc/lunar/local/.config.2.6.stable
+        else
+		  cp kernels/conf/${ISO_KSUFFIX}/base $ISO_TARGET/etc/lunar/local/.config.2.6.stable
+        fi
 		;;
 esac
 
@@ -98,7 +102,7 @@ chroot $ISO_TARGET /sbin/lin -c gcc
 # Compile everything but iptables (see next paragraph)
 for mod in `lsh sort_by_dependency $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list | grep -v iptables)` ; do
   if [ "$mod" == "glibc" ]; then
-    # Remove bits/syscall.h or it will be missing on the iso
+    # Remove bits/syscall.h or it will be missing on the iso, we should probably patch glibc
     rm -f $ISO_TARGET/usr/include/bits/syscall.h
     chroot $ISO_TARGET /sbin/lin -c $mod
   else

@@ -1,0 +1,25 @@
+DEFAULT install
+APPEND read-only load_ramdisk=1 ramdisk_size=INITRDSIZE initrd=initrd root=/dev/ram0 prompt_ramdisk=0 rootdelay=10
+DISPLAY f1.txt
+TIMEOUT 600
+PROMPT 1
+F1 f1.txt
+F2 f2.txt
+F3 f3.txt
+F4 f1.txt
+F5 f1.txt
+F6 f1.txt
+F7 f1.txt
+F8 f1.txt
+F9 f1.txt
+LABEL install
+	KERNEL linux
+	APPEND read-only load_ramdisk=1 ramdisk_size=INITRDSIZE initrd=initrd root=/dev/ram0 prompt_ramdisk=0 vga=ask rootdelay=10 skipinitrd
+LABEL linux
+	KERNEL linux
+	APPEND read-only load_ramdisk=1 ramdisk_size=INITRDSIZE initrd=initrd root=/dev/ram0 prompt_ramdisk=0 vga=ask
+LABEL safe
+	KERNEL safe
+	APPEND read-only load_ramdisk=1 ramdisk_size=INITRDSIZE initrd=initrd root=/dev/ram0 prompt_ramdisk=0 vga=normal acpi=off apm=off noapic noisapnp nosmp notsc
+# uncomment the following line to enable serial console booting
+# SERIAL 0 38400

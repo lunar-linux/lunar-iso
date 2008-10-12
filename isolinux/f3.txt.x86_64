@@ -1,0 +1,23 @@
+
+Lunar-%VERSION%.iso, 0c%CODENAME% (%DATE%)07, kernel %KERNEL%
+
+0eWelcome07 to 05Lunar Linux07 Copyright (C) %COPYRIGHTYEAR% by the
+09Lunar-Linux team <maintainer@lunar-linux.org>07
+All Rights Reserved.
+
+Safe mode
+
+In order to boot with certain hardware and kernel features disabled,
+type 02safe07 to the boot prompt and press ENTER. This option
+also disables MTRR, RAID, LVM, USB keyboard, FireWire and much more such
+as APM, ACPI, APIC etc. Some hardware may not function as well.
+
+This safe mode does not restrict your access to write to devices, so
+beware when you need to recover a broken system. If you wish to perform
+recovery of a broken system, boot into the installer and use the 03shell07
+option to start a rescue shell
+
+
+type 02safe07 followed by optional kernel parameters to use this boot option
+
+                             0aF107 install  0aF207 modules  02F302 safe
