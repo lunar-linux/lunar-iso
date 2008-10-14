@@ -38,6 +38,7 @@ less
 cpio
 file
 tar
+grub
 lilo
 man
 parted

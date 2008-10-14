@@ -47,6 +47,7 @@ libpcap
 wpa_supplicant
 rp-pppoe
 pppconfig
+quota
 nfs-utils
 links
 lard
