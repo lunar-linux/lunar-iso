@@ -718,11 +718,14 @@ menu_select_partitions()
 			continue
 		fi &&
 
-		#case "$FSYS" in
+		case "$FSYS" in
 		#xfs|jfs|reiserfs)
 		#	msgbox "Selecting XFS, JFS or reiserfs for your root and/or boot filesystem *requires* you to compile a kernel later on with XFS, JFS or reiserfs built in to the kernel. The default pre-compiled lunar-linux kernel will NOT work in your case!"
 		#	;;
-		#esac
+		    swap)
+			SWAP_ENABLED=1
+			;;
+		esac
 
 		MNTPNT=$(get_mount_point $FSYS) &&
 
@@ -785,9 +788,15 @@ means that your root or boot filesystem should be ext2."
 
 	if [ -n "$ROOT" ]; then
 		if (( STEP <= 4 )) ; then
-			STEP=5
+		        # Skip swapfile step if swap partition was set
+		        if [ -n "$SWAP_ENABLED" ]; then
+			        S_OK=\\Z2
+			        STEP=6
+			else
+			        S_OK=
+				STEP=5
+			fi
 		fi
-		S_OK=
 		T_OK=
 		M_OK=\\Z2
 	fi
@@ -1122,6 +1131,8 @@ transfer()
 
 			# some more missing files:
 			cp /etc/lunar.release $TARGET/etc/
+			cp /etc/lsb-release $TARGET/etc/
+
 			echo "    LUNAR_MODULE=lunar" > $TARGET/etc/lunar/local/config
 			cp /etc/lunar/local/.config* $TARGET/etc/lunar/local/
 

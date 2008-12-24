@@ -13,6 +13,19 @@ echo "+ tagging release version"
 echo "Lunar Linux $ISO_CNAME" > $ISO_TARGET/etc/lunar.release
 echo "lunar" > $ISO_TARGET/etc/hostname
 
+echo "+ tagging lsb release version"
+if [ "x$ISO_MINOR" != "x" ]; then
+    C_VER="${ISO_MAJOR}-${ISO_MINOR}"
+else
+    C_VER=$ISO_MAJOR
+fi
+cat >$ISO_TARGET/etc/lsb-release<<EOF
+DISTRIB_ID="Lunar Linux"
+DISTRIB_RELEASE="$C_VER"
+DISTRIB_CODENAME="$ISO_CODENAME"
+DISTRIB_DESCRIPTION="Lunar Linux $ISO_CNAME"
+EOF
+
 echo "+ adding kernel modules"
 mkdir -p $ISO_TARGET/kernels
 cp -a $ISO_SOURCE/kernels/TAR/* $ISO_TARGET/kernels/
