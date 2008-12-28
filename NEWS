@@ -1,3 +1,17 @@
+20081224 1.6.4 ratler
+    * Final release of 1.6.4 'Lacus Autumni' for both i686 and x86-64
+
+    * Modules
+    - Kernel bumped to 2.6.27.10
+    - Removed USB modem modules from the precompiled kernels
+    - All packages refreshed
+    - lsb-release added
+
+    * Installer
+    - The installer will now skip 'swap file' step if a swap partition
+      was added
+    - Bumped isolinux.bin version
+
 20081012 1.6.4-beta1 ratler
     * Beta 1 release!
 
