@@ -293,6 +293,7 @@ menu_list_targets()
 
 			PTYPE=$(file -Ls $DEVICE 2>&1 | cat)
 			case $PTYPE in
+			        *ext4*) PTYPE="(ext4)" ;;
 				*ext3*) PTYPE="(ext3)" ;;
 				*ext2*) PTYPE="(ext2)" ;;
 				*XFS*) PTYPE="(XFS)" ;;
@@ -386,6 +387,7 @@ menu_get_filesystem()
 	TITLE="Filesystem Selection Menu"
 	HELP="Please select a filesystem. A '*' means that this is a journalling filesystem, which provides better data security against system crashes etc."
 
+	EXT4="Fourth Extended file system (*)"
 	EXT3="Third Extended file system (*)"
 	EXT2="Second Extended file system"
 	REISER="Reiserfs file system (*)"
@@ -394,6 +396,7 @@ menu_get_filesystem()
 	SWAP="Swap (Virtual memory or paging filesystem)"
 
 	$DIALOG --title "$TITLE" --default-item "ext3" --menu "$HELP" 0 0 0 \
+	           "ext4"      "$EXT4"    \
 		   "ext3"      "$EXT3"    \
 		   "ext2"      "$EXT2"    \
 		   "reiserfs"  "$REISER"  \
@@ -480,7 +483,7 @@ check_partition()
 {
 	PROMPT="Check for errors?"
 	case $1 in
-		ext2|ext3|swap)
+		ext2|ext3|ext4|swap)
 			if confirm "$PROMPT" "--defaultno"; then
 			    echo "-c";
 			fi
