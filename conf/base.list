@@ -8,8 +8,8 @@ discover-data
 zlib
 sed
 gawk
-mktemp
 ncurses
+yasm
 e3
 nano
 dialog
