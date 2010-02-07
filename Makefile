@@ -27,20 +27,20 @@ export ISO_SOURCE ISO_TARGET ISO_MAJOR ISO_MINOR ISO_VERSION ISO_CODENAME \
 
 all: iso
 
-iso: initrd proper locale $(ISO_TARGET)/.iso
+iso: initrd proper $(ISO_TARGET)/.iso
 $(ISO_TARGET)/.iso:
 	@echo "Generating ISO"
 	@scripts/isofs
+
+proper: locale aaa_dev aaa_base $(ISO_TARGET)/.proper
+$(ISO_TARGET)/.proper:
+	@echo "Cleaning BUILD"
+	@scripts/proper
 
 locale: $(ISO_TARGET)/.locale_list
 $(ISO_TARGET)/.locale_list:
 	@echo "Generating locale list"
 	@scripts/gen_locale_list
-
-proper: aaa_dev aaa_base $(ISO_TARGET)/.proper
-$(ISO_TARGET)/.proper:
-	@echo "Cleaning BUILD"
-	@scripts/proper
 
 aaa_dev: $(ISO_SOURCE)/aaa_dev/aaa_dev.tar.bz2
 $(ISO_SOURCE)/aaa_dev/aaa_dev.tar.bz2: initrd
