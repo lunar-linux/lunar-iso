@@ -3,7 +3,7 @@
 export LC_ALL=C
 
 # set gcc optimization
-echo "CPU=$ISO_GCCARCH" >> $ISO_TARGET/etc/lunar/local/optimizations.GCC_4_2
+echo "CPU=$ISO_GCCARCH" >> $ISO_TARGET/etc/lunar/local/optimizations.GCC_4_4
 # do the parallel thingy?
 if [ -n "$ISO_MAKES" ]; then
   echo "MAKES=$ISO_MAKES" >> $ISO_TARGET/etc/lunar/local/optimizations.GNU_MAKE
@@ -67,7 +67,7 @@ chroot $ISO_TARGET lsh create_depends_cache
 # glibc is special
 chroot $ISO_TARGET /sbin/lin --deps --reconfigure glibc
 
-for mod in $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list | grep -v glibc | grep -v perl) ; do
+for mod in $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list | grep -v glibc | grep -v perl | grep -v sysvinit) ; do
   yes '' | NEVER_ASK=y chroot $ISO_TARGET /sbin/lin --deps --reconfigure $mod
 done
 
@@ -95,9 +95,12 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo ""
 
 # perl is notoriously problematic and needs to be built before glibc
-chroot $ISO_TARGET /sbin/lin -c perl
+#chroot $ISO_TARGET /sbin/lin -c perl
 chroot $ISO_TARGET /sbin/lin -c glibc
 chroot $ISO_TARGET /sbin/lin -c gcc
+
+# Remove inittab to make sure it's tracked by sysvinit
+rm -f $ISO_TARGET/etc/inittab
 
 # Compile everything but iptables (see next paragraph)
 for mod in `lsh sort_by_dependency $(cat conf/base.list conf/base.list-${ISO_KSUFFIX} conf/extended.list | grep -v iptables)` ; do
@@ -119,6 +122,9 @@ chroot $ISO_TARGET /sbin/lin -c openssh
 chroot $ISO_TARGET /sbin/lin -c e2fsprogs
 # we don't want vi linked against libX11
 chroot $ISO_TARGET /sbin/lin -c vim --opts --without-x
+# We need to make sure inittab is included with sysvinit
+rm -f $ISO_TARGET/etc/inittab
+chroot $ISO_TARGET /sbin/lin -c sysvinit
 
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "+          REBUILD FINISHED                            +"

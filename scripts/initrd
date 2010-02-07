@@ -56,7 +56,8 @@ echo "+ copying and setting up udev rules"
 (
   cd $ISO_TARGET
   cp --no-dereference -r etc/udev $ISO_SOURCE/initrd/BUILD/etc/
-  for i in $ISO_SOURCE/initrd/BUILD/etc/udev/rules.d/*; do
+  cp --no-dereference -r lib/udev/rules.d $ISO_SOURCE/initrd/BUILD/lib/udev/
+  for i in $ISO_SOURCE/initrd/BUILD/lib/udev/rules.d/*; do
     sed -i 's;GROUP=".*";;g' $i
   done
 )
@@ -107,10 +108,10 @@ for KERNEL in linux safe ; do
     tar xjf $ISO_SOURCE/kernels/TAR/$KVER.tar.bz2
     mkdir -p $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
     mkdir -p $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/fs/
-    echo "+ cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{block,md,ata,ide,scsi,usb/host} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/"
-    cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{block,md,ata,ide,scsi,usb/host} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
-    echo "+ cp -a --no-dereference lib/modules/$KVER/kernel/drivers/fs/{nls,fat,vfat,reiserfs,xfs,ext4} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/fs/"
-    cp -a --no-dereference lib/modules/$KVER/kernel/fs/{nls,fat,vfat,reiserfs,xfs,ext4} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/fs/
+    echo "+ cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{block,md,ata,scsi,usb/host} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/"
+    cp -a --no-dereference lib/modules/$KVER/kernel/drivers/{block,md,ata,scsi,usb/host} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/drivers/
+    echo "+ cp -a --no-dereference lib/modules/$KVER/kernel/drivers/fs/{nls,fat} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/fs/"
+    cp -a --no-dereference lib/modules/$KVER/kernel/fs/{nls,fat} $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/kernel/fs/
     echo "+ cp lib/modules/$KVER/modules.* $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/"
     cp lib/modules/$KVER/* $ISO_SOURCE/initrd/BUILD/lib/modules/$KVER/
     echo "+ depmod -b $ISO_SOURCE/initrd/BUILD -a -F $ISO_SOURCE/kernels/$KERNEL.map $KVER"

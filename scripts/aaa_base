@@ -6,11 +6,10 @@ unset VERBOSE
 echo "+ cleaning up (some) file structure items"
 #rm -f $ISO_TARGET/etc/rc?.d/{*nfs,*xinetd,*serial,*portmap}
 rm -rf $ISO_TARGET/var/cache/ccache/*
-rmdir /usr/lib/locale/*
 chroot $ISO_TARGET ccache -C
 chroot $ISO_TARGET ccache -M 256M
 rm -rf $ISO_TARGET/etc/ssh/ssh_host_*key $ISO_TARGET/etc/ssh/ssh_host_*key.pub
-rmdir /usr/lib/locale/*
+rm -rf $ISO_TARGET/usr/lib/locale/*
 sed -i 's/^MAKES=.*/MAKES=/' $ISO_TARGET/etc/lunar/local/optimizations.GNU_MAKE
 # this might go wrong so force it's removal before creating it as empty file:
 rm -f $ISO_TARGET/etc/mtab
@@ -53,7 +52,7 @@ find $ISO_TARGET/{bin,boot,etc,home,lib,mnt,opt,root,sbin,srv,usr,var} | sort | 
 # add the install logs
 cat $ISO_TARGET/var/log/lunar/install/* | sort | uniq > $ISO_TARGET/.tracked
 diff -U0 $ISO_TARGET/.tracked $ISO_TARGET/.present | grep '^\+[^+]' | sed 's/^+//g' > $ISO_TARGET/.aaa_base.list
-for n in /etc/lunar/local/optimizations.* ; do echo $n >> $ISO_TARGET/.aaa_base.list ; done
+for n in $ISO_TARGET/etc/lunar/local/optimizations.* ; do echo $n | sed "s;$ISO_TARGET;;" >> $ISO_TARGET/.aaa_base.list ; done
 
 # make the tarball
 chroot $ISO_TARGET tar cjf /var/cache/lunar/aaa_base.tar.bz2 -T .aaa_base.list --no-recursion
