@@ -2,5 +2,5 @@ BOPT=Faster
 SPD=(  )
 XTRA=(  )
 FPM=None
-CC_OPTS=( ccpipe cxxpipe )
+CC_OPTS=( Pipe )
 STACK=

@@ -11,7 +11,7 @@ proc	/proc		proc	defaults	0 0
 devpts	/dev/pts	devpts	defaults	0 0
 
 # usb devfs can be helpfull on interactive (desktop) machines
-usbdevfs  /proc/bus/usb   usbdevfs defaults       0 0 
+#usbdevfs  /proc/bus/usb   usbdevfs defaults       0 0 
 
 # /tmp should be wiped on boot so by default it helps to have it on tmpfs
 tmpfs	/tmp		tmpfs	defaults,size=256m,nr_inodes=64m	0 0
