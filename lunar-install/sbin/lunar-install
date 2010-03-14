@@ -524,7 +524,7 @@ select_swap_file()
 determine_mount_opts()
 {
 	if [ "$1" == "swap" ]; then
-		echo "sw"
+		echo "defaults"
 	else
 		echo "defaults"
 	fi
@@ -547,7 +547,7 @@ determine_fsck_pass()
 get_mount_point()
 {
 	if [ "$1" == "swap" ]; then
-		echo "none"
+		echo "swap"
 	else
 		POINT=$(inputbox "Please enter a mount point" "") &&
 		if [ -z "$POINT" -a -z "$ROOT" ]; then
@@ -971,8 +971,8 @@ transfer()
                                                # or we end up with double entries in fstab if more than one
                                                # swap device was added
                                                if ! echo $FSTAB | grep -q $PART; then
+						            LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
 					         	    if swapon $PART; then
-								    LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
 						        	    FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
 							            swapoff $PART
 						            else
@@ -991,8 +991,8 @@ transfer()
 							MNTOPTARGS=""
 						fi
 						echo "Mounting $PART as $FSYS"
+                				LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
 						if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
-                					LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
 							FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
 							if [ "$FSYS" == "swap" ]; then
 								umount -n $PART
@@ -1014,7 +1014,7 @@ transfer()
 				    mkswap $TARGET$SWAPFILE &&
 				    chmod 000 $TARGET$SWAPFILE
 			then
-				FSTAB="$FSTAB\n$SWAPFILE\tnone\tswap\tsw\t\t0 0"
+				FSTAB="$FSTAB\n$SWAPFILE\tswap\tswap\tdefaults\t\t0 0"
 			else
 				sleep 3
 				msgbox "Problem creating swapfile. Installation will continue."
@@ -1238,13 +1238,11 @@ fstab_style_menu()
     
     TITLE="Fstab Style Menu"
     HELP="Please select preferred fstab mount style"
-    FSTAB_OPTIONS='"DEV" "Device name style" \
-                   "LABEL" "LABEL style" \
-                   "UUID" "UUID style"'
     FSTAB_STYLE=`$DIALOG --title "$TITLE" --default-item "$FSTAB_STYLE" --cr-wrap --menu "$HELP" 0 0 0 \
                  "DEV" "Device name style" \
                  "LABEL" "LABEL style" \
                  "UUID" "UUID style"`
+    FSTAB_STYLE=${FSTAB_STYLE:-UUID}
 }
 
 ##
@@ -1303,7 +1301,7 @@ set_fs_label() {
 	    jfs_tune -L $LABEL $PART &> /dev/null
 	    ;;
 	swap)
-	    swapon -L swap${PART##*/} $PART &> /dev/null
+	    mkswap -L swap${PART##*/} $PART &> /dev/null
 	    ;;
     esac	
 }
@@ -1332,7 +1330,8 @@ set_fs_uuid() {
 	    jfs_tune -U $UUID $PART &> /dev/null
 	    ;;
 	swap)
-	    swapon -U $UUID $PART &> /dev/null
+	    mkswap -U $UUID $PART &> /dev/null
+	    ;;
     esac	
 }
 
@@ -1730,7 +1729,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 					"G" "Toggle guided menus on/off                     [$GUIDE]" \
 					"C" "Toggle asking of confirmations on/off          [$CONFIRM]" \
 					"D" "Toggle disabling the ability to perform steps  [$DISABLE]" \
-                                        "F" "Configure /etc/fstab style                     [$FSTAB_STYLE]" \
+                                        "F" "Configure fstab mount style                    [$FSTAB_STYLE]" \
 					"M" "Load more kernel modules" \
 					"S" "Temporarily run a shell" \
 					"Q" "Quit the installer"`
