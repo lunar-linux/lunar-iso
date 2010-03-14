@@ -67,6 +67,7 @@ chroot_run()
 	if [ -n "$USE_SWAP" ]; then
 		chroot $TARGET swapon -a
 	fi
+	clear
 	chroot $TARGET $1 $2 $3 $4 $5 $6 $7 $8 $9
 	RESULT=$?
 	if [ -n "$USE_SWAP" ]; then
@@ -1489,10 +1490,16 @@ install_kernels()
 					cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
 					ln -s /usr/src/linux-$CCOMMAND $TARGET/usr/src/linux
 
-                                        # Register the kernel module as installed
-                                        if ! grep -q "^linux-2.6" $TARGET/var/state/lunar/packages; then
-                                             echo "linux-2.6:%DATE%:installed:$CCOMMAND:37000KB" >> $TARGET/var/state/lunar/packages
-                                        fi
+					# Register the kernel module as installed
+					if ! grep -q "^linux-2.6" $TARGET/var/state/lunar/packages; then
+						echo "linux-2.6:%DATE%:installed:$CCOMMAND:37000KB" >> $TARGET/var/state/lunar/packages
+					fi
+
+					# Generate kernel install log
+					tar -tf /kernels/$CCOMMAND.tar.bz2 | sed '/^usr\/src/d;s:^:/:g' >> $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} &> /dev/null
+
+					# Generate kernel md5sum log
+					cat $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} | xargs -i md5sum {} >> $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} 2> /dev/null
 
 					# let the plugin code handle the hard work
 					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
