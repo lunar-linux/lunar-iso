@@ -6,7 +6,7 @@
 # portions Copyright 2002 by rodzilla                       #
 # portions Copyright 2003-2004 by tchan, kc8apf             #
 # portions Copyright 2004-2007 by Auke Kok                  #
-# portions Copyright 2008 by Stefan Wold                    #
+# portions Copyright 2008-2010 by Stefan Wold               #
 #                                                           #
 #############################################################
 #                                                           #
@@ -966,18 +966,19 @@ transfer()
 					fi
 					# again, weed out swap first
 					if [ "$FSYS" == "swap" ]; then
-                        # We need to check that the swap device wasn't added already
-                        # or we end up with double entries in fstab if more than one
-                        # swap device was added
-                        if ! echo $FSTAB | grep -q $PART; then
-						    if swapon $PART; then
-							    FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
-							    swapoff $PART
-						    else
-							    sleep 3
-							    msgbox "Problem mounting swap on $PART. Installation will continue."
-						    fi
-                        fi
+                                               # We need to check that the swap device wasn't added already
+                                               # or we end up with double entries in fstab if more than one
+                                               # swap device was added
+                                               if ! echo $FSTAB | grep -q $PART; then
+					         	    if swapon $PART; then
+								    LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
+						        	    FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+							            swapoff $PART
+						            else
+							            sleep 3
+							             msgbox "Problem mounting swap on $PART. Installation will continue."
+						            fi
+                                                fi
 					# then try to mount normal FS's
 					else
 						if [ ! -d $TARGET$MOUNTPOINT ] ; then
@@ -990,7 +991,8 @@ transfer()
 						fi
 						echo "Mounting $PART as $FSYS"
 						if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
-							FSTAB="$FSTAB\n$PART\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
+                					LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
+							FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
 							if [ "$FSYS" == "swap" ]; then
 								umount -n $PART
 							fi
@@ -1229,6 +1231,109 @@ toggle()
 	fi
 }
 
+fstab_style_menu()
+{
+    local TITLE HELP DEFAULT STYLE FSTAB_OPTIONS
+    
+    TITLE="Fstab Style Menu"
+    HELP="Please select preferred fstab mount style"
+    FSTAB_OPTIONS='"DEV" "Device name style" \
+                   "LABEL" "LABEL style" \
+                   "UUID" "UUID style"'
+    FSTAB_STYLE=`$DIALOG --title "$TITLE" --default-item "$FSTAB_STYLE" --cr-wrap --menu "$HELP" 0 0 0 \
+                 "DEV" "Device name style" \
+                 "LABEL" "LABEL style" \
+                 "UUID" "UUID style"`
+}
+
+##
+# fstab_style partition fstype mountpoint
+#
+fstab_style() 
+{
+    local PART PTYPE MNTPT
+    
+    PART=$1
+    PTYPE=$2
+    MNTPT=$3
+    
+    case "$FSTAB_STYLE" in 
+	DEV)
+	    # Do nothing
+	    echo $PART
+	    ;;
+	LABEL)
+	    set_fs_label $PART $PTYPE $MNTPT
+	    if [ "$PTYPE" == "swap" ]; then
+		echo "LABEL=swap${PART##*/}"
+	    else
+		echo "LABEL=$MNTPT"
+	    fi
+	    ;;
+	UUID)
+	    UUID=$(uuidgen)
+	    set_fs_uuid $PART $PTYPE $UUID
+	    echo "UUID=$UUID"
+	    ;;
+    esac
+}
+
+##
+# set_fs_label partition fstype label
+#
+set_fs_label() {
+    local PART PTYPE LABEL
+    
+    PART=$1
+    PTYPE=$2
+    LABEL=$3
+
+    case "$PTYPE" in
+	ext*)
+	    tune2fs -L $LABEL $PART &> /dev/null
+	    ;;
+	reiserfs)
+	    reiserfstune -l $LABEL $PART &> /dev/null
+	    ;;
+	xfs)
+	    xfs_admin -L $LABEL $PART &> /dev/null
+	    ;;
+	jfs)
+	    jfs_tune -L $LABEL $PART &> /dev/null
+	    ;;
+	swap)
+	    swapon -L swap${PART##*/} $PART &> /dev/null
+	    ;;
+    esac	
+}
+
+##
+# set_fs_uuid partition fstype uuid
+#
+set_fs_uuid() {
+    local PART PTYPE UUID
+
+    PART=$1
+    PTYPE=$2
+    UUID=$3
+
+    case "$PTYPE" in
+	ext*)
+	    tune2fs -U $UUID $PART &> /dev/null
+	    ;;
+	reiserfs)
+	    reiserfstune -u $UUID $PART &> /dev/null
+	    ;;
+	xfs)
+	    xfs_admin -U $UUID $PART &> /dev/null
+	    ;;
+	jfs)
+	    jfs_tune -U $UUID $PART &> /dev/null
+	    ;;
+	swap)
+	    swapon -U $UUID $PART &> /dev/null
+    esac	
+}
 
 show_consolefonts()
 {
@@ -1384,10 +1489,10 @@ install_kernels()
 					cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
 					ln -s /usr/src/linux-$CCOMMAND $TARGET/usr/src/linux
 
-                    # Register the kernel module as installed
-                    if ! grep -q "^linux-2.6" $TARGET/var/state/lunar/packages; then
-                      echo "linux-2.6:%DATE%:installed:$CCOMMAND:37000KB" >> $TARGET/var/state/lunar/packages
-                    fi
+                                        # Register the kernel module as installed
+                                        if ! grep -q "^linux-2.6" $TARGET/var/state/lunar/packages; then
+                                             echo "linux-2.6:%DATE%:installed:$CCOMMAND:37000KB" >> $TARGET/var/state/lunar/packages
+                                        fi
 
 					# let the plugin code handle the hard work
 					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
@@ -1618,6 +1723,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 					"G" "Toggle guided menus on/off                     [$GUIDE]" \
 					"C" "Toggle asking of confirmations on/off          [$CONFIRM]" \
 					"D" "Toggle disabling the ability to perform steps  [$DISABLE]" \
+                                        "F" "Configure /etc/fstab style                     [$FSTAB_STYLE]" \
 					"M" "Load more kernel modules" \
 					"S" "Temporarily run a shell" \
 					"Q" "Quit the installer"`
@@ -1628,6 +1734,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 					G) toggle GUIDE ;;
 					C) toggle CONFIRM ;;
 					D) toggle DISABLE ;;
+                                        F) fstab_style_menu ;;
 					S) shell ;;
 					M) load_module ;;
 					Q) goodbye ;;
@@ -1686,6 +1793,7 @@ main()
 	CONFIRM=on
 	GUIDE=on
 	DISABLE=on
+	FSTAB_STYLE="UUID"
 
 	block_devices init
 
