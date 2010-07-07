@@ -48,6 +48,7 @@ transfer()
 	cd $ISO_TARGET
 	cat $ISO_SOURCE/initrd/initrd.list | transfer
 	cat $ISO_SOURCE/initrd/initrd.list-$ISO_KSUFFIX | transfer
+	find lib/ -name "ld-*" | transfer
 	$ISO_SOURCE/scripts/ldd-gather $ISO_SOURCE/initrd/initrd.list | transfer
 	$ISO_SOURCE/scripts/ldd-gather $ISO_SOURCE/initrd/initrd.list-$ISO_KSUFFIX | transfer
 )
@@ -149,17 +150,17 @@ else
 fi &&
 
 dd if=/dev/zero of=initrd.raw bs=1024 count=$SIZE &&
-losetup /dev/loop/0 initrd.raw &&
-mkfs.ext2 -b 1024 -m 0 -i 1024 -N 768 /dev/loop/0 &&
+losetup /dev/loop0 initrd.raw &&
+mkfs.ext2 -b 1024 -m 0 -i 1024 -N 768 /dev/loop0 &&
 mkdir BUILD.mnt &&
-mount /dev/loop/0 BUILD.mnt &&
+mount /dev/loop0 BUILD.mnt &&
 cp -a BUILD/* BUILD.mnt/ &&
 df -h BUILD.mnt/
 
 umount BUILD.mnt || exit 1
 
-tune2fs -l /dev/loop/0 | grep -e 'Free'
-losetup -d /dev/loop/0
+tune2fs -l /dev/loop0 | grep -e 'Free'
+losetup -d /dev/loop0
 
 [ -f initrd ] && rm initrd
 gzip -c initrd.raw > initrd
