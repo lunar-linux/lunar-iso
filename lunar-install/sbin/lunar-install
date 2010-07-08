@@ -67,7 +67,9 @@ chroot_run()
 	if [ -n "$USE_SWAP" ]; then
 		chroot $TARGET swapon -a
 	fi
-	clear
+	if [ -n "$USE_CLEAR" ]; then
+	    clear
+	fi
 	chroot $TARGET $1 $2 $3 $4 $5 $6 $7 $8 $9
 	RESULT=$?
 	if [ -n "$USE_SWAP" ]; then
@@ -1046,7 +1048,7 @@ transfer()
 			mkdir -p etc/lunar/local/depends
 			ln -s . etc/rc.d
 			mkdir -p etc/init.d etc/rc{0,1,2,3,4,5,6,S}.d
-			mkdir -p var/log/lunar/{install,md5sum,compile}
+			mkdir -p var/log/lunar/{install,md5sum,compile,queue}
 			mkdir -p var/{cache,empty,lib,lock,log,run,spool,state,tmp}
 			mkdir -p var/{cache,lib,log,spool,state}/lunar
 			mkdir -p var/state/discover
@@ -1437,7 +1439,7 @@ install_kernels()
 			unset MISSING
 			MODULE=$(echo $LINE | cut -d: -f2)
 			for SOURCE in $(chroot_run lvu sources $MODULE) ; do
-				if [ ! -e /var/spool/lunar/$SOURCE ]; then
+				if [ ! -e $TARGET/var/spool/lunar/$SOURCE ]; then
 					MISSING=yes
 				fi
 			done
@@ -1463,11 +1465,12 @@ install_kernels()
 			C)
 				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 $(list_kernel_modules)`
 				if grep -q "^$CCOMMAND:" /kernels/.kernel-modules ; then
-					if ! USE_SWAP=1 chroot_run lin -r $(grep "^$CCOMMAND:" /kernels/.kernel-modules | cut -d: -f2); then
+				    KERNMODULE=$(grep "^$CCOMMAND:" /kernels/.kernel-modules | cut -d: -f2)
+				    if ! USE_CLEAR=1 USE_SWAP=1 chroot_run lin -r $KERNMODULE; then
 						echo "Press ENTER to go back to the menu"
 						read
 					else
-						msgbox "The kernel \"$CCOMMAND\" has been installed to your system."
+						msgbox "The kernel \"$KERNMODULE\" has been installed to your system."
 						if (( STEP == 8 )); then
 							(( STEP++ ))
 						fi
@@ -1495,10 +1498,10 @@ install_kernels()
 					fi
 
 					# Generate kernel install log
-					tar -tf /kernels/$CCOMMAND.tar.bz2 | sed '/^usr\/src/d;s:^:/:g' >> $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} &> /dev/null
+					tar -tf /kernels/$CCOMMAND.tar.bz2 | sed '/^usr\/src/d;s:^:/:g' >> $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} 2> /dev/null
 
 					# Generate kernel md5sum log
-					cat $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} | xargs -i md5sum {} >> $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} 2> /dev/null
+					cat $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} | xargs -i md5sum {} >> $TARGET/var/log/lunar/md5sum/linux-2.6-${CCOMMAND} 2> /dev/null
 
 					# let the plugin code handle the hard work
 					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
@@ -1777,7 +1780,7 @@ cd-rom tray and reboot. See you at the login prompt!"
 	  L)  install_bootloader     ;;
 	  K)  install_kernels        ;;
 
-	  R)  chroot_run passwd    ; if (( STEP ==  9 )) ; then (( STEP++ )); fi ; R_OK=\\Z2 ;;
+	  R)  USE_CLEAR=1 chroot_run passwd    ; if (( STEP ==  9 )) ; then (( STEP++ )); fi ; R_OK=\\Z2 ;;
 	  U)  chroot_run luser     ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; U_OK=\\Z2 ;;
 	  H)  chroot_run lnet      ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
 	  V)  chroot_run lservices ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
