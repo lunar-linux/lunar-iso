@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# ssh	Secure Shell Daemon
+#
+# chkconfig: 345 80 20
+# description: SSH daemon
+# processname: sshd
+# config:      /etc/ssh/sshd_config
+
+test -f /tmp/ssh/ssh_host_dsa_key || (cd /etc/ssh; make server-keys)
+test -f /tmp/ssh/ssh_host_key || (cd /etc/ssh; make server-keys)
+test -f /tmp/ssh/ssh_host_rsa_key || (cd /etc/ssh; make server-keys)
+
+. /lib/lsb/init-functions
+
