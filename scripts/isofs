@@ -79,6 +79,10 @@ cp $ISO_SOURCE/template/motd $ISO_TARGET/etc/
 cp $ISO_SOURCE/template/motd.target $ISO_TARGET/etc/
 echo "+ copying initd disable list"
 cp $ISO_SOURCE/conf/initd.disable.list $ISO_TARGET/.initd.disable.list
+echo "+ copying LiveCD ssh configuration"
+cp $ISO_SOURCE/livecd/template/etc/ssh/* $ISO_TARGET/etc/ssh/
+echo "+ copying LiveCD sshd init script"
+cp $ISO_SOURCE/livecd/template/etc/init.d/sshd $ISO_TARGET/etc/init.d/
 
 for file in $ISO_TARGET/isolinux/{f{1,2,3,4}.txt,boot.cat,isolinux.{bin,cfg}} $ISO_TARGET/etc/motd $ISO_TARGET/etc/motd $ISO_TARGET/sbin/lunar-install $ISO_TARGET/README $ISO_TARGET/etc/motd $ISO_TARGET/etc/motd.target ; do
   sed -i -e "s:%VERSION%:${ISO_VERSION}:g" \
