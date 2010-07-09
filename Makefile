@@ -131,10 +131,10 @@ clean:
 	rm -rf locale
 
 dist: lunar-$(ISO_VERSION).iso
-	rm -f lunar-$(ISO_VERSION).iso.{bz2,md5,bz2.md5}
+	rm -f lunar-$(ISO_VERSION).iso.{bz2,sha1,bz2.sha1}
 	bzip2 -k lunar-$(ISO_VERSION).iso
-	md5sum lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.md5
-	md5sum lunar-$(ISO_VERSION).iso.bz2 > lunar-$(ISO_VERSION).iso.bz2.md5
+	sha1sum lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.sha1
+	sha1sum lunar-$(ISO_VERSION).iso.bz2 > lunar-$(ISO_VERSION).iso.bz2.sha1
 
 blank:
 	@scripts/blank
