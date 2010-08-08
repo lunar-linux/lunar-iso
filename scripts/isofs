@@ -99,12 +99,14 @@ cd $ISO_TARGET
 touch .lunar-cd
 rm .cachefill .dirs .etcf .init .proper .rebuild .unpack
 
-mkisofs -o ../lunar-${ISO_VERSION}.iso -R \
+mkisofs -o ../lunar-${ISO_VERSION}.iso -R -J -l \
         -V "Lunar-Linux ${ISO_CODENAME}" -v  \
         -d -D -N -no-emul-boot -boot-load-size 4 -boot-info-table \
         -b isolinux/isolinux.bin \
         -c isolinux/boot.cat \
         -A "Lunar-${ISO_VERSION}" .
+
+isohybrid ../lunar-${ISO_VERSION}.iso
 
 ln -sf lunar-${ISO_VERSION}.iso ../lunar.iso
 
