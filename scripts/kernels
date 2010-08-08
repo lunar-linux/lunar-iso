@@ -32,6 +32,10 @@ prepare()
 		tar jxf $ISO_SOURCE/spool/lunar/ll-$ISO_PVER.tar.bz2 &&
 		cd $ISO_SOURCE/kernels || exit 1
 	fi
+
+	# Disable appended + by kernel scripts/setlocalversion
+	touch $ISO_SOURCE/kernels/linux-$VERSION/.scmversion
+
 	cd $ISO_SOURCE/kernels/linux-$VERSION
 }
 
