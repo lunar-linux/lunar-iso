@@ -332,13 +332,13 @@ IFS=$'\t\n'
 # fastboot or not?
 if cat /proc/cmdline | grep -q 'skipinitrd'; then
 	echo ""
-	echo " /--------------  fast boot in process  -----------------\\"
+	echo " ,--------------  fast boot in process  -----------------."
 	echo " |                                                       |"
 	echo " |  The initrd menu is being skipped. If something goes  |"
 	echo " |  wrong in this process, reboot with the ISO and use   |"
 	echo " |  the 'linux' or 'safe' boot options instead.          |"
 	echo " |                                                       |"
-	echo " \\-------------------------------------------------------/"
+	echo " `-------------------------------------------------------´"
 	echo ""
 	skipinitrd $*
 else
