@@ -31,8 +31,8 @@ Index:
 
 1. About lunar-linux
 
-Lunar-Linux is a source distribution. This means that lunar is just
-like any other distrobution, except that you compile packages instead
+Lunar-Linux is a source based distribution. This means that lunar is just
+like any other distribution, except that you compile packages instead
 of installing precompiled packages. That really is the only difference
 with so-called "binary" distributions.
 
