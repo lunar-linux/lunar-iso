@@ -398,7 +398,7 @@ menu_get_filesystem()
 	JFS="JFS file system (*)"
 	SWAP="Swap (Virtual memory or paging filesystem)"
 
-	$DIALOG --title "$TITLE" --default-item "ext3" --menu "$HELP" 0 0 0 \
+	$DIALOG --title "$TITLE" --default-item "ext4" --menu "$HELP" 0 0 0 \
 	           "ext4"      "$EXT4"    \
 		   "ext3"      "$EXT3"    \
 		   "ext2"      "$EXT2"    \
