@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.35
-# Sun Aug  8 12:56:52 2010
+# Linux kernel version: 2.6.35.3
+# Sat Aug 21 13:21:59 2010
 #
 CONFIG_64BIT=y
 # CONFIG_X86_32 is not set
@@ -3307,6 +3307,7 @@ CONFIG_CRYPTO_RNG2=y
 CONFIG_CRYPTO_PCOMP=y
 CONFIG_CRYPTO_MANAGER=y
 CONFIG_CRYPTO_MANAGER2=y
+# CONFIG_CRYPTO_MANAGER_TESTS is not set
 CONFIG_CRYPTO_GF128MUL=m
 CONFIG_CRYPTO_NULL=m
 # CONFIG_CRYPTO_PCRYPT is not set
