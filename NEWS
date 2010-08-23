@@ -1,3 +1,88 @@
+20100823 1.6.5 ratler
+    * 1.6.5 final release
+
+    * Modules
+    - Kernel config bumped to 2.6.35.3
+    - Wireless firmware now also available on the LiveCD
+
+    * Installer
+    - EXT4 is now default
+
+    * Script changes
+    - isofs
+      - Enable hybrid ISO support
+    - initrd
+      - Cosmetic change of boot banner
+    - kernels
+      - Prevent the kernel source from thinking it's inside a git repository when building
+
+20100709 1.6.5-rc1 ratler
+    * 1.6.5 rc 1 release
+
+    * Modules
+    - Kernel config bumped to 2.6.34.1
+    - Added screen
+
+    * Installer
+    - Added template files for openssh on the liveCD
+    - Added USE_CLEAR option for the function chroot_run() to clear screen before executing commands
+    - Create missing directory /var/log/lunar/queue
+    - Check for kernel sources in $TARGET
+    - Fixed a bug in install and md5sum logs generation for precompiled kernels
+
+    * Script changes
+    - initrd
+      - Autodectect correct glibc library version to install
+      - Updated list of udev helpers to copy
+    - Makefile
+      - dist: Changed md5sum to sha1sum
+
+20100315 1.6.5-beta2 ratler
+    * 1.6.5 beta 2 release
+
+    * Modules
+    - Kernel config bumped to 2.6.32.9
+    - openssh now part of the liveCD
+    - Added a few dependencies needed by udev
+    - Added grub2 to sources
+
+    * Installer
+    - Generate md5sum and install logs for pre-compiled kernels
+    - Added support to change preferred fstab style; UUID, LABEL or device name
+    - Bumped isolinux.bin version
+
+    * Script changes
+    - initrd
+      - Updated list of needed udev files
+    - etc
+      - Create default devices needed by udev
+
+20100212 1.6.5-beta1 ratler
+    * 1.6.5 beta 1 release
+
+    * Modules
+    - Kernel config bumped to 2.6.32.7
+    - Added yasm, gperf, libusb-compat, xz, gmp, mpfr, cron-common,
+      logrotate, rsyslog, iwlwifi-3945-ucode, iwlwifi-4965-ucode,
+      iwlwifi-5000-ucode and mc
+    - Removed mktemp, device-mapper and lard
+
+    * Installer
+    - Added support for EXT4 filesystem
+    - Updated template files for gcc optimizations
+
+    * Script changes
+    - initrd
+      - udev changes
+      - Updated files to be included
+      - Copy only needed kernel modules
+    - aaa_base
+      - Fixed issue rmdir non directories
+      - Copy the correct lunar/local/optimization.* files
+    - rebuild
+      - sysvinit need to be rebuilt last, after removing inittab or it won't get tracked
+      - Changed GCC_4_2 -> GCC_4_4
+
 20081224 1.6.4 ratler
     * Final release of 1.6.4 'Lacus Autumni' for both i686 and x86-64
 
@@ -23,7 +108,7 @@
     * Installer
     - Fixed issue with swap partitions showing up twice in fstab
       if you add more than one
-    - Fixed issue with block device list, Bash 3.2 changed behavior 
+    - Fixed issue with block device list, Bash 3.2 changed behavior
       in =~ operator, the regex can no longer be quoted
     - Modified a small problem in transfer() where some variables got
       assigned with the wrong values. Also added a feature to list
@@ -52,7 +137,7 @@
       - exit 0 if x86_64
     - gen_locale_list
       - New script to generate a language list from the locale-archive in $ISO_TARGET
-    
+
 
 20080914 1.6.4-alpha3 ratler
     * Alpha release 3
@@ -72,14 +157,14 @@
        - Support booting installation from any media. For example you can
          put syslinux on a usb stick and copy initrd and kernel from the
          iso, and then put the iso it self on the usb-stick and boot away.
-         It's also possible to put the .iso in the root of any mountable 
+         It's also possible to put the .iso in the root of any mountable
          partition (a script will be available later to bootstrap this)
        - No more udev/rules.d template, instead take rules.d from the installed
          udev and wash them to make them work properly with the initrd
     - Installer:
-       - Disable staticly defined mount point in fstab that match a user 
+       - Disable staticly defined mount point in fstab that match a user
          defined mount point during partition selection (currently only /tmp)
-       - Further improvements to the language menu to also include territory 
+       - Further improvements to the language menu to also include territory
          for each encoding
        - Detect protected device (won't show up in the partition selection),
          this is the device where the .iso reside for the alternative installation
@@ -178,7 +263,7 @@ Unreleased moe
 	- fixed grsec kernels not being built
 	- added 'server' type kernel config for performance to bigmem
 	  kernels and tweaked IO performance
-	
+
 
 20060105 1.6.0-i686-rc1 sofar
 	* development release
@@ -191,7 +276,7 @@ Unreleased moe
 	- fixed root device detect code loop
 	- added grsecurity kernels
 	- downgraded dialog to 20050306 due to menu bug
-	
+
 
 20051121 1.6.0-i686-alpha1 sofar
 	* tentative 2.6-based release (very alpha)
@@ -281,12 +366,12 @@ Unreleased moe
 	- added package install progress bar
 	- install default kernel headers through aaa_base
 	- lilo installer fixes
-	- don't set vga=5 by default	
+	- don't set vga=5 by default
 
 
 20050408 1.5.0-i686-pre1 sofar
 	* first release of the new build code:
-	
+
 	- integrated memtest
 	- added 'discover' hardware detection in the initrd and on
 	  the installed system
