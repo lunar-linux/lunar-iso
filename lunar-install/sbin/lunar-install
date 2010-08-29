@@ -302,6 +302,7 @@ menu_list_targets()
 				*XFS*) PTYPE="(XFS)" ;;
 				*Minix*) PTYPE="(minix)" ;;
 				*Reiser*) PTYPE="(reiserfs)" ;;
+				*BTRFS*) PTYPE="(btrfs)" ;;
 				*) PTYPE="(unknown)" ;;
 			esac
 
@@ -391,6 +392,7 @@ menu_get_filesystem()
 	HELP="Please select a filesystem. A '*' means that this is a journalling filesystem, which provides better data security against system crashes etc."
 
 	EXT4="Fourth Extended file system (*)"
+	BTRFS="BTree file system (*)"
 	EXT3="Third Extended file system (*)"
 	EXT2="Second Extended file system"
 	REISER="Reiserfs file system (*)"
@@ -400,6 +402,7 @@ menu_get_filesystem()
 
 	$DIALOG --title "$TITLE" --default-item "ext4" --menu "$HELP" 0 0 0 \
 	           "ext4"      "$EXT4"    \
+		   "btrfs"     "$BTRFS"   \
 		   "ext3"      "$EXT3"    \
 		   "ext2"      "$EXT2"    \
 		   "reiserfs"  "$REISER"  \
@@ -728,6 +731,9 @@ menu_select_partitions()
 		#xfs|jfs|reiserfs)
 		#	msgbox "Selecting XFS, JFS or reiserfs for your root and/or boot filesystem *requires* you to compile a kernel later on with XFS, JFS or reiserfs built in to the kernel. The default pre-compiled lunar-linux kernel will NOT work in your case!"
 		#	;;
+		   btrfs)
+			msgbox "Selecting btrfs as /boot is currently not supported, you will need to create a /boot partition and format it as ext2, ext3 or ext4 in order to boot from it."
+			;;
 		    swap)
 			SWAP_ENABLED=1
 			;;
@@ -1296,6 +1302,9 @@ set_fs_label() {
 	reiserfs)
 	    reiserfstune -l $LABEL $PART &> /dev/null
 	    ;;
+	btrfs)
+	    msgbox "Installer internal error: Settign a label for btrfs is not supported"
+	    ;;
 	xfs)
 	    xfs_admin -L $LABEL $PART &> /dev/null
 	    ;;
@@ -1321,6 +1330,9 @@ set_fs_uuid() {
     case "$PTYPE" in
 	ext*)
 	    tune2fs -U $UUID $PART &> /dev/null
+	    ;;
+	btrfs)
+	    msgbox "Installer internal error: Settign a fs uuid for btrfs is not supported"
 	    ;;
 	reiserfs)
 	    reiserfstune -u $UUID $PART &> /dev/null
