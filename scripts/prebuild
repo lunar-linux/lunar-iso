@@ -17,3 +17,5 @@ for MODULE in $MODULES ; do
 		echo "Module $MODULE appears to be installed and has a valid cache"
 	fi
 done
+
+touch $ISO_TARGET/.prebuild
