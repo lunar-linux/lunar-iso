@@ -10,10 +10,10 @@
 ISO_ARCH = i686
 
 # the ISO major version number
-ISO_MAJOR = 1.6.2
+ISO_MAJOR = 1.6.5
 
 # minor version (pre, rc, etc). leave empty for final release
-ISO_MINOR = alpha
+ISO_MINOR =
 
 ifeq (,$(ISO_MINOR))
   ISO_VERSION = $(ISO_MAJOR)-$(ISO_ARCH)
@@ -24,10 +24,10 @@ endif
 # the ISO codename (i.e. Lacus Autumni)
 # Codename scheme: http://en.wikipedia.org/wiki/List_of_maria_on_the_Moon
 # Rotate between lacus, mare and palus for each release to avoid confusion
-ISO_CODENAME = Unnamed
+ISO_CODENAME = Mare Ingenii
 
 # the release/offical date tag - must be in the form of YYYYMMDD
-ISO_DATE = 20070330
+ISO_DATE = 20100822
 
 # the iso BUILD arch:
 ISO_BUILD = $(ISO_ARCH)-pc-linux-gnu
@@ -44,9 +44,9 @@ ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
 ## for 2.6 kernels - read this:
 # the kernel version used on the ISO
-ISO_KVER = 2.6.20
+ISO_KVER = 2.6.35
 # the patch LEVEL used (from kernel.org)
-ISO_PVER = 2.6.20.4
+ISO_PVER = 2.6.35.3
 
 # which lunar core tools do we want on the ISO
 ISO_LUNAR_MODULE = lunar
