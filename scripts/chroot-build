@@ -1,0 +1,26 @@
+#!/bin/bash
+
+function mount_system_fs ()
+{
+  for mpoint in proc sys dev ; do
+    mount --bind /${mpoint} $ISO_TARGET/${mpoint} || return 1
+  done
+}
+
+function umount_system_fs ()
+{
+  for mpoint in proc sys dev ; do
+    if ! umount $ISO_TARGET/${mpoint} &> /dev/null ; then
+      umount -l -f $ISO_TARGET/${mpoint} &> /dev/null
+    fi
+  done
+}
+
+mount_system_fs &&
+
+chroot "$ISO_TARGET" "$@"
+RESULT=$?
+
+umount_system_fs
+
+exit $RESULT

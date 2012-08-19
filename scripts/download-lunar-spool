@@ -1,0 +1,37 @@
+#!/bin/bash
+
+CORE_MODULES=`find "$ISO_TARGET/var/lib/lunar/moonbase/core" -name DETAILS -printf "%h\n" | sed 's@.*/@@'`
+
+mkdir -p "$ISO_SOURCE/spool"
+
+LUNAR_CACHE=`lsh eval echo '$SOURCE_CACHE'`
+NO_CACHE=
+
+echo Required modules:
+for mod in $CORE_MODULES ; do
+  echo " $mod"
+done
+
+for mod in $CORE_MODULES ; do
+  lsh eval MOONBASE="$ISO_TARGET/var/lib/lunar/moonbase" download_module "$mod"
+  # check for cache file presence
+  for src in `lsh eval MOONBASE="$ISO_TARGET/var/lib/lunar/moonbase" sources "$mod"` ; do
+    if [ ! -f "$ISO_SOURCE/spool/$src" ] ; then
+      cp "$LUNAR_CACHE/$src" "$ISO_SOURCE/spool/$src" || NO_CACHE="$NO_CACHE $mod"
+    fi
+  done
+done
+
+if [ -z "$NO_CACHE" ] ; then
+  exit 0
+fi
+
+# make a unique list of module
+NO_CACHE=`for mod in $NO_CACHE ; do echo $mod ; done | sort -u`
+
+echo No module source files:
+for mod in $NO_CACHE ; do
+  echo " $mod"
+done
+
+exit 1

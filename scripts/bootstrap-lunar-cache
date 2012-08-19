@@ -1,0 +1,81 @@
+#!/bin/bash
+
+BOOTSTRAP_MODULES="bash binutils bzip2 coreutils dialog diffutils file findutils gawk gcc glib-2 glibc grep gzip installwatch less lunar make patch procps readline sed util-linux xz zlib"
+
+mkdir -p "$ISO_SOURCE/cache"
+
+NEED_MODULES=
+LUNAR_CACHE=`lsh eval echo '$INSTALL_CACHE'`
+NEED_CACHE=
+NO_CACHE=
+
+# make a list of all the required caches
+for mod in $BOOTSTRAP_MODULES ; do
+  # if this module isn't installed it probebly isn't required
+  if lsh module_installed $mod ; then
+    NEED_MODULES="$NEED_MODULES $mod"
+    for dep in `lvu links $mod` ; do
+      MODULE_NAME="$dep"
+      # find the correct name of this module
+      while echo "$MODULE_NAME" | grep -q - ; do
+        MODULE_NAME=${MODULE_NAME%-*}
+        lsh module_installed $MODULE_NAME && break
+      done || continue
+      NEED_MODULES="$NEED_MODULES $MODULE_NAME"
+    done
+  fi
+done
+
+# make a unique list of module
+NEED_MODULES=`for mod in $NEED_MODULES ; do echo $mod ; done | sort -u`
+
+echo Required modules:
+for mod in $NEED_MODULES ; do
+  echo " $mod"
+done
+
+for mod in $NEED_MODULES ; do
+  # check for cache file presence
+  CACHE="$mod-$(lsh installed_version $mod)-$ISO_BUILD.tar.bz2"
+  if [ ! -f "$ISO_SOURCE/cache/$CACHE" ] ; then
+    cp "$LUNAR_CACHE/$CACHE" "$ISO_SOURCE/cache/$CACHE" || NEED_CACHE="$NEED_CACHE $mod"
+  fi
+done
+
+if [ ! -f "$ISO_SOURCE/cache/fixup-$ISO_BUILD.tar.bz2" ] ; then
+  tar -cjf "$ISO_SOURCE/cache/fixup-$ISO_BUILD.tar.bz2" /lib/ld-linux-x86-64.so.2 /lib/libc.so.6 /lib/libdl.so.2 /lib/libm.so.6 /lib/librt.so.1 /lib/libpthread.so.0 /lib/libnss_files.so.2 /lib/libutil.so.1 /lib/libnsl.so.1 /lib/libcrypt.so.1
+fi
+
+if [ -z "$NEED_CACHE" ] ; then
+  exit 0
+fi
+
+echo Rebuild modules to create cache:
+for mod in $NEED_CACHE ; do
+  echo " $mod"
+done
+
+if [ -n "$REBUILD_MANUAL" ] ; then
+  exit 1
+fi
+
+lin -c $NEED_CACHE
+
+for mod in $NEED_CACHE ; do
+  # check for cache file presence
+  CACHE="$mod-$(lsh installed_version $mod)-$ISO_BUILD.tar.bz2"
+  if [ ! -f "$ISO_SOURCE/cache/$CACHE" ] ; then
+    cp "$LUNAR_CACHE/$CACHE" "$ISO_SOURCE/cache/$CACHE" || NO_CACHE="$NO_CACHE $mod"
+  fi
+done
+
+if [ -z "$NO_CACHE" ] ; then
+  exit 0
+fi
+
+echo No module cache files:
+for mod in $NO_CACHE ; do
+  echo " $mod"
+done
+
+exit 1
