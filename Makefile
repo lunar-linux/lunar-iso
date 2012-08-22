@@ -34,9 +34,9 @@ include mkfiles/download.mk
 include mkfiles/build.mk
 
 clean:
-	rm -r $(ISO_TARGET) $(ISO_SOURCE)/{spool,cache}
+	rm -rf $(ISO_TARGET) $(ISO_SOURCE)/{spool,cache}
 
 # Convenient target for development
 chroot:
-	$(ISO_SOURCE)/scripts/chroot-build su -
+	$(ISO_SOURCE)/scripts/chroot-build /bin/bash
 

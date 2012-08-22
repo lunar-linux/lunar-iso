@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BOOTSTRAP_MODULES="bash binutils bzip2 coreutils dialog diffutils file findutils gawk gcc glib-2 glibc grep gzip installwatch less lunar make patch procps readline sed util-linux xz zlib"
+BOOTSTRAP_MODULES="bash binutils bzip2 coreutils dialog diffutils file findutils flex gawk gcc glib-2 glibc grep gzip installwatch less lunar m4 make net-tools patch pbzip2 perl pkgconfig procps readline sed tar texinfo util-linux xz zlib"
 
 mkdir -p "$ISO_SOURCE/cache"
 
@@ -27,7 +27,7 @@ for mod in $BOOTSTRAP_MODULES ; do
 done
 
 # make a unique list of module
-NEED_MODULES=`for mod in $NEED_MODULES ; do echo $mod ; done | sort -u`
+NEED_MODULES=`for mod in $NEED_MODULES ; do echo $mod ; done | sort -u | grep -v '^moonbase$'`
 
 echo Required modules:
 for mod in $NEED_MODULES ; do
@@ -36,9 +36,10 @@ done
 
 for mod in $NEED_MODULES ; do
   # check for cache file presence
-  CACHE="$mod-$(lsh installed_version $mod)-$ISO_BUILD.tar.bz2"
+  MODULE_VERSION=`lsh installed_version $mod`
+  CACHE="$mod-$MODULE_VERSION-$ISO_BUILD.tar.bz2"
   if [ ! -f "$ISO_SOURCE/cache/$CACHE" ] ; then
-    cp "$LUNAR_CACHE/$CACHE" "$ISO_SOURCE/cache/$CACHE" || NEED_CACHE="$NEED_CACHE $mod"
+    cp "$LUNAR_CACHE/$CACHE" "$ISO_SOURCE/cache/$CACHE" && echo "$mod:$(date --date=@$(stat -c%Z $LUNAR_CACHE/$CACHE) +%Y%m%d):installed:$MODULE_VERSION:0KB" >> "$ISO_SOURCE/cache/packages" || NEED_CACHE="$NEED_CACHE $mod"
   fi
 done
 
@@ -59,7 +60,15 @@ if [ -n "$REBUILD_MANUAL" ] ; then
   exit 1
 fi
 
+OLD_ARCHIVE=`lunar set ACHIVE`
+lunar set ARCHIVE on
 lin -c $NEED_CACHE
+OLD_ARCHIVE=${OLD_ARCHIVE#*=}
+if [ -z "$OLD_ARCHIVE" ] ; then
+  lunar unset ARCHIVE
+else
+  lunar set ARCHIVE $OLD_ARCHIVE
+fi
 
 for mod in $NEED_CACHE ; do
   # check for cache file presence

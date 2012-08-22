@@ -1,5 +1,5 @@
            FUZZY=off
-         ARCHIVE=off
+         ARCHIVE=on
          AUTOFIX=off
        AUTOPRUNE=off
     MAIL_REPORTS=off

@@ -1,7 +1,9 @@
 bootstrap: bootstrap-base bootstrap-lunar
 
-# file the target with the base file required
+
+# fill the target with the base file required
 $(ISO_TARGET)/.base: $(ISO_TARGET)/.stamp
+	@echo bootstrap-base
 	@mkdir -p $(ISO_TARGET)/{bin,dev,etc,lib,mnt,proc,root,run,sbin,sys,tmp,usr,var} $(ISO_TARGET)/run/lock $(ISO_TARGET)/usr/{bin,include,lib,libexec,sbin,src,share} $(ISO_TARGET)/var/{cache,empty,lib,log,spool,state,tmp}
 	@ln -sf lib $(ISO_TARGET)/lib32
 	@ln -sf lib $(ISO_TARGET)/lib64
@@ -10,24 +12,35 @@ $(ISO_TARGET)/.base: $(ISO_TARGET)/.stamp
 	@ln -sf ../run/lock $(ISO_TARGET)/var/lock
 	@ln -sf ../run $(ISO_TARGET)/var/run
 	@cp -r $(ISO_SOURCE)/template/etc $(ISO_TARGET)
+	@echo MAKES=$(ISO_MAKES) > $(ISO_TARGET)/etc/lunar/local/optimizations.GNU_MAKE
 	@touch $@
 
 bootstrap-base: $(ISO_TARGET)/.base
 
+
 # bootstrap on a lunar host
 $(ISO_SOURCE)/cache/.copied:
+	@echo bootstrap-lunar-cache
 	@$(ISO_SOURCE)/scripts/bootstrap-lunar-cache
 	@touch $@
 
+# note: use cat after grep to ignore the exit code of grep
 $(ISO_TARGET)/.modules: $(ISO_SOURCE)/cache/.copied $(ISO_TARGET)/.stamp
-	for archive in $(ISO_SOURCE)/cache/*-$(ISO_BUILD).tar.bz2 ; do \
+	@echo bootstrap-lunar
+	@for archive in $(ISO_SOURCE)/cache/*-$(ISO_BUILD).tar.bz2 ; do \
 	  tar -xjf "$$archive" -C $(ISO_TARGET) || exit 1 ; \
 	done
+	@mkdir -p $(ISO_TARGET)/var/state/lunar
+	@touch $(ISO_TARGET)/var/state/lunar/packages.backup
+	@grep -w -v -F "`cut -d: -f1 $(ISO_SOURCE)/cache/packages`" $(ISO_TARGET)/var/state/lunar/packages.backup | cat > $(ISO_TARGET)/var/state/lunar/packages
+	@cat $(ISO_SOURCE)/cache/packages >> $(ISO_TARGET)/var/state/lunar/packages
+	@cp $(ISO_TARGET)/var/state/lunar/packages $(ISO_TARGET)/var/state/lunar/packages.backup
 	@touch $@
 
 bootstrap-lunar: $(ISO_TARGET)/.modules
 
 
+# create the target directory
 $(ISO_TARGET)/.stamp:
 	@mkdir -p $(ISO_TARGET)
 	@touch $@
