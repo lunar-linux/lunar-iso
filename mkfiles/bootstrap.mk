@@ -1,8 +1,12 @@
+.INTERMEDIATE: boostrap bootstrap-base bootstrap-lunar
+
+.SECONDARY: $(ISO_TARGET)/.base $(ISO_TARGET)/.modules $(ISO_SOURCE)/cache/.copied
+
 bootstrap: bootstrap-base bootstrap-lunar
 
 
 # fill the target with the base file required
-$(ISO_TARGET)/.base: $(ISO_TARGET)/.stamp
+$(ISO_TARGET)/.base:
 	@echo bootstrap-base
 	@mkdir -p $(ISO_TARGET)/{bin,dev,etc,lib,mnt,proc,root,run,sbin,sys,tmp,usr,var} $(ISO_TARGET)/run/lock $(ISO_TARGET)/usr/{bin,include,lib,libexec,sbin,src,share} $(ISO_TARGET)/var/{cache,empty,lib,log,spool,state,tmp}
 	@ln -sf lib $(ISO_TARGET)/lib32
@@ -25,8 +29,9 @@ $(ISO_SOURCE)/cache/.copied:
 	@touch $@
 
 # note: use cat after grep to ignore the exit code of grep
-$(ISO_TARGET)/.modules: $(ISO_SOURCE)/cache/.copied $(ISO_TARGET)/.stamp
+$(ISO_TARGET)/.modules: $(ISO_SOURCE)/cache/.copied
 	@echo bootstrap-lunar
+	@mkdir -p $(ISO_TARGET)
 	@for archive in $(ISO_SOURCE)/cache/*-$(ISO_BUILD).tar.bz2 ; do \
 	  tar -xjf "$$archive" -C $(ISO_TARGET) || exit 1 ; \
 	done
@@ -38,9 +43,3 @@ $(ISO_TARGET)/.modules: $(ISO_SOURCE)/cache/.copied $(ISO_TARGET)/.stamp
 	@touch $@
 
 bootstrap-lunar: $(ISO_TARGET)/.modules
-
-
-# create the target directory
-$(ISO_TARGET)/.stamp:
-	@mkdir -p $(ISO_TARGET)
-	@touch $@
