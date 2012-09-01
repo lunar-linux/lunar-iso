@@ -51,6 +51,7 @@ $(ISO_SOURCE)/cache/.stage1: stage1-build
 	@echo stage1-cache
 	@rm -rf $(ISO_SOURCE)/cache
 	@cp -r $(ISO_TARGET)/var/cache/lunar $(ISO_SOURCE)/cache
+	@tar -cjf $(ISO_SOURCE)/cache/fixup-$(ISO_BUILD).tar.bz2 -C $(ISO_TARGET) lib/ld-linux-x86-64.so.2 lib/libc.so.6 lib/libdl.so.2 lib/libm.so.6 lib/librt.so.1 lib/libpthread.so.0 lib/libnss_files.so.2 lib/libutil.so.1 lib/libnsl.so.1 lib/libcrypt.so.1
 	@touch $@
 
 stage1-cache: $(ISO_SOURCE)/cache/.stage1

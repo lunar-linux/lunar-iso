@@ -1,4 +1,4 @@
-.INTERMEDIATE: boostrap bootstrap-base bootstrap-lunar
+.INTERMEDIATE: bootstrap bootstrap-base bootstrap-lunar
 
 .SECONDARY: $(ISO_TARGET)/.base $(ISO_TARGET)/.modules $(ISO_SOURCE)/cache/.copied
 
