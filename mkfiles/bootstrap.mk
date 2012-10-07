@@ -37,7 +37,7 @@ $(ISO_TARGET)/.modules: $(ISO_SOURCE)/cache/.copied
 	done
 	@mkdir -p $(ISO_TARGET)/var/state/lunar
 	@touch $(ISO_TARGET)/var/state/lunar/packages.backup
-	@grep -w -v -F "`cut -d: -f1 $(ISO_SOURCE)/cache/packages`" $(ISO_TARGET)/var/state/lunar/packages.backup | cat > $(ISO_TARGET)/var/state/lunar/packages
+	@grep -v "`sed 's/^/^/;s/:.*/:/' $(ISO_SOURCE)/cache/packages`" $(ISO_TARGET)/var/state/lunar/packages.backup | cat > $(ISO_TARGET)/var/state/lunar/packages
 	@cat $(ISO_SOURCE)/cache/packages >> $(ISO_TARGET)/var/state/lunar/packages
 	@cp $(ISO_TARGET)/var/state/lunar/packages $(ISO_TARGET)/var/state/lunar/packages.backup
 	@touch $@
