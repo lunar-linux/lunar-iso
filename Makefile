@@ -18,6 +18,12 @@ include conf/config
 
 ###ISO_KSUFFIX = $(shell if echo $(ISO_KVER) | grep -q "^2\.6\." ; then echo 2.6 ; else echo 2.4 ; fi ;)
 
+ifeq ($(ISO_GCCARCH),x86-64)
+  ISO_LD_LINUX = ld-linux-$(ISO_GCCARCH).so.2
+else
+  ISO_LD_LINUX = ld-linux.so.2
+endif
+
 # define the location where the ISO will be generated
 ISO_TARGET = $(ISO_SOURCE)/BUILD
 
