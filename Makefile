@@ -33,7 +33,7 @@ ISO_TARGET = $(ISO_SOURCE)/BUILD
 
 export ISO_SOURCE ISO_TARGET ISO_BUILD
 
-all: stage2
+all: pack
 
 .SUFFIXES:
 
@@ -41,6 +41,7 @@ include mkfiles/bootstrap.mk
 include mkfiles/download.mk
 include mkfiles/stage1.mk
 include mkfiles/stage2.mk
+include mkfiles/pack.mk
 
 clean:
 	rm -rf $(ISO_TARGET) $(ISO_SOURCE)/{spool,cache}
