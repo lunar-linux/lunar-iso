@@ -27,20 +27,22 @@ stage1-moonbase: $(ISO_TARGET)/.stage1-moonbase
 
 
 # first build sequence to get the toolchain installed properly
+TOOLCHAIN_MODULES=kernel-headers glibc binutils gcc binutils glibc
+
 $(ISO_TARGET)/.stage1-toolchain: stage1-moonbase stage1-spool
 	@echo stage1-toolchain
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -rc kernel-headers glibc binutils gcc binutils glibc
+	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -rc $(TOOLCHAIN_MODULES)
 	@touch $@
 
 stage1-toolchain: $(ISO_TARGET)/.stage1-toolchain
 
 
 # first time build all the require modules for a minimal system
-STAGE1_MODULES=acl attr bash bzip2 coreutils cracklib dialog diffutils e2fsprogs file findutils gawk glib-2 gmp grep gzip installwatch less libcap libffi libmpc lunar make mpfr ncurses net-tools patch pcre perl procps readline sed shadow tar util-linux wget xz zlib
+STAGE1_MODULES=acl attr bash binutils bzip2 coreutils cracklib dialog diffutils e2fsprogs file findutils gawk gcc glibc glib-2 gmp grep gzip installwatch kernel-headers less libcap libffi libmpc lunar make mpfr ncurses net-tools patch pcre perl procps readline sed shadow tar util-linux wget xz zlib
 
 $(ISO_TARGET)/.stage1: stage1-toolchain
 	@echo stage1-build
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -rc $(STAGE1_MODULES)
+	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -rc $(filter-out $(TOOLCHAIN_MODULES),$(STAGE1_MODULES))
 	@touch $@
 
 stage1-build: $(ISO_TARGET)/.stage1

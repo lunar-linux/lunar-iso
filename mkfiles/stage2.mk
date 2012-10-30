@@ -81,12 +81,12 @@ stage2-moonbase: $(ISO_TARGET)/.stage2-moonbase
 
 
 # build all the require modules for the iso
-STAGE2_MODULES=kernel-headers pkgconfig xz gettext attr acl gawk sed ncurses readline zlib cracklib libcap util-linux e2fsprogs libffi gmp bzip2 glib-2 wget shadow coreutils net-tools gzip mpfr procps file bash dialog diffutils findutils grep installwatch less tar patch libmpc binutils glibc lunar gcc make
+STAGE2_MODULES=kernel-headers glibc gcc binutils pkgconfig xz gettext attr acl gawk sed ncurses readline zlib cracklib libcap util-linux e2fsprogs libffi gmp bzip2 glib-2 wget shadow coreutils net-tools gzip mpfr procps file bash dialog diffutils findutils grep installwatch less tar patch libmpc lunar make
 
 $(ISO_TARGET)/.stage2: stage2-moonbase stage2-spool
 	@echo stage2-build
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c kernel-headers glibc gcc binutils
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c $(STAGE1_MODULES)
+	#@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c kernel-headers glibc gcc binutils
+	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c $(STAGE2_MODULES)
 	@touch $@
 
 stage2-build: $(ISO_TARGET)/.stage2
