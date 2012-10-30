@@ -16,7 +16,7 @@ stage2-target: $(ISO_TARGET)/.stage2-target
 # create base directory structure
 $(ISO_TARGET)/.stage2-base: stage2-target
 	@echo stage2-base
-	@mkdir -p $(ISO_TARGET)/{bin,dev,etc,lib,mnt,proc,root,run,sbin,sys,tmp,usr,var} $(ISO_TARGET)/run/lock $(ISO_TARGET)/usr/{bin,include,lib,libexec,sbin,src,share} $(ISO_TARGET)/var/{cache,empty,lib,log,spool,state,tmp}
+	@mkdir -p $(ISO_TARGET)/{boot,bin,dev,etc,lib,mnt,proc,root,run,sbin,sys,tmp,usr,var} $(ISO_TARGET)/run/lock $(ISO_TARGET)/usr/{bin,include,lib,libexec,sbin,src,share} $(ISO_TARGET)/var/{cache,empty,lib,log,spool,state,tmp}
 	@ln -sf lib $(ISO_TARGET)/lib32
 	@ln -sf lib $(ISO_TARGET)/lib64
 	@ln -sf lib $(ISO_TARGET)/usr/lib32
