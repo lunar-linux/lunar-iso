@@ -14,7 +14,7 @@ ISO_SOURCE = $(shell bash -c "pwd -P")
 # and the general arch (i386/i686)
 ISO_ARCH=$(shell arch)
 
-include conf/config
+include $(ISO_SOURCE)/conf/config
 
 ###ISO_KSUFFIX = $(shell if echo $(ISO_KVER) | grep -q "^2\.6\." ; then echo 2.6 ; else echo 2.4 ; fi ;)
 

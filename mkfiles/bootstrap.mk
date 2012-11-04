@@ -1,12 +1,21 @@
-.INTERMEDIATE: bootstrap bootstrap-base bootstrap-lunar
+.INTERMEDIATE: target bootstrap bootstrap-base bootstrap-lunar
 
 .SECONDARY: $(ISO_TARGET)/.base $(ISO_TARGET)/.modules $(ISO_SOURCE)/cache/.copied
 
 bootstrap: bootstrap-base bootstrap-lunar
 
 
+# this rule is shared with the download
+$(ISO_TARGET)/.target:
+	@rm -rf $(ISO_TARGET)
+	@mkdir -p $(ISO_TARGET)
+	@touch $@
+
+target: $(ISO_TARGET)/.target
+
+
 # fill the target with the base file required
-$(ISO_TARGET)/.base:
+$(ISO_TARGET)/.base: target
 	@echo bootstrap-base
 	@mkdir -p $(ISO_TARGET)/{boot,bin,dev,etc,lib,mnt,proc,root,run,sbin,sys,tmp,usr,var} $(ISO_TARGET)/run/lock $(ISO_TARGET)/usr/{bin,include,lib,libexec,sbin,src,share} $(ISO_TARGET)/var/{cache,empty,lib,log,spool,state,tmp}
 	@ln -sf lib $(ISO_TARGET)/lib32
