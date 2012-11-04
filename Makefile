@@ -7,12 +7,12 @@
 #
 
 # need to make this defined during run-time
-ISO_SOURCE = $(shell bash -c "pwd -P")
+ISO_SOURCE:=$(shell bash -c "pwd -P")
 
 # define the kernel arch name
 ###ISO_KARCH=$(shell arch | grep -qw i.86 && echo i386 || arch)
 # and the general arch (i386/i686)
-ISO_ARCH=$(shell arch)
+ISO_ARCH:=$(shell arch)
 
 include $(ISO_SOURCE)/conf/config
 

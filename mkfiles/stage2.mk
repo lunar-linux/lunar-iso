@@ -81,15 +81,18 @@ stage2-moonbase: $(ISO_TARGET)/.stage2-moonbase
 
 
 # build all the require modules for the iso
-$(ISO_SOURCE)/conf/modules.stage2: $(ISO_SOURCE)/spool/moonbase.tar.bz2
-	echo STAGE2_MODULES=`tar -tf $< | sed -n 's@^moonbase/core/\([^/]*/\)*\([^/]\+\)/DETAILS$$@\2@p'` > $@
+$(ISO_SOURCE)/conf/modules.all: $(ISO_SOURCE)/spool/moonbase.tar.bz2
+	echo ALL_MODULES=`tar -tf $< | sed -n 's@^moonbase/core/\([^/]*/\)*\([^/]\+\)/DETAILS$$@\2@p'` > $@
 
--include $(ISO_SOURCE)/conf/modules.stage2
+ifneq ($(MAKECMDGOALS),clean)
+-include $(ISO_SOURCE)/conf/modules.all
+endif
+include $(ISO_SOURCE)/conf/modules.stage2
 include $(ISO_SOURCE)/conf/modules.kernel
 
-$(ISO_TARGET)/.stage2: stage2-moonbase stage2-spool $(ISO_SOURCE)/conf/modules.stage2
+$(ISO_TARGET)/.stage2: stage2-moonbase stage2-spool $(ISO_SOURCE)/conf/modules.all
 	@echo stage2-build
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c $(filter-out $(KERNEL_MODULES),$(STAGE2_MODULES))
+	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c $(STAGE2_MODULES) `$(ISO_SOURCE)/scripts/chroot-build lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES),$(ALL_MODULES))`
 	@touch $@
 
 stage2-build: $(ISO_TARGET)/.stage2

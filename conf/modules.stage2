@@ -1,0 +1,1 @@
+STAGE2_MODULES=kernel-headers glibc gcc binutils
