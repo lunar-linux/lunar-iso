@@ -1,1 +1,1 @@
-EXCLUDE_MODULES+=grub
+EXCLUDE_MODULES+=grub memtest86+
