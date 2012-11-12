@@ -9,8 +9,8 @@ download: download-lunar
 $(ISO_SOURCE)/spool/moonbase.tar.bz2:
 	@echo download-moonbase
 	@mkdir -p $(ISO_SOURCE)/spool
-	@wget -O $@ "`lsh eval echo '$$MOONBASE_URL'`/moonbase.tar.bz2" \
-	  || { rm $@ ; exit 1 ; }
+	@wget -O $@.tmp "`lsh eval echo '$$MOONBASE_URL'`/moonbase.tar.bz2"
+	@mv $@.tmp $@
 
 
 # note: this installs an empty installed packages list

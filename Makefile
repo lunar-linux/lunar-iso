@@ -43,6 +43,7 @@ include mkfiles/stage1.mk
 include mkfiles/stage2.mk
 include mkfiles/pack.mk
 include mkfiles/kernel.mk
+include mkfiles/iso.mk
 
 clean:
 	rm -rf $(ISO_TARGET) $(ISO_SOURCE)/{spool,cache}
