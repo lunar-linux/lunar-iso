@@ -1,0 +1,9 @@
+#
+# Stub config file for building core modules
+#
+CONFIG_FANOTIFY=y
+CONFIG_DEVTMPFS=y
+CONFIG_CGROUPS=y
+CONFIG_MODULES=y
+CONFIG_BLK_DEV_INITRD=y
+CONFIG_INOTIFY_USER=y

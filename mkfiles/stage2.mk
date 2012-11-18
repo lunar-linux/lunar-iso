@@ -1,5 +1,7 @@
 .INTERMEDIATE: stage2 stage2-target stage2-base stage2-modules stage2-spool stage2-extract-moonbase stage2-moonbase stage2-build
 
+.SECONDARY: $(ISO_TARGET)/.stage2-target $(ISO_TARGET)/.stage2-base $(ISO_TARGET)/.stage2-modules $(ISO_TARGET)/.stage2-spool $(ISO_TARGET)/.stage2-extract-moonbase $(ISO_TARGET)/.stage2-moonbase $(ISO_TARGET)/.stage2
+
 stage2: stage2-build
 
 
@@ -82,7 +84,7 @@ stage2-moonbase: $(ISO_TARGET)/.stage2-moonbase
 
 # build all the require modules for the iso
 $(ISO_SOURCE)/conf/modules.all: $(ISO_SOURCE)/spool/moonbase.tar.bz2
-	echo ALL_MODULES=`tar -tf $< | sed -n 's@^moonbase/core/\([^/]*/\)*\([^/]\+\)/DETAILS$$@\2@p'` > $@
+	@echo ALL_MODULES=`tar -tf $< | sed -n 's@^moonbase/core/\([^/]*/\)*\([^/]\+\)/DETAILS$$@\2@p'` > $@
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(ISO_SOURCE)/conf/modules.all

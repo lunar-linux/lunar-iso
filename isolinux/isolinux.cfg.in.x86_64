@@ -1,5 +1,5 @@
 DEFAULT install
-APPEND read-only load_ramdisk=1 ramdisk_size=INITRDSIZE initrd=initrd root=/dev/ram0 prompt_ramdisk=0 rootdelay=10
+APPEND ro initrd=initrd root=LABEL=Lunar-Linux_Mare_Ingenii readonlyroot rootdelay=10
 DISPLAY f1.txt
 TIMEOUT 600
 PROMPT 1
@@ -14,7 +14,7 @@ F8 f1.txt
 F9 f1.txt
 LABEL install
 	KERNEL linux
-	APPEND read-only load_ramdisk=1 ramdisk_size=INITRDSIZE initrd=initrd root=/dev/ram0 prompt_ramdisk=0 vga=ask rootdelay=10 skipinitrd
+	APPEND ro initrd=initrd root=/dev/sr0 readonlyroot rootdelay=10 vga=ask
 LABEL linux
 	KERNEL linux
 	APPEND read-only load_ramdisk=1 ramdisk_size=INITRDSIZE initrd=initrd root=/dev/ram0 prompt_ramdisk=0 vga=ask

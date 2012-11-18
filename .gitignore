@@ -1,8 +1,8 @@
 *~
-*.iso
-template/*.tar.bz2
-BUILD/
-spool/
-cache/
-isolinux/isolinux.cfg
-conf/config
+/*.iso
+/template/*.tar.bz2
+/BUILD/
+/spool/
+/cache/
+/isolinux/isolinux.cfg
+/conf/config
