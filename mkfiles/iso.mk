@@ -35,7 +35,10 @@ $(ISO_TARGET)/etc/lsb-release: iso-modules
 	  echo 'DISTRIB_CODENAME="$(ISO_CODENAME)"' ; \
 	  echo 'DISTRIB_DESCRIPTION="Lunar Linux $(ISO_CNAME)"' ; } > $@
 
-iso-files: $(ISO_TARGET)/etc/lsb-release
+$(ISO_TARGET)/etc/fstab: $(ISO_SOURCE)/livecd/template/etc/fstab iso-modules
+	@cp $< $@
+
+iso-files: $(ISO_TARGET)/etc/lsb-release $(ISO_TARGET)/etc/fstab
 
 
 # Copy the isolinux files to the target

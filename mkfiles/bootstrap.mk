@@ -17,13 +17,14 @@ target: $(ISO_TARGET)/.target
 # fill the target with the base file required
 $(ISO_TARGET)/.base: target
 	@echo bootstrap-base
-	@mkdir -p $(ISO_TARGET)/{boot,bin,dev,etc,lib,mnt,proc,root,run,sbin,sys,tmp,usr,var} $(ISO_TARGET)/run/lock $(ISO_TARGET)/usr/{bin,include,lib,libexec,sbin,src,share} $(ISO_TARGET)/var/{cache,empty,lib,log,spool,state,tmp}
+	@mkdir -p $(ISO_TARGET)/{boot,bin,dev,etc,lib,mnt,proc,root,run,sbin,sys,tmp,usr,var} $(ISO_TARGET)/run/lock $(ISO_TARGET)/usr/{bin,include,lib,libexec,sbin,src,share} $(ISO_TARGET)/var/{cache,empty,lib,log,spool,state,tmp} $(ISO_TARGET)/var/cache/man
 	@ln -sf lib $(ISO_TARGET)/lib32
 	@ln -sf lib $(ISO_TARGET)/lib64
 	@ln -sf lib $(ISO_TARGET)/usr/lib32
 	@ln -sf lib $(ISO_TARGET)/usr/lib64
 	@ln -sf ../run/lock $(ISO_TARGET)/var/lock
 	@ln -sf ../run $(ISO_TARGET)/var/run
+	@ln -sf ../proc/self/mounts $(ISO_TARGET)/etc/mtab
 	@cp -r $(ISO_SOURCE)/template/etc $(ISO_TARGET)
 	@echo MAKES=$(ISO_MAKES) > $(ISO_TARGET)/etc/lunar/local/optimizations.GNU_MAKE
 	@touch $@
