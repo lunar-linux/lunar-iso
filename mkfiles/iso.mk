@@ -1,6 +1,6 @@
-.INTERMEDIATE: iso iso-target iso-modules iso-tools iso-files iso-isolinux
+.INTERMEDIATE: iso iso-target iso-modules iso-tools iso-files iso-strip iso-isolinux
 
-iso: $(ISO_SOURCE)/lunar-$(ISO_VERSION)-$(ISO_ARCH).iso
+iso: $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso
 
 
 # Clean stage2 markers and mark the start of iso
@@ -30,15 +30,25 @@ iso-modules: $(ISO_TARGET)/.iso-modules
 
 # Prepare target files
 $(ISO_TARGET)/etc/lsb-release: iso-modules
-	{ echo 'DISTRIB_ID="Lunar Linux"' ; \
-	  echo 'DISTRIB_RELEASE="$(ISO_VERSION)"' ; \
-	  echo 'DISTRIB_CODENAME="$(ISO_CODENAME)"' ; \
-	  echo 'DISTRIB_DESCRIPTION="Lunar Linux $(ISO_CNAME)"' ; } > $@
+	@echo lsb-release
+	@{ echo 'DISTRIB_ID="Lunar Linux"' ; \
+	   echo 'DISTRIB_RELEASE="$(ISO_VERSION)"' ; \
+	   echo 'DISTRIB_CODENAME="$(ISO_CODENAME)"' ; \
+	   echo 'DISTRIB_DESCRIPTION="Lunar Linux $(ISO_CNAME)"' ; } > $@
 
 $(ISO_TARGET)/etc/fstab: $(ISO_SOURCE)/livecd/template/etc/fstab iso-modules
 	@cp $< $@
 
 iso-files: $(ISO_TARGET)/etc/lsb-release $(ISO_TARGET)/etc/fstab
+
+
+# Strip executables and libraries
+$(ISO_TARGET)/.iso-strip: iso-modules
+	@echo iso-strip
+	@find \( -type f -perm /u=x -o -name 'lib*.so*' \) -exec strip {} \;
+	@touch $@
+
+iso-strip: $(ISO_TARGET)/.iso-strip
 
 
 # Copy the isolinux files to the target
@@ -56,7 +66,7 @@ iso-isolinux: $(ISO_TARGET)/.iso-isolinux $(ISO_TARGET)/isolinux/isolinux.bin
 
 
 # Generate the actual image
-$(ISO_SOURCE)/lunar-$(ISO_VERSION)-$(ISO_ARCH).iso: iso-tools iso-files iso-isolinux
+$(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-strip
 	mkisofs -o $@.tmp -R -J -l \
 		-V "Lunar-Linux_`echo -n $(ISO_CODENAME) | tr '[:space:]' _`" -v \
 	-d -D -N -no-emul-boot -boot-load-size 4 -boot-info-table \
@@ -69,6 +79,7 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION)-$(ISO_ARCH).iso: iso-tools iso-files iso-isol
 	-m '$(ISO_TARGET)/var/spool/*' \
 	-m '$(ISO_TARGET)/var/log/*' \
 	-m '$(ISO_TARGET)/root/*' \
+	-m '$(ISO_TARGET)/usr/lib/locale' \
 	-m '$(ISO_TARGET)/usr/share/locale' \
 	-m '$(ISO_TARGET)/usr/share/man' \
 	-m '$(ISO_TARGET)/usr/share/info' \
@@ -76,7 +87,6 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION)-$(ISO_ARCH).iso: iso-tools iso-files iso-isol
 	-m '$(ISO_TARGET)/usr/include' \
 	-m '$(ISO_TARGET)/usr/src' \
 	-m '$(ISO_TARGET)/var/state/lunar/module_history' \
-	-m 'lib*.a' \
 	-m 'doc' \
 	-A "Lunar-$(ISO_VERSION)" $(ISO_TARGET)
 	#mkhybrid $@.tmp

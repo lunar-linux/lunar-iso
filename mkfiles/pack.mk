@@ -15,10 +15,13 @@ $(ISO_TARGET)/.aaa_base.found: stage2
 	-path '$(ISO_TARGET)/root' -o \
 	-path '$(ISO_TARGET)/sys' -o \
 	-path '$(ISO_TARGET)/tmp' -o \
+	-path '$(ISO_TARGET)/boot' -o \
+	-path '$(ISO_TARGET)/lib/modules' -o \
 	-path '$(ISO_TARGET)/usr/include' -o \
 	-path '$(ISO_TARGET)/usr/lib' -o \
 	-path '$(ISO_TARGET)/usr/libexec' -o \
 	-path '$(ISO_TARGET)/usr/share' -o \
+	-path '$(ISO_TARGET)/usr/src' -o \
 	-path '$(ISO_TARGET)/var/cache' -o \
 	-path '$(ISO_TARGET)/var/lib/lunar' -o \
 	-path '$(ISO_TARGET)/var/log' -o \
