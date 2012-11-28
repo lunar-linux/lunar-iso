@@ -53,16 +53,31 @@ iso-strip: $(ISO_TARGET)/.iso-strip
 
 # Copy the isolinux files to the target
 $(ISO_TARGET)/usr/share/syslinux/isolinux.bin: $(ISO_TARGET)/.iso-isolinux
+	@test -f $@
 	@touch $@
 
 $(ISO_TARGET)/isolinux/isolinux.bin: $(ISO_TARGET)/usr/share/syslinux/isolinux.bin
+	@cp $< $@
+
+$(ISO_TARGET)/boot/linux: $(ISO_TARGET)/.iso-isolinux
+	@test -f $@
+	@touch $@
+
+$(ISO_TARGET)/isolinux/linux: $(ISO_TARGET)/boot/linux
+	@cp $< $@
+
+$(ISO_TARGET)/boot/initrd: $(ISO_TARGET)/.iso-isolinux
+	@test -f $@
+	@touch $@
+
+$(ISO_TARGET)/isolinux/initrd: $(ISO_TARGET)/boot/initrd
 	@cp $< $@
 
 $(ISO_TARGET)/.iso-isolinux: iso-target
 	@cp -r $(ISO_SOURCE)/isolinux $(ISO_TARGET)
 	@touch $@
 
-iso-isolinux: $(ISO_TARGET)/.iso-isolinux $(ISO_TARGET)/isolinux/isolinux.bin
+iso-isolinux: $(ISO_TARGET)/.iso-isolinux $(ISO_TARGET)/isolinux/isolinux.bin $(ISO_TARGET)/isolinux/linux $(ISO_TARGET)/isolinux/initrd
 
 
 # Generate the actual image
