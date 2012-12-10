@@ -9,7 +9,8 @@ ISO images based on a fixed set of tools. The code should be as self-
 sufficient as possible and generate as much of the binaries as possible
 so porting to other platforms will be easy. Please keep this in mind if
 you change the scripts and want to include binaries. This should be kept
-to a minimum.
+to a minimum. Note that this code doesn't do cross builds and it requires a
+Lunar host.
 
 The ISO has been optimized to minimize the number of alien files. These
 should always be as much as possible be provided by modules. The exception
@@ -21,54 +22,70 @@ that really (really (really)) do not need to be in there.
 
 -- Start
 
-Right now the Makefile should provide you the proper list of steps to
-take but there are a few necessary prerequisites that the CVS copy does not
-contain:
+The Makefile should be able to do most of the ISO building automatically, but
+there are a few steps that need to be taken:
 
- o A proper cache tar.bz2 of every required package (including core tools)
- o A full set of sources for each module
  o Configure the base parameters of the ISO in conf/config
+ o For now, copy one of theisolinux/isolinux.cfg.in to isolinux/isolinux.cfg
  
-You will need to provide this in order to succesfully perform all steps.
-The cache copies wiil be used to bootstrap your ISO, after which basically
-the scripts perform a rebuild of every package and create the optimum
-least-common denominator dependency-based install. 
+The code tries to polute the host system as little as it can. It will however
+create a build cache for the bootstrap modules if it doesn't exist already.
+Also it will download all the sources of core modules. Last it will install
+cdrtools if mkisofs isn't found.
 
-A fresh moonbase will be installed on your computer and a copy kept to be
-transferred onto the target automatically.
+The build cache will be copied to cache/ and the sources of the core modules
+will be copied to spool/.
 
-The cache tar.bz2's may be left in /var/cache/lunar and will automatically as
-needed be copied to cache/
-
-The same goes for the sources, they end up in spool/
+The cache is used to bootstrap the ISO building. As first stage a few modules
+are build. These modules are then copied to cache/. For the second stage
+this cache is used to build all the core modules.
 
 
 -- Building it
 
 Here's a brief explanation of the make targets:
 
-prepare		download all the required sources
-init		setup the buildroot
-dirs		make LSB dirs and a few more needed
-toolset		fetch a copy of moonbase.tar.bz2 and install it
-unpack		extract the cache tar.bz2's
-etc		copy the template files that are not provided by modules
-rebuild		rebuild all modules at least once
-aaa_base	create a tarball with required but untracked files
-aaa_dev		create static device nodes needed by iso and initrd
-proper		clear temporary files in the image and clean up some misc stuff
-memtest		create a memtest boot image
-kernels		compile a set of kernels for both the initrd and to be installed
-initrd		compose the initrd from the template and miscfiles
-iso		create the final iso image
-test		run some (limited) tests after `make iso`
-dist		pack up the iso and calculate md5sums
+target			create BUILD/ directory
 
-misc. targets:
-tar		create a big tar of the current BUILD tree
-burn		burn the latest iso image
-blank		blank an entire cdrw
-clean		wipes it all away
+boostrap-lunar		use Lunar host to get the main modules into BUILD/
+boostrap-base		populate BUILD/ directory with generic files
+boostrap		populate BUILD/ directory
+
+install-moonbase	download and extract the moonbase to BUILD/
+download-lunar		use Lunar host to download all sources
+download		download all sources
+
+stage1-spool		copy spool/ to BUILD/
+stage1-moonbase		fix the moonbase cache files
+stage1-toolchian	build gcc, glibc and binutils
+stage1-build		build the main modules
+stage1-cache		copy stage1 to cache/
+stage1			build stage1 and copy to cache/
+
+stage2-target		create a clean BUILD/
+stage2-base		populate BUILD/ directory with generic files
+stage2-modules		populate BUILD/ with stage1 modues
+stage2-spool		copy spool/ to BUILD/
+stage2-extract-moonbase	extract the moonbase to BUILD/
+stage2-moonbase		fix the moonbase cache files
+stage2-build		build stage2
+stage2			build stage2 from stage1
+
+pack-base		create aaa_base.tar.bz2
+pack			create packages of alien files
+
+linux			build linux kernel
+kernel			create kernel for the ISO and installation
+
+iso-target		clean stage2 markers
+iso-modules		remove modules not needed on the ISO
+iso-tools		check for mkisofs
+iso-files		create config files for the ISO
+iso-strip		strip all executables
+iso-isolinux		copy isolinux files to BUILD/
+iso			create the ISO from stage2
+
+clean			wipes it all away
 
 The Makefile itself contains no configurable items. Copy the template config
 in the conf/ directory to conf/config and adjust the values as needed for
