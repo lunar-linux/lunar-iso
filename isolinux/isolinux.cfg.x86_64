@@ -1,5 +1,5 @@
 DEFAULT install
-APPEND ro initrd=initrd root=LABEL=Lunar-Linux_Mare_Ingenii readonlyroot rootdelay=10
+APPEND ro initrd=initrd root=LABEL=%LABEL% readonlyroot rootdelay=10
 DISPLAY f1.txt
 TIMEOUT 600
 PROMPT 1
