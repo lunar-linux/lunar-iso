@@ -4,7 +4,7 @@
 
 -- Goal
 
-Most of this code was written to automate the generation of homogenous
+Most of this code was written to automate the generation of homogeneous
 ISO images based on a fixed set of tools. The code should be as self-
 sufficient as possible and generate as much of the binaries as possible
 so porting to other platforms will be easy. Please keep this in mind if
@@ -26,9 +26,8 @@ The Makefile should be able to do most of the ISO building automatically, but
 there are a few steps that need to be taken:
 
  o Configure the base parameters of the ISO in conf/config
- o For now, copy one of theisolinux/isolinux.cfg.in to isolinux/isolinux.cfg
  
-The code tries to polute the host system as little as it can. It will however
+The code tries to pollute the host system as little as it can. It will however
 create a build cache for the bootstrap modules if it doesn't exist already.
 Also it will download all the sources of core modules. Last it will install
 cdrtools if mkisofs isn't found.
@@ -64,7 +63,7 @@ stage1			build stage1 and copy to cache/
 
 stage2-target		create a clean BUILD/
 stage2-base		populate BUILD/ directory with generic files
-stage2-modules		populate BUILD/ with stage1 modues
+stage2-modules		populate BUILD/ with stage1 modules
 stage2-spool		copy spool/ to BUILD/
 stage2-extract-moonbase	extract the moonbase to BUILD/
 stage2-moonbase		fix the moonbase cache files
