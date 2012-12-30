@@ -33,7 +33,7 @@ ISO_TARGET = $(ISO_SOURCE)/BUILD
 
 export ISO_SOURCE ISO_TARGET ISO_BUILD
 
-all: pack
+all: iso
 
 .SUFFIXES:
 
@@ -43,6 +43,7 @@ include mkfiles/stage1.mk
 include mkfiles/stage2.mk
 include mkfiles/pack.mk
 include mkfiles/kernel.mk
+include mkfiles/installer.mk
 include mkfiles/iso.mk
 
 clean:

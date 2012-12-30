@@ -90,9 +90,10 @@ iso-isolinux: $(ISO_TARGET)/.iso-isolinux $(ISO_TARGET)/isolinux/isolinux.bin $(
 
 
 # Generate the actual image
-$(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-strip
-	mkisofs -o $@.tmp -R -J -l \
-	-V '$(ISO_LABEL) -v \
+$(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-strip installer
+	@echo iso
+	@mkisofs -o $@.tmp -R -J -l \
+	-V '$(ISO_LABEL)' -v \
 	-d -D -N -no-emul-boot -boot-load-size 4 -boot-info-table \
 	-b isolinux/isolinux.bin \
 	-c isolinux/boot.cat \
@@ -114,4 +115,4 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-str
 	-m 'doc' \
 	-A 'Lunar-$(ISO_VERSION)' $(ISO_TARGET)
 	#mkhybrid $@.tmp
-	mv $@.tmp $@
+	@mv $@.tmp $@

@@ -6,3 +6,4 @@
 /cache/
 /isolinux/isolinux.cfg
 /conf/config
+/conf/modules.all
