@@ -5,7 +5,7 @@
 
 # copy this file to 'config' and edit your settings as needed
 
-# Which arch are we compiling for? Hint: i868 or x86_64
+# Which arch are we compiling for? Hint: i686 or x86_64
 
 ISO_ARCH = i686
 
@@ -35,18 +35,14 @@ ISO_BUILD = $(ISO_ARCH)-pc-linux-gnu
 # this copncatenates the full name
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
-## for 2.4 kernels - read this:
-# the kernel version used on the ISO
-# ISO_KVER = 2.4.32
-# the patch name (should refer to the *lunar* patch tarball used)
-# ISO_PVER = r12.0
-# leave ISO_GRSVER unset
+# the iso label may not contain spaces
+ISO_LABEL = $(shell echo -n Lunar-Linux $(ISO_CODENAME) | tr '[:space:]' _)
 
-## for 2.6 kernels - read this:
+## the kernel version shouldn't be used
 # the kernel version used on the ISO
-ISO_KVER = 2.6.35
+ISO_KVER = 3.7
 # the patch LEVEL used (from kernel.org)
-ISO_PVER = 2.6.35.3
+ISO_PVER = 3.7.1
 
 # which lunar core tools do we want on the ISO
 ISO_LUNAR_MODULE = lunar
