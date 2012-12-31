@@ -80,7 +80,7 @@ $(ISO_TARGET)/isolinux/initrd: $(ISO_TARGET)/boot/initrd
 $(ISO_TARGET)/isolinux/%: $(ISO_SOURCE)/isolinux/% $(ISO_TARGET)/.iso-isolinux
 	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
 
-$(ISO_TARGET)/isolinux/%: $(ISO_SOURCE)/isolinux/%.$(ISO_ARCH)$ (ISO_TARGET)/.iso-isolinux
+$(ISO_TARGET)/isolinux/%: $(ISO_SOURCE)/isolinux/%.$(ISO_ARCH) $(ISO_TARGET)/.iso-isolinux
 	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
 
 $(ISO_TARGET)/.iso-isolinux: iso-target
