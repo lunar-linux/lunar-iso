@@ -1,2 +1,0 @@
-OPTS=" --without-debug --without-profile"
-CONFIGURED="y"

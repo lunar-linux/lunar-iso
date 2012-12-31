@@ -1,1 +1,0 @@
-CONFIG_PPPOE="n"

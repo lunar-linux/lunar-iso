@@ -1,3 +1,0 @@
-#!/bin/bash
-
-cdrecord -v dev=0,0,0 blank=fast

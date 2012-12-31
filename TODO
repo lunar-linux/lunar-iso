@@ -1,4 +1,1 @@
-* man lfirsttime bugs?
-* make lilo/grub bootloaders optionally show up instead of always.
-* make lnet put own hostname in /etc/hosts !
-* add microcode update tools
+* fill the TODO

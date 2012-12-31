@@ -1,2 +1,0 @@
-CONFIGURED="y"
-OPTS=" --enable-perl-regexp --enable-largefile --enable-nls"
