@@ -114,5 +114,5 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-str
 	-m '$(ISO_TARGET)/var/state/lunar/module_history' \
 	-m 'doc' \
 	-A 'Lunar-$(ISO_VERSION)' $(ISO_TARGET)
-	#mkhybrid $@.tmp
+	isohybrid $@.tmp
 	@mv $@.tmp $@
