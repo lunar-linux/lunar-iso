@@ -1,6 +1,7 @@
 # /etc/fstab: static file system information.
 # <file system> <mount point> <type> <options> <dump> <pass>
 
+LABEL=%LABEL%	/	iso9660	ro	0	0
 tmpfs	/var/log	tmpfs	size=4m	0	0
 tmpfs	/var/tmp	tmpfs	size=4m	0	0
 #tmpfs	/var/cache/man	tmpfs	size=4m	0	0

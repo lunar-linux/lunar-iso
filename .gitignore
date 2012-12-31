@@ -1,9 +1,7 @@
 *~
 /*.iso
-/template/*.tar.bz2
 /BUILD/
 /spool/
 /cache/
-/isolinux/isolinux.cfg
 /conf/config
 /conf/modules.all

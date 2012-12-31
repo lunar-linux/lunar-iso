@@ -29,17 +29,19 @@ iso-modules: $(ISO_TARGET)/.iso-modules
 
 
 # Prepare target files
-$(ISO_TARGET)/etc/lsb-release: iso-modules
-	@echo lsb-release
-	@{ echo 'DISTRIB_ID="Lunar Linux"' ; \
-	   echo 'DISTRIB_RELEASE="$(ISO_VERSION)"' ; \
-	   echo 'DISTRIB_CODENAME="$(ISO_CODENAME)"' ; \
-	   echo 'DISTRIB_DESCRIPTION="Lunar Linux $(ISO_CNAME)"' ; } > $@
+ISO_ETC_FILES=lsb-release fstab
 
-$(ISO_TARGET)/etc/fstab: $(ISO_SOURCE)/livecd/template/etc/fstab iso-modules
-	@cp $< $@
+$(ISO_TARGET)/etc/%: $(ISO_SOURCE)/livecd/template/etc/% iso-modules
+	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
 
-iso-files: $(ISO_TARGET)/etc/lsb-release $(ISO_TARGET)/etc/fstab
+# Symlinks need special care
+$(ISO_TARGET)/.iso-files: iso-target
+	@echo iso-files
+	@ln -sf /usr/lib/systemd/system/multi-user.target $(ISO_TARGET)/etc/systemd/system/default.target
+	@ln -sf ../../tmp/random-seed $(ISO_TARGET)/var/lib/random-seed
+	@touch $@
+
+iso-files: $(ISO_TARGET)/.iso-files $(addprefix $(ISO_TARGET)/etc/, $(ISO_ETC_FILES))
 
 
 # Strip executables and libraries
@@ -75,10 +77,10 @@ $(ISO_TARGET)/boot/initrd: $(ISO_TARGET)/.iso-isolinux
 $(ISO_TARGET)/isolinux/initrd: $(ISO_TARGET)/boot/initrd
 	@cp $< $@
 
-$(ISO_TARGET)/isolinux/%: $(ISO_SOURCE)/isolinux/%
+$(ISO_TARGET)/isolinux/%: $(ISO_SOURCE)/isolinux/% $(ISO_TARGET)/.iso-isolinux
 	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
 
-$(ISO_TARGET)/isolinux/%: $(ISO_SOURCE)/isolinux/%.$(ISO_ARCH)
+$(ISO_TARGET)/isolinux/%: $(ISO_SOURCE)/isolinux/%.$(ISO_ARCH)$ (ISO_TARGET)/.iso-isolinux
 	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
 
 $(ISO_TARGET)/.iso-isolinux: iso-target
@@ -114,5 +116,5 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-str
 	-m '$(ISO_TARGET)/var/state/lunar/module_history' \
 	-m 'doc' \
 	-A 'Lunar-$(ISO_VERSION)' $(ISO_TARGET)
-	isohybrid $@.tmp
+	@isohybrid $@.tmp
 	@mv $@.tmp $@

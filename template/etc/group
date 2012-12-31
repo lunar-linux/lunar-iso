@@ -26,6 +26,7 @@ utmp:x:24:
 video:x:25:
 games:x:26:
 proxy:x:27:
+dialout:x:27:
 wheel:x:30:
 users:x:100:
 nogroup:x:65534:

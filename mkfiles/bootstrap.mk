@@ -24,7 +24,7 @@ $(ISO_TARGET)/.base: target
 	@ln -sf lib $(ISO_TARGET)/usr/lib64
 	@ln -sf ../run/lock $(ISO_TARGET)/var/lock
 	@ln -sf ../run $(ISO_TARGET)/var/run
-	@ln -sf ../proc/self/mounts $(ISO_TARGET)/etc/mtab
+	@ln -sf /proc/self/mounts $(ISO_TARGET)/etc/mtab
 	@cp -r $(ISO_SOURCE)/template/etc $(ISO_TARGET)
 	@echo MAKES=$(ISO_MAKES) > $(ISO_TARGET)/etc/lunar/local/optimizations.GNU_MAKE
 	@touch $@
