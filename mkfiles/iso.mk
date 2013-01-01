@@ -15,6 +15,7 @@ iso-target: $(ISO_TARGET)/.iso-target
 # Host system iso tools
 iso-tools:
 	@which mkisofs || lin cdrtools
+	@which isohybrid || lin syslinux
 
 
 # Remove non iso modules
