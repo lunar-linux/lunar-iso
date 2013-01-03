@@ -104,9 +104,7 @@ stage2-toolchain: $(ISO_TARGET)/.stage2-toolchain
 
 $(ISO_TARGET)/.stage2: stage2-toolchain
 	@echo stage2-build
-	@$(ISO_SOURCE)/scripts/chroot-build lunar set PROMPT_DELAY 0
-	@$(ISO_SOURCE)/scripts/chroot-build lin -c `$(ISO_SOURCE)/scripts/chroot-build lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))`
-	@$(ISO_SOURCE)/scripts/chroot-build lunar unset PROMPT_DELAY
+	@$(ISO_SOURCE)/scripts/chroot-build PROMPT_DELAY=0 lin -c `$(ISO_SOURCE)/scripts/chroot-build lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))`
 	@touch $@
 
 stage2-build: $(ISO_TARGET)/.stage2
