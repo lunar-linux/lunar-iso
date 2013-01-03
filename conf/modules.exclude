@@ -1,1 +1,1 @@
-EXCLUDE_MODULES=ppl theedge udev setserial
+EXCLUDE_MODULES=theedge udev
