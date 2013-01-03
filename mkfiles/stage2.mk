@@ -1,6 +1,6 @@
-.INTERMEDIATE: stage2 stage2-target stage2-base stage2-modules stage2-spool stage2-extract-moonbase stage2-moonbase stage2-build
+.INTERMEDIATE: stage2 stage2-target stage2-base stage2-modules stage2-spool stage2-extract-moonbase stage2-moonbase stage2-toolchain stage2-build
 
-.SECONDARY: $(ISO_TARGET)/.stage2-target $(ISO_TARGET)/.stage2-base $(ISO_TARGET)/.stage2-modules $(ISO_TARGET)/.stage2-spool $(ISO_TARGET)/.stage2-extract-moonbase $(ISO_TARGET)/.stage2-moonbase $(ISO_TARGET)/.stage2
+.SECONDARY: $(ISO_TARGET)/.stage2-target $(ISO_TARGET)/.stage2-base $(ISO_TARGET)/.stage2-modules $(ISO_TARGET)/.stage2-spool $(ISO_TARGET)/.stage2-extract-moonbase $(ISO_TARGET)/.stage2-moonbase $(ISO_TARGET)/.stage2-toolchain $(ISO_TARGET)/.stage2
 
 stage2: stage2-build
 
@@ -95,9 +95,18 @@ include $(ISO_SOURCE)/conf/modules.kernel
 include $(ISO_SOURCE)/conf/modules.exclude
 -include $(ISO_SOURCE)/conf/modules.exclude.$(ISO_ARCH)
 
-$(ISO_TARGET)/.stage2: stage2-moonbase stage2-spool $(ISO_SOURCE)/conf/modules.all
+$(ISO_TARGET)/.stage2-toolchain: stage2-moonbase stage2-spool $(ISO_SOURCE)/conf/modules.all
+	@echo stage2-toolchain
+	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c $(STAGE2_MODULES)
+	@touch $@
+
+stage2-toolchain: $(ISO_TARGET)/.stage2-toolchain
+
+$(ISO_TARGET)/.stage2: stage2-toolchain
 	@echo stage2-build
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c $(STAGE2_MODULES) `$(ISO_SOURCE)/scripts/chroot-build lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))`
+	@$(ISO_SOURCE)/scripts/chroot-build lunar set PROMPT_DELAY 0
+	@$(ISO_SOURCE)/scripts/chroot-build lin -c `$(ISO_SOURCE)/scripts/chroot-build lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))`
+	@$(ISO_SOURCE)/scripts/chroot-build lunar unset PROMPT_DELAY
 	@touch $@
 
 stage2-build: $(ISO_TARGET)/.stage2

@@ -1,1 +1,1 @@
-STAGE2_MODULES=kernel-headers glibc gcc binutils
+STAGE2_MODULES=kernel-headers glibc gcc binutils Linux-PAM
