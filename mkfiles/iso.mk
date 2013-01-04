@@ -21,7 +21,7 @@ iso-tools:
 # Remove non iso modules
 include $(ISO_SOURCE)/conf/modules.iso
 
-$(ISO_TARGET)/.iso-modules: iso-target
+$(ISO_TARGET)/.iso-modules: iso-target $(ISO_TARGET)/isolinux/isolinux.bin
 	@echo iso-modules
 	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lrm $(filter-out $(ISO_MODULES), $(ALL_MODULES))
 	@touch $@
@@ -48,7 +48,7 @@ iso-files: $(ISO_TARGET)/.iso-files $(addprefix $(ISO_TARGET)/etc/, $(ISO_ETC_FI
 # Strip executables and libraries
 $(ISO_TARGET)/.iso-strip: iso-modules
 	@echo iso-strip
-	@find \( -type f -perm /u=x -o -name 'lib*.so*' \) -exec strip {} \;
+	@find \( -type f -perm /u=x -o -name 'lib*.so*' -o -name '*.ko' \) -exec strip {} \;
 	@touch $@
 
 iso-strip: $(ISO_TARGET)/.iso-strip
@@ -57,6 +57,7 @@ iso-strip: $(ISO_TARGET)/.iso-strip
 # Copy the isolinux files to the target
 ISOLINUX_FILES=README f1.txt f2.txt f3.txt f4.txt generate-iso.sh isolinux.cfg
 
+.SECONDARY: $(ISO_TARGET)/usr/share/syslinux/isolinux.bin
 $(ISO_TARGET)/usr/share/syslinux/isolinux.bin: $(ISO_TARGET)/.iso-isolinux
 	@test -f $@
 	@touch $@
