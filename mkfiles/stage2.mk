@@ -66,7 +66,9 @@ $(ISO_TARGET)/.stage2-extract-moonbase: stage2-target $(ISO_SOURCE)/spool/moonba
 	@tar -xjf $(ISO_SOURCE)/spool/moonbase.tar.bz2 -C $(ISO_TARGET)/var/lib/lunar moonbase/core moonbase/aliases
 	@mkdir -p $(ISO_TARGET)/var/lib/lunar/moonbase/zlocal
 	@mkdir -p $(ISO_TARGET)/var/state/lunar/moonbase
-	@touch $(ISO_TARGET)/var/state/lunar/{packages,depends}{,.backup}
+	@touch $(ISO_TARGET)/var/state/lunar/packages{,.backup}
+	@cp $(ISO_SOURCE)/template/var/state/lunar/depends $(ISO_TARGET)/var/state/lunar/depends
+	@cp $(ISO_TARGET)/var/state/lunar/depends{,.backup}
 	@touch $@
 
 stage2-extract-moonbase: $(ISO_TARGET)/.stage2-extract-moonbase
@@ -104,7 +106,7 @@ stage2-toolchain: $(ISO_TARGET)/.stage2-toolchain
 
 $(ISO_TARGET)/.stage2: stage2-toolchain
 	@echo stage2-build
-	@PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build lin -c `$(ISO_SOURCE)/scripts/chroot-build lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))`
+	@PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'echo `lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))` | xargs -n 1 lin -c'
 	@touch $@
 
 stage2-build: $(ISO_TARGET)/.stage2
