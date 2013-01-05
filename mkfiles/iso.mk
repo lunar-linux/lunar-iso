@@ -23,7 +23,7 @@ include $(ISO_SOURCE)/conf/modules.iso
 
 $(ISO_TARGET)/.iso-modules: iso-target $(ISO_TARGET)/isolinux/isolinux.bin
 	@echo iso-modules
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lrm $(filter-out $(ISO_MODULES), $(ALL_MODULES))
+	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lrm -n $(filter-out $(ISO_MODULES), $(ALL_MODULES))
 	@touch $@
 
 iso-modules: $(ISO_TARGET)/.iso-modules
@@ -48,7 +48,7 @@ iso-files: $(ISO_TARGET)/.iso-files $(addprefix $(ISO_TARGET)/etc/, $(ISO_ETC_FI
 # Strip executables and libraries
 $(ISO_TARGET)/.iso-strip: iso-modules
 	@echo iso-strip
-	@find \( -type f -perm /u=x -o -name 'lib*.so*' -o -name '*.ko' \) -exec strip {} \;
+	@find \( -type f -perm /u=x -o -name 'lib*.so*' -o -name '*.ko' \) -exec strip --strip-unneeded {} \;
 	@touch $@
 
 iso-strip: $(ISO_TARGET)/.iso-strip
