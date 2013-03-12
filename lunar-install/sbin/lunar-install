@@ -1382,7 +1382,7 @@ show_languages()
   while read locale language; do
     echo "$locale"
     echo "$language"
-  done < /.locale_list
+  done < /locale.list
 }
 
 

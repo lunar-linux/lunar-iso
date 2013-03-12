@@ -9,4 +9,14 @@ $(ISO_TARGET)/.lunar-install: iso-target
 	@cp -r $(ISO_SOURCE)/lunar-install/* $(ISO_TARGET)
 	@touch $@
 
-lunar-install: $(ISO_TARGET)/.lunar-install
+# Generate locale list
+$(ISO_TARGET)/locale.list: iso-target
+	@echo locale.list
+	@$(ISO_SOURCE)/scripts/chroot-build locale -a -v | \
+	sed -rn 's;archive.*|locale:|language \||territory \|;;gp' | \
+	awk '{printf $$0 ; printf " "} NR % 3 == 0 {print " "}' | \
+	while read locale language territory ; do \
+	  echo -e "$$locale\t$$language ($$territory)" ; \
+	done > $@
+
+lunar-install: $(ISO_TARGET)/.lunar-install $(ISO_TARGET)/locale.list
