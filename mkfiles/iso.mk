@@ -97,7 +97,7 @@ iso-isolinux: $(ISO_TARGET)/.iso-isolinux $(ISO_TARGET)/isolinux/isolinux.bin $(
 $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-strip installer
 	@echo iso
 	@mkisofs -o $@.tmp -R -J -l \
-	-V '$(ISO_LABEL)' -v \
+	-V '$(ISO_LABEL)' \
 	-d -D -N -no-emul-boot -boot-load-size 4 -boot-info-table \
 	-b isolinux/isolinux.bin \
 	-c isolinux/boot.cat \

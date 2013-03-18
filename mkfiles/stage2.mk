@@ -2,7 +2,7 @@
 
 .SECONDARY: $(ISO_TARGET)/.stage2-target $(ISO_TARGET)/.stage2-base $(ISO_TARGET)/.stage2-modules $(ISO_TARGET)/.stage2-spool $(ISO_TARGET)/.stage2-extract-moonbase $(ISO_TARGET)/.stage2-moonbase $(ISO_TARGET)/.stage2-toolchain $(ISO_TARGET)/.stage2
 
-stage2: stage2-build
+stage2: stage2-build $(ISO_TARGET)/var/cache/lunar/packages
 
 
 # clean the target directory for stage2
@@ -110,3 +110,7 @@ $(ISO_TARGET)/.stage2: stage2-toolchain
 	@touch $@
 
 stage2-build: $(ISO_TARGET)/.stage2
+
+$(ISO_TARGET)/var/cache/lunar/packages: stage2-build
+	@mkdir -p $(ISO_TARGET)/var/cache/lunar
+	@cp $(ISO_TARGET)/var/state/lunar/packages $@

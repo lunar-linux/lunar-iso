@@ -14,19 +14,14 @@
 #                                                           #
 #############################################################
 
-
-is_26()
-{
-	case `uname -r` in
-		2.6*)	return 0 ;;
-		   *)	return 1 ;;
-	esac
-}
-
+LOCALE_LIST=/usr/share/lunar-install/locale.list
+PACKAGES_LIST=/var/cache/lunar/packages
+KERNEL_LIST=/var/cache/lunar/kernels
+KMOD_LIST=/var/spool/lunar/kmodules
 
 pkg_avail()
 {
-	grep -q "^$1:" /.packages
+	grep -q "^$1:" $PACKAGES_LIST
 }
 
 
@@ -63,7 +58,7 @@ chroot_run()
 	mount --bind /proc $TARGET/proc
 	mount --bind /dev $TARGET/dev
 	mount --bind /tmp $TARGET/tmp
-	is_26 && mount --bind /sys $TARGET/sys
+	mount --bind /sys $TARGET/sys
 	if [ -n "$USE_SWAP" ]; then
 		chroot $TARGET swapon -a
 	fi
@@ -75,7 +70,7 @@ chroot_run()
 	if [ -n "$USE_SWAP" ]; then
 		chroot $TARGET swapoff -a
 	fi
-	is_26 && umount $TARGET/sys
+	umount $TARGET/sys
 	umount $TARGET/tmp
 	umount $TARGET/dev
 	umount $TARGET/proc
@@ -414,15 +409,17 @@ menu_get_filesystem()
 
 show_keymaps()
 {
-	KEYDIR="/usr/share/keymaps/i386"
+	KEYDIR="/usr/share/kbd/keymaps/i386"
 
 	azerty="$(ls $KEYDIR/azerty)"
+	colemak="$(ls $KEYDIR/colemak)"
 	dvorak="$(ls $KEYDIR/dvorak)"
 	fgGIod="$(ls $KEYDIR/fgGIod)"
+	olpc="$(ls $KEYDIR/olpc)"
 	qwerty="$(ls $KEYDIR/qwerty)"
 	qwertz="$(ls $KEYDIR/qwertz)"
 
-	MAP_FILES=$(echo -e "$azerty\n$dvorak\n$fgGIod\n$qwerty\n$qwertz" | sort | sed "s/\.kmap\.gz//")
+	MAP_FILES=$(echo -e "$azerty\n$colemak\n$dvorak\n$fgGIod\n$olpc\n$qwerty\n$qwertz" | sort | sed "s/\.kmap\.gz//")
 
 	for MAP in $MAP_FILES; do
 		echo $MAP
@@ -831,7 +828,7 @@ make_lilo_conf()
 		echo "delay=100"
 		echo "timeout=100"
 		echo "install=menu"
-		is_26 || echo "append=\"devfs=nomount\""
+		echo "append=\"devfs=nomount\""
 		echo "read-only"
 		echo ""
 		if echo $BOOT | grep -q md ; then
@@ -912,10 +909,9 @@ install_grub()
 transfer_package()
 {
 	cd $TARGET &&
-	LINE=$(grep "^$1:" /.packages)
+	LINE=$(grep "^$1:" $PACKAGES_LIST)
 	MOD=$(echo $LINE | cut -d: -f1)
 	VER=$(echo $LINE | cut -d: -f4)
-	SIZ=$(echo $LINE | cut -d: -f5)
 	cp /var/cache/lunar/$MOD-$VER-*.tar.bz2 $TARGET/var/cache/lunar/
 	tar xjf $TARGET/var/cache/lunar/$MOD-$VER-*.tar.bz2 2> /dev/null
 	echo $LINE >> $TARGET/var/state/lunar/packages
@@ -1030,7 +1026,7 @@ transfer()
 		fi
 
 		# calculate the total so we can display progress
-		NUM=$(wc -l /.packages | awk '{print $1}')
+		NUM=$(wc -l $PACKAGES_LIST | awk '{print $1}')
 		# add the number of times we call percent_msg, subtract 2 for lilo/grub
 		(( NUM = NUM + 10 - 2 ))
 
@@ -1040,7 +1036,7 @@ transfer()
 			percent_msg "Creating base LSB directories"
 			mkdir -p bin boot dev etc home lib mnt media
 			mkdir -p proc root sbin srv tmp usr var opt
-			is_26 && mkdir -p sys
+			mkdir -p sys
 			if [ `arch` == "x86_64" ]; then
 				ln -sf /lib lib64
 				ln -sf /usr/lib usr/lib64
@@ -1052,10 +1048,11 @@ transfer()
 			ln -sf share/man usr/man
 			ln -sf share/info usr/info
 			mkdir -p etc/lunar/local/depends
-			ln -s . etc/rc.d
-			mkdir -p etc/init.d etc/rc{0,1,2,3,4,5,6,S}.d
+                        mkdir -p run/lock
+                        ln -sf ../run var/run
+                        ln -sf ../run/lock var/lock
 			mkdir -p var/log/lunar/{install,md5sum,compile,queue}
-			mkdir -p var/{cache,empty,lib,lock,log,run,spool,state,tmp}
+			mkdir -p var/{cache,empty,lib,log,spool,state,tmp}
 			mkdir -p var/{cache,lib,log,spool,state}/lunar
 			mkdir -p var/state/discover
 			mkdir -p var/spool/mail
@@ -1072,7 +1069,7 @@ transfer()
 				tar xjf /var/cache/lunar/aaa_dev.tar.bz2 2> /dev/null
 			fi
 
-			for LINE in $(cat /.packages | grep -v -e '^lilo:' -e '^grub:') ; do
+			for LINE in $(cat $PACKAGES_LIST | grep -v -e '^lilo:' -e '^grub:' -e '^grub2:') ; do
 				MOD=$(echo $LINE | cut -d: -f1)
 				VER=$(echo $LINE | cut -d: -f4)
 				SIZ=$(echo $LINE | cut -d: -f5)
@@ -1154,13 +1151,6 @@ transfer()
 			touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
 			chmod 0644 $TARGET/var/log/{utmp,wtmp,lastlog}
 			chmod 0600 $TARGET/var/log/btmp
-
-            # disable some services
-            if [ -e /.initd.disable.list ]; then
-              while read INITD; do
-                chroot_run /sbin/chkconfig --del $INITD
-              done < /.initd.disable.list
-            fi
 
 		# really we are done now ;^)
 		) | $DIALOG --title " Installing Lunar-Linux " --gauge "" 10 70 0
@@ -1382,7 +1372,7 @@ show_languages()
   while read locale language; do
     echo "$locale"
     echo "$language"
-  done < /locale.list
+  done < $LOCALE_LIST
 }
 
 
@@ -1440,7 +1430,7 @@ install_kernels()
 			echo $LINE | cut -d: -f2-
 			# same text below - more space for longer description
 			echo $LINE | cut -d: -f2-
-		done < /kernels/.kernels
+		done < $KERNEL_LIST
 	}
 
 	list_kernel_modules()
@@ -1461,7 +1451,7 @@ install_kernels()
 				echo $LINE | cut -d: -f3-
 			fi
 		    )
-		done < /kernels/.kernel-modules
+		done < $KMOD_LIST
 	}
 
 	while true ; do
@@ -1476,8 +1466,8 @@ install_kernels()
 		case $KCOMMAND in
 			C)
 				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 $(list_kernel_modules)`
-				if grep -q "^$CCOMMAND:" /kernels/.kernel-modules ; then
-				    KERNMODULE=$(grep "^$CCOMMAND:" /kernels/.kernel-modules | cut -d: -f2)
+				if grep -q "^$CCOMMAND:" $KMOD_LIST ; then
+				    KERNMODULE=$(grep "^$CCOMMAND:" $KMOD_LIST | cut -d: -f2)
 				    if ! USE_CLEAR=1 USE_SWAP=1 chroot_run lin -r $KERNMODULE; then
 						echo "Press ENTER to go back to the menu"
 						read
@@ -1500,8 +1490,8 @@ install_kernels()
 			P)
 				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --item-help --menu "" 0 0 0 \
 					$(list_precompiled_kernels)`
-				if [ -f "/kernels/$CCOMMAND.tar.bz2" ]; then
-					cd $TARGET && tar xjf /kernels/$CCOMMAND.tar.bz2
+				if [ -f "/var/cache/lunar/$CCOMMAND.tar.bz2" ]; then
+					cd $TARGET && tar xjf /var/cache/lunar/$CCOMMAND.tar.bz2
 					ln -s /usr/src/linux-$CCOMMAND $TARGET/usr/src/linux
 
 					# Register the kernel module as installed
@@ -1510,7 +1500,7 @@ install_kernels()
 					fi
 
 					# Generate kernel install log
-					tar -tf /kernels/$CCOMMAND.tar.bz2 | sed '/^usr\/src/d;s:^:/:g' >> $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} 2> /dev/null
+					tar -tf /var/cache/lunar/$CCOMMAND.tar.bz2 | sed '/^usr\/src/d;s:^:/:g' >> $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} 2> /dev/null
 
 					# Generate kernel md5sum log
 					cat $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} | xargs -i md5sum {} >> $TARGET/var/log/lunar/md5sum/linux-2.6-${CCOMMAND} 2> /dev/null
