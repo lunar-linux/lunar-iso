@@ -1,2 +1,3 @@
 irssi:perl:off:optional::--without-perl
 tar:pbzip2:off:optional:--with-bzip2=/usr/bin/pbzip2:
+systemd:docbook-xsl:off:optional:--enable-manpages:--disable-manpages
