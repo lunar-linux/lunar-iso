@@ -15,6 +15,9 @@ F9 f1.txt
 LABEL install
 	KERNEL linux
 	APPEND ro initrd=initrd root=LABEL=%LABEL% readonlyroot rootdelay=10 vga=ask
+LABEL novga
+	KERNEL linux
+	APPEND ro initrd=initrd root=LABEL=%LABEL% readonlyroot rootdelay=10
 LABEL linux
 	KERNEL linux
 	APPEND read-only load_ramdisk=1 ramdisk_size=INITRDSIZE initrd=initrd root=/dev/ram0 prompt_ramdisk=0 vga=ask

@@ -99,14 +99,14 @@ include $(ISO_SOURCE)/conf/modules.exclude
 
 $(ISO_TARGET)/.stage2-toolchain: stage2-moonbase stage2-spool $(ISO_SOURCE)/conf/modules.all
 	@echo stage2-toolchain
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c $(STAGE2_MODULES)
+	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0  $(ISO_SOURCE)/scripts/chroot-build lin -c $(STAGE2_MODULES)
 	@touch $@
 
 stage2-toolchain: $(ISO_TARGET)/.stage2-toolchain
 
 $(ISO_TARGET)/.stage2: stage2-toolchain
 	@echo stage2-build
-	@PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'echo `lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))` | xargs -n 1 lin -c'
+	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'echo `lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))` | xargs -n 1 lin -c'
 	@touch $@
 
 stage2-build: $(ISO_TARGET)/.stage2
