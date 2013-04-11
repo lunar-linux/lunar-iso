@@ -5,7 +5,7 @@ BOOTSTRAP_MODULES="bash binutils bzip2 coreutils dialog diffutils file findutils
 mkdir -p "$ISO_SOURCE/cache"
 
 NEED_MODULES=
-LUNAR_CACHE=`lsh eval echo '$INSTALL_CACHE'`
+LUNAR_CACHE=`lsh echo '$INSTALL_CACHE'`
 NEED_CACHE=
 NO_CACHE=
 

@@ -4,7 +4,7 @@ CORE_MODULES=`find "$ISO_TARGET/var/lib/lunar/moonbase/core" -name DETAILS -prin
 
 mkdir -p "$ISO_SOURCE/spool"
 
-LUNAR_CACHE=`lsh eval echo '$SOURCE_CACHE'`
+LUNAR_CACHE=`lsh echo '$SOURCE_CACHE'`
 NO_CACHE=
 
 echo Required modules:
@@ -13,9 +13,9 @@ for mod in $CORE_MODULES ; do
 done
 
 for mod in $CORE_MODULES ; do
-  lsh eval MOONBASE="$ISO_TARGET/var/lib/lunar/moonbase" download_module "$mod"
+  lsh MOONBASE="$ISO_TARGET/var/lib/lunar/moonbase" download_module "$mod"
   # check for cache file presence
-  for src in `lsh eval MOONBASE="$ISO_TARGET/var/lib/lunar/moonbase" sources "$mod"` ; do
+  for src in `lsh MOONBASE="$ISO_TARGET/var/lib/lunar/moonbase" sources "$mod"` ; do
     if [ ! -f "$ISO_SOURCE/spool/$src" ] ; then
       cp "$LUNAR_CACHE/$src" "$ISO_SOURCE/spool/$src" || NO_CACHE="$NO_CACHE $mod"
     fi
