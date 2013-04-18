@@ -18,6 +18,8 @@ LOCALE_LIST=/usr/share/lunar-install/locale.list
 PACKAGES_LIST=/var/cache/lunar/packages
 KERNEL_LIST=/var/cache/lunar/kernels
 KMOD_LIST=/var/spool/lunar/kmodules
+MOONBASE_TAR=/usr/share/lunar-install/moonbase.tar.bz2
+MOTD_FILE=/usr/share/lunar-install/motd
 
 pkg_avail()
 {
@@ -1080,13 +1082,13 @@ transfer()
 			percent_msg "Installing moonbase"
 			(
 				cd $TARGET/var/lib/lunar
-				tar xjf /var/lib/lunar/moonbase.tar.bz2 2> /dev/null
-				tar j --list -f /var/lib/lunar/moonbase.tar.bz2 | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
+				tar xjf $MOONBASE_TAR 2> /dev/null
+				tar j --list -f $MOONBASE_TAR | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
 			)
 
 			# transfer sources
-			percent_msg "Copying sources"
-			cp /var/spool/lunar/* $TARGET/var/spool/lunar/
+			#percent_msg "Copying sources"
+			#cp /var/spool/lunar/* $TARGET/var/spool/lunar/
 
 			# setup list of installed packages etc.
 			percent_msg "Updating administrative files"
@@ -1113,10 +1115,10 @@ transfer()
 			[ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
 
 			# post-first-boot message:
-			cp /etc/init.d/lunar-install $TARGET/etc/init.d/
-			ln -sf /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
+			#cp /etc/init.d/lunar-install $TARGET/etc/init.d/
+			#ln -sf /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
 			cp /README $TARGET/root/README
-			cp /etc/motd.target $TARGET/etc/motd
+			cp $MOTD_FILE $TARGET/etc/motd
 
 			# save proxies
 			if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
@@ -1141,11 +1143,11 @@ transfer()
 			make_grub_conf
 
 			# some more missing files:
-			cp /etc/lunar.release $TARGET/etc/
+			#cp /etc/lunar.release $TARGET/etc/
 			cp /etc/lsb-release $TARGET/etc/
 
 			echo "    LUNAR_MODULE=lunar" > $TARGET/etc/lunar/local/config
-			cp /etc/lunar/local/.config* $TARGET/etc/lunar/local/
+			#cp /etc/lunar/local/.config* $TARGET/etc/lunar/local/
 
 			# initialize the new machine:
 			touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
@@ -1360,7 +1362,7 @@ font_menu()
 	CONSOLEFONT=${CONSOLEFONT:-default8x16}
 	CONSOLEFONT=`$DIALOG --title "$TITLE" --default-item "$CONSOLEFONT" --menu "$HELP" 0 0 0 $FONTS`
 	if [ $? == 0 ]; then
-		consolechars -f $CONSOLEFONT
+		setfont $CONSOLEFONT
 		D_OK=\\Z2
 	fi
 	DEFAULT=E
@@ -1465,27 +1467,7 @@ install_kernels()
 
 		case $KCOMMAND in
 			C)
-				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "L" --item-help --menu "" 0 0 0 $(list_kernel_modules)`
-				if grep -q "^$CCOMMAND:" $KMOD_LIST ; then
-				    KERNMODULE=$(grep "^$CCOMMAND:" $KMOD_LIST | cut -d: -f2)
-				    if ! USE_CLEAR=1 USE_SWAP=1 chroot_run lin -r $KERNMODULE; then
-						echo "Press ENTER to go back to the menu"
-						read
-					else
-						msgbox "The kernel \"$KERNMODULE\" has been installed to your system."
-						if (( STEP == 8 )); then
-							(( STEP++ ))
-						fi
-						K_OK=\\Z2
-						R_OK=
-						U_OK=
-						H_OK=
-						V_OK=
-						G_OK=
-						A_OK=
-						break
-					fi
-				fi
+				msgbox "This option is not available from the installer."
 			;;
 			P)
 				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --item-help --menu "" 0 0 0 \

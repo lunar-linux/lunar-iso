@@ -1,10 +1,13 @@
 
 Welcome to Lunar Linux %VERSION% (%CODENAME%)!
 
-You are running the system from the lunar ISO - as a Live CD. Not
-all tools are available within this system, as it only contains
-the base tools. Limited networking tools are also available.
+Read `man lfirsttime` if you are a new Lunar Linux user. It contains
+many hints that are useful if you do not know what to do next. Read
+`man lunar` about the Lunar Linux package management system, to find
+out how to install additional packages. Also read the "/root/README"
+file for more hints on what you can do with the ISO itself in case
+of problems.
 
-The install target location is /mnt. You can mount it yourself
-there or chroot into it to perform maintenance and rescue.
+You are reading the contents of "/etc/motd". If you do not edit or
+remove it, it will continue to bug you with this message.
 
