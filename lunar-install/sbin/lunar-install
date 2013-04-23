@@ -846,6 +846,21 @@ make_lilo_conf()
 }
 
 
+install_grub2()
+{
+	if ! pkg_avail grub2 ; then
+		return
+	fi
+
+	DISC=$(echo $ROOT | sed 's/[0-9]*$//')
+	chroot_run grub-install $DISK
+	chroot_run grub-mkconfig -o /boot/grub/grub.cfg
+
+	echo "grub was installed on the MBR of $DISC"
+	sleep 4
+}
+
+
 make_grub_conf()
 {
 	if ! pkg_avail grub ; then
@@ -1474,20 +1489,21 @@ install_kernels()
 					$(list_precompiled_kernels)`
 				if [ -f "/var/cache/lunar/$CCOMMAND.tar.bz2" ]; then
 					cd $TARGET && tar xjf /var/cache/lunar/$CCOMMAND.tar.bz2
-					ln -s /usr/src/linux-$CCOMMAND $TARGET/usr/src/linux
+					#ln -s /usr/src/linux-$CCOMMAND $TARGET/usr/src/linux
 
 					# Register the kernel module as installed
-					if ! grep -q "^linux-2.6" $TARGET/var/state/lunar/packages; then
-						echo "linux-2.6:%DATE%:installed:$CCOMMAND:37000KB" >> $TARGET/var/state/lunar/packages
+					if ! grep -q "^linux" $TARGET/var/state/lunar/packages; then
+						echo "linux:%DATE%:installed:$CCOMMAND:37000KB" >> $TARGET/var/state/lunar/packages
 					fi
 
 					# Generate kernel install log
-					tar -tf /var/cache/lunar/$CCOMMAND.tar.bz2 | sed '/^usr\/src/d;s:^:/:g' >> $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} 2> /dev/null
+					tar -tf /var/cache/lunar/$CCOMMAND.tar.bz2 | sed '/^usr\/src/d;s:^:/:g' >> $TARGET/var/log/lunar/install/linux-${CCOMMAND} 2> /dev/null
 
 					# Generate kernel md5sum log
-					cat $TARGET/var/log/lunar/install/linux-2.6-${CCOMMAND} | xargs -i md5sum {} >> $TARGET/var/log/lunar/md5sum/linux-2.6-${CCOMMAND} 2> /dev/null
+					cat $TARGET/var/log/lunar/install/linux-${CCOMMAND} | xargs -i md5sum {} >> $TARGET/var/log/lunar/md5sum/linux-${CCOMMAND} 2> /dev/null
 
 					# let the plugin code handle the hard work
+					chroot_run depmod
 					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
 
 					msgbox "The precompiled kernel \"$CCOMMAND\" has been installed to your system."
@@ -1512,7 +1528,8 @@ install_kernels()
 install_bootloader() {
 	while true ; do
 		BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "G" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
-		$(if pkg_avail grub ; then echo "G" ; echo "grub" ; echo "Install grub as boot loader"; fi) \
+		$(if pkg_avail grub2 ; then echo "G" ; echo "grub2" ; echo "Install grub2 as boot loader"; fi) \
+		$(if pkg_avail grub ; then echo "B" ; echo "grub" ; echo "Install grub as boot loader"; fi) \
 		$(if pkg_avail lilo ; then echo "L" ; echo "lilo" ; echo "Install lilo as boot loader"; fi) \
 		"N" "none" "Do not install a boot loader"`
 
@@ -1528,6 +1545,13 @@ install_bootloader() {
 			msgbox "The lilo boot loader package was installed. From now on, when you add a kernel, lilo will be run after the /etc/lilo.conf configuration file has been updated. "
 		;;
 			G)
+			BOOTLOADER=grub2
+			transfer_package $BOOTLOADER
+			chroot_run lsh update_plugin $BOOTLOADER "install"
+			install_grub2
+			msgbox "The grub2 boot loader package was installed. From now on, when you add a kernel, it will be available through grub2 on boot."
+		;;
+			B)
 			BOOTLOADER=grub
 			transfer_package $BOOTLOADER
 			chroot_run lsh update_plugin $BOOTLOADER "install"
