@@ -1444,9 +1444,9 @@ install_kernels()
 		local LINE
 		while read LINE; do
 			echo $LINE | cut -d: -f1
-			echo $LINE | cut -d: -f2-
+			echo $LINE | cut -d: -f3-
 			# same text below - more space for longer description
-			echo $LINE | cut -d: -f2-
+			echo $LINE | cut -d: -f3-
 		done < $KERNEL_LIST
 	}
 
@@ -1491,20 +1491,24 @@ install_kernels()
 					cd $TARGET && tar xjf /var/cache/lunar/$CCOMMAND.tar.bz2
 					#ln -s /usr/src/linux-$CCOMMAND $TARGET/usr/src/linux
 
+					KVER=$(grep "^$CCOMMAND:" $KERNEL_LIST | cut -d: -f2)
+					KVER_PATCH=$(echo $KVER | cut -d . -f 3)
+					KVER_FULL=$(echo $KVER | cut -d . -f 1,2).${KVER_PATCH:-0}
+
 					# Register the kernel module as installed
 					if ! grep -q "^linux" $TARGET/var/state/lunar/packages; then
-						echo "linux:%DATE%:installed:$CCOMMAND:37000KB" >> $TARGET/var/state/lunar/packages
+						echo "linux:%DATE%:installed:$KVER:37000KB" >> $TARGET/var/state/lunar/packages
 					fi
 
 					# Generate kernel install log
-					tar -tf /var/cache/lunar/$CCOMMAND.tar.bz2 | sed '/^usr\/src/d;s:^:/:g' >> $TARGET/var/log/lunar/install/linux-${CCOMMAND} 2> /dev/null
+					#tar -tf /var/cache/lunar/$CCOMMAND.tar.bz2 | sed '/^usr\/src/d;s:^:/:g' >> $TARGET/var/log/lunar/install/linux-${CCOMMAND} 2> /dev/null
 
 					# Generate kernel md5sum log
-					cat $TARGET/var/log/lunar/install/linux-${CCOMMAND} | xargs -i md5sum {} >> $TARGET/var/log/lunar/md5sum/linux-${CCOMMAND} 2> /dev/null
+					#cat $TARGET/var/log/lunar/install/linux-${CCOMMAND} | xargs -i md5sum {} >> $TARGET/var/log/lunar/md5sum/linux-${CCOMMAND} 2> /dev/null
 
 					# let the plugin code handle the hard work
 					chroot_run depmod
-					chroot_run lsh update_bootloader $CCOMMAND ${CCOMMAND:0:15}
+					chroot_run lsh update_bootloader $KVER_FULL $KVER
 
 					msgbox "The precompiled kernel \"$CCOMMAND\" has been installed to your system."
 					if (( STEP == 8 )); then

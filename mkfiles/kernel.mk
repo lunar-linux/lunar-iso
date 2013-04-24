@@ -28,7 +28,7 @@ $(ISO_TARGET)/var/cache/lunar/linux-$(ISO_ARCH).files: $(ISO_TARGET)/var/cache/l
 $(ISO_TARGET)/var/cache/lunar/linux-$(ISO_ARCH).tar.bz2: $(ISO_TARGET)/var/cache/lunar/linux-$(ISO_ARCH).tar $(ISO_TARGET)/var/cache/lunar/linux-$(ISO_ARCH).files
 	@tar -rf $< -C $(ISO_TARGET) -T $(ISO_TARGET)/var/cache/lunar/linux-$(ISO_ARCH).files
 	@rm $(ISO_TARGET)/var/cache/lunar/linux-$(ISO_ARCH).files
-	@echo 'linux-$(ISO_ARCH):You have no choice' > $(ISO_TARGET)/var/cache/lunar/kernels
+	@echo "linux-$(ISO_ARCH):$$($(ISO_SOURCE)/scripts/chroot-build lvu installed linux):You have no choice" > $(ISO_TARGET)/var/cache/lunar/kernels
 	@bzip2 $<
 
 linux: $(ISO_TARGET)/var/cache/lunar/linux-$(ISO_ARCH).tar.bz2
