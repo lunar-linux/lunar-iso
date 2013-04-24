@@ -853,7 +853,7 @@ install_grub2()
 	fi
 
 	DISC=$(echo $ROOT | sed 's/[0-9]*$//')
-	chroot_run grub-install $DISK
+	chroot_run grub-install $DISC
 	chroot_run grub-mkconfig -o /boot/grub/grub.cfg
 
 	echo "grub was installed on the MBR of $DISC"
@@ -1358,7 +1358,7 @@ set_fs_uuid() {
 
 show_consolefonts()
 {
-	FONTDIR="/usr/share/consolefonts"
+	FONTDIR="/usr/share/kbd/consolefonts"
 	cd $FONTDIR
 	FONTS=`ls *.{psf,psfu}.gz | sed -r "s/\.psfu?\.gz//"`
 
