@@ -61,17 +61,19 @@ chroot_run()
 	mount --bind /dev $TARGET/dev
 	mount --bind /tmp $TARGET/tmp
 	mount --bind /sys $TARGET/sys
+	mount --bind /run $TARGET/run
 	if [ -n "$USE_SWAP" ]; then
 		chroot $TARGET swapon -a
 	fi
 	if [ -n "$USE_CLEAR" ]; then
 	    clear
 	fi
-	chroot $TARGET $1 $2 $3 $4 $5 $6 $7 $8 $9
+	chroot $TARGET "$@"
 	RESULT=$?
 	if [ -n "$USE_SWAP" ]; then
 		chroot $TARGET swapoff -a
 	fi
+	umount $TARGET/run
 	umount $TARGET/sys
 	umount $TARGET/tmp
 	umount $TARGET/dev
@@ -854,7 +856,6 @@ install_grub2()
 
 	DISC=$(echo $ROOT | sed 's/[0-9]*$//')
 	chroot_run grub-install $DISC
-	chroot_run grub-mkconfig -o /boot/grub/grub.cfg
 
 	echo "grub was installed on the MBR of $DISC"
 	sleep 4
