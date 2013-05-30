@@ -25,6 +25,7 @@ that really (really (really)) do not need to be in there.
 The Makefile should be able to do most of the ISO building automatically, but
 there are a few steps that need to be taken:
 
+ o Copy conf/config.in to conf/config
  o Configure the base parameters of the ISO in conf/config
  
 The code tries to pollute the host system as little as it can. It will however
@@ -42,7 +43,9 @@ this cache is used to build all the core modules.
 
 -- Building it
 
-Here's a brief explanation of the make targets:
+Run make to build the ISO. The default target will build the completely ISO.
+
+Here's a brief explanation of the different make targets:
 
 target			create BUILD/ directory
 

@@ -2,6 +2,9 @@
 # Makefile to make ISO's
 #
 
+# Default target
+all: iso
+
 #
 # all user configurable options are in conf/config
 #
@@ -15,6 +18,10 @@ ISO_SOURCE:=$(shell bash -c "pwd -P")
 ISO_ARCH:=$(shell arch)
 
 include $(ISO_SOURCE)/conf/config
+
+$(ISO_SOURCE)/conf/config:
+	@echo First copy conf/config.in to conf/config and change the base
+	@echo parameters. Afterwards run make again.
 
 ###ISO_KSUFFIX = $(shell if echo $(ISO_KVER) | grep -q "^2\.6\." ; then echo 2.6 ; else echo 2.4 ; fi ;)
 
@@ -32,8 +39,6 @@ ISO_TARGET = $(ISO_SOURCE)/BUILD
 ###       ISO_KSUFFIX ISO_MAKES ISO_REDUCE ISO_BUILD ISO_KARCH ISO_GCCARCH
 
 export ISO_SOURCE ISO_TARGET ISO_BUILD
-
-all: iso
 
 .SUFFIXES:
 
