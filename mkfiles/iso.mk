@@ -110,7 +110,10 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-str
 	-m '$(ISO_TARGET)/root/*' \
 	-m '$(ISO_TARGET)/usr/lib/locale' \
 	-m '$(ISO_TARGET)/usr/share/locale' \
-	-m '$(ISO_TARGET)/usr/share/man' \
+	-m '$(ISO_TARGET)/usr/share/man/man2' \
+	-m '$(ISO_TARGET)/usr/share/man/man3' \
+	-m '$(ISO_TARGET)/usr/share/man/*/man2' \
+	-m '$(ISO_TARGET)/usr/share/man/*/man3' \
 	-m '$(ISO_TARGET)/usr/share/info' \
 	-m '$(ISO_TARGET)/usr/share/gtk-doc' \
 	-m '$(ISO_TARGET)/usr/include' \
