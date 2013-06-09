@@ -1,5 +1,5 @@
 DEFAULT install
-APPEND ro initrd=initrd root=LABEL=%LABEL% readonlyroot rootdelay=10
+APPEND ro initrd=initrd root=LABEL=%LABEL% readonlyroot rootdelay=10 loglevel=3
 DISPLAY f1.txt
 TIMEOUT 600
 PROMPT 1
@@ -14,16 +14,10 @@ F8 f1.txt
 F9 f1.txt
 LABEL install
 	KERNEL linux
-	APPEND ro initrd=initrd root=LABEL=%LABEL% readonlyroot rootdelay=10 vga=ask
+	APPEND ro initrd=initrd root=LABEL=%LABEL% readonlyroot rootdelay=10 loglevel=3 vga=ask
 LABEL novga
 	KERNEL linux
-	APPEND ro initrd=initrd root=LABEL=%LABEL% readonlyroot rootdelay=10 nomodeset
-LABEL linux
-	KERNEL linux
-	APPEND read-only load_ramdisk=1 ramdisk_size=INITRDSIZE initrd=initrd root=/dev/ram0 prompt_ramdisk=0 vga=ask
-LABEL safe
-	KERNEL safe
-	APPEND read-only load_ramdisk=1 ramdisk_size=INITRDSIZE initrd=initrd root=/dev/ram0 prompt_ramdisk=0 vga=normal acpi=off apm=off noapic noisapnp nosmp notsc
+	APPEND ro initrd=initrd root=LABEL=%LABEL% readonlyroot rootdelay=10 loglevel=3 nomodeset
 LABEL memtest
 	KERNEL memtest
 	APPEND -

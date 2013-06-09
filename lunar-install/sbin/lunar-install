@@ -1126,9 +1126,8 @@ transfer()
 
 			# pass through some of the configuration at this point:
 			percent_msg "Finishing up installation"
-			[ -z "$KEYMAP" ] || echo "$KEYMAP" > $TARGET/etc/keymap
-			[ -z "$CONSOLEFONT" ] || echo "$CONSOLEFONT" > $TARGET/etc/consolefont
-			[ -z "$LANG" ] || echo -e "# you can add declarations for LC_ALL etc in here\n\nexport LANG=\"$LANG\"\n" > $TARGET/etc/LOCALE
+			echo -e "KEYMAP=$KEYMAP\nFONT=$CONSOLEFONT" > $TARGET/etc/vconsole.conf
+			[ -z "$LANG" ] || chroot_run localectl --no-ask-password set-locale "$LANG"
 			[ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
 
 			# post-first-boot message:
@@ -1162,9 +1161,13 @@ transfer()
 			# some more missing files:
 			#cp /etc/lunar.release $TARGET/etc/
 			cp /etc/lsb-release $TARGET/etc/
+			cp /etc/issue{,.net} $TARGET/etc/
 
 			echo "    LUNAR_MODULE=lunar" > $TARGET/etc/lunar/local/config
 			#cp /etc/lunar/local/.config* $TARGET/etc/lunar/local/
+
+			# root user skel files
+			find $TARGET/etc/skel ! -type d | xargs -i cp '{}' $TARGET/root
 
 			# initialize the new machine:
 			touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
