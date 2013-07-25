@@ -1100,6 +1100,7 @@ transfer()
 				cd $TARGET/var/lib/lunar
 				tar xjf $MOONBASE_TAR 2> /dev/null
 				tar j --list -f $MOONBASE_TAR | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
+				mkdir -p moonbase/zlocal
 			)
 
 			# transfer sources
