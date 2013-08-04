@@ -32,7 +32,7 @@ ISO_DATE = 20130531
 # the iso BUILD arch:
 ISO_BUILD = $(ISO_ARCH)-pc-linux-gnu
 
-# this copncatenates the full name
+# this concatenates the full name
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
 # the iso label may not contain spaces
