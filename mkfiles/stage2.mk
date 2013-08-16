@@ -36,8 +36,8 @@ stage2-base: $(ISO_TARGET)/.stage2-base
 # install the module caches
 $(ISO_TARGET)/.stage2-modules: stage2-target
 	@echo stage2-modules
-	@for archive in $(ISO_SOURCE)/cache/*-$(ISO_BUILD).tar.bz2 ; do \
-	  tar -xjf "$$archive" -C $(ISO_TARGET) || exit 1 ; \
+	@for archive in $(ISO_SOURCE)/cache/*-$(ISO_BUILD).tar.xz ; do \
+	  tar -xJf "$$archive" -C $(ISO_TARGET) || exit 1 ; \
 	done
 	@mkdir -p $(ISO_TARGET)/var/state/lunar
 	@touch $(ISO_TARGET)/var/state/lunar/packages.backup

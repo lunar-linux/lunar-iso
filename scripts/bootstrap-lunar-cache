@@ -37,14 +37,14 @@ done
 for mod in $NEED_MODULES ; do
   # check for cache file presence
   MODULE_VERSION=`lsh installed_version $mod`
-  CACHE="$mod-$MODULE_VERSION-$ISO_BUILD.tar.bz2"
+  CACHE="$mod-$MODULE_VERSION-$ISO_BUILD.tar.xz"
   if [ ! -f "$ISO_SOURCE/cache/$CACHE" ] ; then
     cp "$LUNAR_CACHE/$CACHE" "$ISO_SOURCE/cache/$CACHE" && echo "$mod:$(date --date=@$(stat -c%Z $LUNAR_CACHE/$CACHE) +%Y%m%d):installed:$MODULE_VERSION:0KB" >> "$ISO_SOURCE/cache/packages" || NEED_CACHE="$NEED_CACHE $mod"
   fi
 done
 
-if [ ! -f "$ISO_SOURCE/cache/fixup-$ISO_BUILD.tar.bz2" ] ; then
-  tar -cjf "$ISO_SOURCE/cache/fixup-$ISO_BUILD.tar.bz2" /lib/ld-linux.so.2 /lib/ld-linux-x86-64.so.2 /lib/libc.so.6 /lib/libdl.so.2 /lib/libm.so.6 /lib/librt.so.1 /lib/libpthread.so.0 /lib/libnss_files.so.2 /lib/libutil.so.1 /lib/libnsl.so.1 /lib/libcrypt.so.1
+if [ ! -f "$ISO_SOURCE/cache/fixup-$ISO_BUILD.tar.xz" ] ; then
+  tar -cJf "$ISO_SOURCE/cache/fixup-$ISO_BUILD.tar.xz" /lib/ld-linux.so.2 /lib/ld-linux-x86-64.so.2 /lib/libc.so.6 /lib/libdl.so.2 /lib/libm.so.6 /lib/librt.so.1 /lib/libpthread.so.0 /lib/libnss_files.so.2 /lib/libutil.so.1 /lib/libnsl.so.1 /lib/libcrypt.so.1
 fi
 
 if [ -z "$NEED_CACHE" ] ; then
@@ -61,7 +61,9 @@ if [ -n "$REBUILD_MANUAL" ] ; then
 fi
 
 OLD_ARCHIVE=`lunar set ACHIVE`
+OLD_COMPRESS_METHOD=`lunar set COMPRESS_METHOD`
 lunar set ARCHIVE on
+lunar set COMPRESS_METHOD xz
 lin -c $NEED_CACHE
 OLD_ARCHIVE=${OLD_ARCHIVE#*=}
 if [ -z "$OLD_ARCHIVE" ] ; then
@@ -69,10 +71,16 @@ if [ -z "$OLD_ARCHIVE" ] ; then
 else
   lunar set ARCHIVE $OLD_ARCHIVE
 fi
+OLD_COMPRESS_METHOD=${OLD_COMPRESS_METHOD#*=}
+if [ -z "$OLD_COMPRESS_METHOD" ] ; then
+  lunar unset COMPRESS_METHOD
+else
+  lunar set COMPRESS_METHOD $OLD_COMPRESS_METHOD
+fi
 
 for mod in $NEED_CACHE ; do
   # check for cache file presence
-  CACHE="$mod-$(lsh installed_version $mod)-$ISO_BUILD.tar.bz2"
+  CACHE="$mod-$(lsh installed_version $mod)-$ISO_BUILD.tar.xz"
   if [ ! -f "$ISO_SOURCE/cache/$CACHE" ] ; then
     cp "$LUNAR_CACHE/$CACHE" "$ISO_SOURCE/cache/$CACHE" || NO_CACHE="$NO_CACHE $mod"
   fi

@@ -42,8 +42,8 @@ $(ISO_SOURCE)/cache/.copied:
 $(ISO_TARGET)/.modules: $(ISO_SOURCE)/cache/.copied
 	@echo bootstrap-lunar
 	@mkdir -p $(ISO_TARGET)
-	@for archive in $(ISO_SOURCE)/cache/*-$(ISO_BUILD).tar.bz2 ; do \
-	  tar -xjf "$$archive" -C $(ISO_TARGET) || exit 1 ; \
+	@for archive in $(ISO_SOURCE)/cache/*-$(ISO_BUILD).tar.xz ; do \
+	  tar -xJf "$$archive" -C $(ISO_TARGET) || exit 1 ; \
 	done
 	@mkdir -p $(ISO_TARGET)/var/state/lunar
 	@touch $(ISO_TARGET)/var/state/lunar/packages.backup

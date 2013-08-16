@@ -47,8 +47,8 @@ $(ISO_TARGET)/.aaa_base.list: $(ISO_TARGET)/.aaa_base.found $(ISO_TARGET)/.aaa_b
 	@sort $^ | uniq -u | sed 's:^/::' > $@
 
 # Create tar with not tracked files
-$(ISO_TARGET)/var/cache/lunar/aaa_base.tar.bz2: $(ISO_TARGET)/.aaa_base.list
+$(ISO_TARGET)/var/cache/lunar/aaa_base.tar.xz: $(ISO_TARGET)/.aaa_base.list
 	@echo pack-base
-	@tar -cjf $@ -C $(ISO_TARGET) --no-recursion -T $<
+	@tar -cJf $@ -C $(ISO_TARGET) --no-recursion -T $<
 
-pack-base: $(ISO_TARGET)/var/cache/lunar/aaa_base.tar.bz2
+pack-base: $(ISO_TARGET)/var/cache/lunar/aaa_base.tar.xz
