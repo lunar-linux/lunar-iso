@@ -1,0 +1,72 @@
+#!/bin/bash
+
+#
+# pack a moonbase consisting of several separate
+# git trees. There are no duplicate packages. Ordering
+# matters!
+#
+
+GIT_DIR=$ISO_SOURCE/moonbase-git
+
+# The ISO is only interrested in core
+#REPOS=(core xorg other xfce efl kde gnome)
+REPOS=(core)
+
+mkdir -p $GIT_DIR
+
+rm -rf $GIT_DIR/moonbase
+mkdir $GIT_DIR/moonbase
+
+for n in ${REPOS[@]}; do
+  P="$GIT_DIR/$n"
+  if [ -d "$P" ]; then
+    # Don't update the repos. Using git for manual control
+    : #( cd $P; git pull )
+  else
+    # Clone the repo if it doesn't exists. Helping the user here.
+    git clone git://github.com/lunar-linux/moonbase-$n $P
+  fi
+  ( cd $P; git ls-files) \
+    | grep '/DETAILS$' \
+    | sed 's/\/DETAILS$//' \
+    | sed "s/^/$n\//" \
+    | sed 's/\([a-zA-Z0-9/_-]*\)\/\([a-zA-Z0-9_+-]*\)/\2:\1/' > $P/module.index
+  git clone $P $GIT_DIR/moonbase/$n
+  rm -rf $GIT_DIR/moonbase/$n/.git
+done
+
+# why does this not work?
+for n in ${REPOS[@]} ; do INDEXES=( ${INDEXES[@]} $GIT_DIR/$n/module.index) ; done
+DUPES=`cut -d: -f1 ${INDEXES[@]} | sort | uniq -d`
+
+# scan for duplicates
+for n in $DUPES; do
+  echo "WARNING: Duplicate module $n"
+  p=""
+  for r in ${REPOS[@]}; do
+    if grep -q "^$n:" $GIT_DIR/$r/module.index ; then
+      if [ -n "$p" ]; then
+        echo "  removing $n from $r"
+        rm -rf $GIT_DIR/moonbase/$(grep "^$n:" $GIT_DIR/$r/module.index | cut -d: -f2)/$n
+        sed "/^$n:/d" -i $GIT_DIR/$r/module.index
+      else
+        echo "  preserving $n from $r"
+        p=$r
+      fi
+    fi
+  done
+done
+
+# collate aliases and indices
+for n in ${REPOS[@]}; do
+  cp $GIT_DIR/$n/module.index $GIT_DIR/moonbase/$n/module.index
+  cat $GIT_DIR/$n/module.index >> $GIT_DIR/moonbase/module.index
+  if [ -f $GIT_DIR/$n/aliases ]; then
+    cat $GIT_DIR/$n/aliases >> $GIT_DIR/moonbase/aliases
+  fi
+done
+
+# export
+mkdir -p $ISO_SOURCE/spool
+tar cjf $ISO_SOURCE/spool/moonbase.tar.bz2.tmp -C $GIT_DIR moonbase
+mv $ISO_SOURCE/spool/moonbase.tar.bz2{.tmp,}

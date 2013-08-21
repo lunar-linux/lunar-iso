@@ -1,4 +1,5 @@
 .INTERMEDIATE: download install-moonbase download-lunar
+.PHONY: download-moonbase moonbase-git
 
 .SECONDARY: $(ISO_TARGET)/.install-moonbase
 
@@ -6,7 +7,7 @@ download: download-lunar
 
 
 # download the moonbase
-$(ISO_SOURCE)/spool/moonbase.tar.bz2:
+download-moonbase $(ISO_SOURCE)/spool/moonbase.tar.bz2:
 	@echo download-moonbase
 	@mkdir -p $(ISO_SOURCE)/spool
 	@wget -O $@.tmp "`lsh echo '$$MOONBASE_URL'`/moonbase.tar.bz2"
@@ -34,3 +35,9 @@ $(ISO_SOURCE)/spool/.copied: install-moonbase
 	@touch $@
 
 download-lunar: $(ISO_SOURCE)/spool/.copied
+
+
+# Update the moonbase.tar.bz2 file from git
+moonbase-git:
+	@echo moonbase-git
+	@$(ISO_SOURCE)/scripts/pack-moonbase-git
