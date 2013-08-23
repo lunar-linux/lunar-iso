@@ -53,7 +53,9 @@ boostrap-lunar		use Lunar host to get the main modules into BUILD/
 boostrap-base		populate BUILD/ directory with generic files
 boostrap		populate BUILD/ directory
 
-install-moonbase	download and extract the moonbase to BUILD/
+donwload-moonbase	download the moonbase, can be used for updating
+moonbase-git		create moonbase package from local git
+install-moonbase	extract the moonbase to BUILD/
 download-lunar		use Lunar host to download all sources
 download		download all sources
 
@@ -70,7 +72,8 @@ stage2-modules		populate BUILD/ with stage1 modules
 stage2-spool		copy spool/ to BUILD/
 stage2-extract-moonbase	extract the moonbase to BUILD/
 stage2-moonbase		fix the moonbase cache files
-stage2-build		build stage2
+stage2-toolchian	build stage2 gcc, glibc and binutils
+stage2-build		build stage2 core modules
 stage2			build stage2 from stage1
 
 pack-base		create aaa_base.tar.bz2
@@ -78,6 +81,9 @@ pack			create packages of alien files
 
 linux			build linux kernel
 kernel			create kernel for the ISO and installation
+
+lunar-installer		copy the installer to BUILD/
+installer		install the insatller on the ISO
 
 iso-target		clean stage2 markers
 iso-modules		remove modules not needed on the ISO
@@ -93,3 +99,30 @@ The Makefile itself contains no configurable items. Copy the template config
 in the conf/ directory to conf/config and adjust the values as needed for
 your needs.
 
+
+--- Using git moonbase
+
+The moonbase.tar.bz2 can be generated from a in-tree git clone. This clone is
+located at moonbase-git/core. make moonbase-git will create this clone if it
+doesn't exist, otherwise it will only update the moonbase.tar.bz2 in spool/.
+
+To use the git moonbase run make moonbase-git first to create the clone. Next
+make you modification by any means. Make sure to commit all modifications to
+the active branch. Only committed changes will be in moonbase.tar.bz2. When
+done making modifications run make moonbase-git to update the moonbase.tar.bz2
+in spool/. This will make the ISO build start from the beginning when running
+make iso.
+
+To stop using the git moonbase run make download-moonbase. This will overwrite
+the custom moonbase.tar.bz2 in spool/ with the current moonbase.tar.bz2 from
+Lunar-Linux.
+
+
+--- Tips and tricks
+
+ o Removing BUILD/ will make start from the last finished stage redoing the
+   next stages: bootstrap, stage1, stage2
+
+ o Some build steps are not file based. These steps use markers. Most of them
+   are placed in BUILD/ some are in spool/ and cache/. Removing such a marker
+   can be used to redo that build step.
