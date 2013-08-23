@@ -53,7 +53,7 @@ boostrap-lunar		use Lunar host to get the main modules into BUILD/
 boostrap-base		populate BUILD/ directory with generic files
 boostrap		populate BUILD/ directory
 
-donwload-moonbase	download the moonbase, can be used for updating
+download-moonbase	download the moonbase, can be used for updating
 moonbase-git		create moonbase package from local git
 install-moonbase	extract the moonbase to BUILD/
 download-lunar		use Lunar host to download all sources
@@ -61,7 +61,7 @@ download		download all sources
 
 stage1-spool		copy spool/ to BUILD/
 stage1-moonbase		fix the moonbase cache files
-stage1-toolchian	build gcc, glibc and binutils
+stage1-toolchain	build gcc, glibc and binutils
 stage1-build		build the main modules
 stage1-cache		copy stage1 to cache/
 stage1			build stage1 and copy to cache/
@@ -72,7 +72,7 @@ stage2-modules		populate BUILD/ with stage1 modules
 stage2-spool		copy spool/ to BUILD/
 stage2-extract-moonbase	extract the moonbase to BUILD/
 stage2-moonbase		fix the moonbase cache files
-stage2-toolchian	build stage2 gcc, glibc and binutils
+stage2-toolchain	build stage2 gcc, glibc and binutils
 stage2-build		build stage2 core modules
 stage2			build stage2 from stage1
 
