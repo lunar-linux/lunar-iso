@@ -26,13 +26,13 @@ for n in ${REPOS[@]}; do
     # Clone the repo if it doesn't exists. Helping the user here.
     git clone git://github.com/lunar-linux/moonbase-$n $P
   fi
-  ( cd $P; git ls-files) \
+  ( cd $P; git archive -o ../$n.tar --format=tar --prefix=$n/ HEAD )
+  tar -tf $P.tar \
     | grep '/DETAILS$' \
     | sed 's/\/DETAILS$//' \
-    | sed "s/^/$n\//" \
     | sed 's/\([a-zA-Z0-9/_-]*\)\/\([a-zA-Z0-9_+-]*\)/\2:\1/' > $P/module.index
-  git clone $P $GIT_DIR/moonbase/$n
-  rm -rf $GIT_DIR/moonbase/$n/.git
+  tar -xf $P.tar -C $GIT_DIR/moonbase
+  rm $P.tar
 done
 
 # why does this not work?
