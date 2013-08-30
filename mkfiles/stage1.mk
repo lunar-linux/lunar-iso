@@ -54,7 +54,6 @@ $(ISO_SOURCE)/cache/.stage1: stage1-build
 	@rm -rf $(ISO_SOURCE)/cache
 	@cp -r $(ISO_TARGET)/var/cache/lunar $(ISO_SOURCE)/cache
 	@grep $(patsubst %,-e^%:,$(STAGE1_MODULES)) $(ISO_TARGET)/var/state/lunar/packages | cat > $(ISO_SOURCE)/cache/packages
-	@tar -cJf $(ISO_SOURCE)/cache/fixup-$(ISO_BUILD).tar.xz -C $(ISO_TARGET) lib/$(ISO_LD_LINUX) lib/libc.so.6 lib/libdl.so.2 lib/libm.so.6 lib/librt.so.1 lib/libpthread.so.0 lib/libnss_files.so.2 lib/libutil.so.1 lib/libnsl.so.1 lib/libcrypt.so.1
 	@touch $@
 
 stage1-cache: $(ISO_SOURCE)/cache/.stage1

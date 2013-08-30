@@ -1,1 +1,1 @@
-TOOLCHAIN_MODULES=kernel-headers glibc binutils gcc binutils glibc
+TOOLCHAIN_MODULES=fhs kernel-headers glibc binutils gcc binutils glibc

@@ -5,11 +5,14 @@ function mount_system_fs ()
   for mpoint in proc sys dev ; do
     mount --bind /${mpoint} $ISO_TARGET/${mpoint} || return 1
   done
+  for mpoint in run tmp ; do
+    mount -t tmpfs tmpfs $ISO_TARGET/${mpoint} || return 1
+  done
 }
 
 function umount_system_fs ()
 {
-  for mpoint in proc sys dev ; do
+  for mpoint in proc sys dev run tmp ; do
     if ! umount $ISO_TARGET/${mpoint} &> /dev/null ; then
       umount -l -f $ISO_TARGET/${mpoint} &> /dev/null
     fi
@@ -17,6 +20,8 @@ function umount_system_fs ()
 }
 
 mount_system_fs &&
+
+mkdir $ISO_TARGET/run/lock &&
 
 chroot "$ISO_TARGET" "$@"
 RESULT=$?
