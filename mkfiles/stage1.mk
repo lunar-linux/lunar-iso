@@ -9,7 +9,7 @@ stage1: stage1-cache
 $(ISO_TARGET)/.stage1-spool: download
 	@echo stage1-spool
 	@mkdir -p $(ISO_TARGET)/var/spool/lunar
-	@cp $(ISO_SOURCE)/spool/* $(ISO_TARGET)/var/spool/lunar/
+	@ln $(ISO_SOURCE)/spool/* $(ISO_TARGET)/var/spool/lunar/
 	@touch $@
 
 stage1-spool: $(ISO_TARGET)/.stage1-spool
