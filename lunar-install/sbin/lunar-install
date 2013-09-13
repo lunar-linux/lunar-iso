@@ -251,7 +251,7 @@ list_block_devices()
 	local DEVICE FDEVICE PDEVICE
 
     # Grab protected device when booting iso from other media then cdrom
-    PDEVICE=$(basename `grep -v '^rootfs' | fgrep -w '/' /proc/mounts | cut -d' ' -f1` 2> /dev/null)
+    PDEVICE=$(basename `grep -v '^rootfs' /proc/mounts | fgrep -w '/' | cut -d' ' -f1` 2> /dev/null)
 
 	for DEVICE in $(tail +3 /proc/partitions | awk '{print $4}' | grep -v -e ${PDEVICE:-^$} -e loop); do
 		FDEVICE=$(lsh unmap_device /dev/$DEVICE)
