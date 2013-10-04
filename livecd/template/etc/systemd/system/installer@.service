@@ -1,0 +1,33 @@
+#  This file is part of Lunar-Linux.
+
+[Unit]
+Description=Installer on %I
+After=systemd-user-sessions.service plymouth-quit-wait.service
+
+# If additional gettys are spawned during boot then we should make
+# sure that this is synchronized before getty.target, even though
+# getty.target didn't actually pull it in.
+Before=getty.target
+IgnoreOnIsolate=yes
+
+# On systems without virtual consoles, don't start any getty. Note
+# that serial gettys are covered by serial-getty@.service, not this
+# unit.
+ConditionPathExists=/dev/tty0
+
+[Service]
+# the VT is cleared by TTYVTDisallocate
+ExecStart=-/sbin/agetty --noclear %I -n -l su -o "-l -c /sbin/lunar-install"
+Type=idle
+Restart=always
+RestartSec=0
+UtmpIdentifier=%I
+TTYPath=/dev/%I
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+KillMode=process
+IgnoreSIGPIPE=no
+
+[Install]
+WantedBy=getty.target

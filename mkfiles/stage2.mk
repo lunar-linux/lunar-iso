@@ -50,7 +50,7 @@ stage2-modules: $(ISO_TARGET)/.stage2-modules
 $(ISO_TARGET)/.stage2-spool: stage2-target download
 	@echo stage2-spool
 	@mkdir -p $(ISO_TARGET)/var/spool/lunar
-	@cp $(ISO_SOURCE)/spool/* $(ISO_TARGET)/var/spool/lunar/
+	@ln $(ISO_SOURCE)/spool/* $(ISO_TARGET)/var/spool/lunar/
 	@touch $@
 
 stage2-spool: $(ISO_TARGET)/.stage2-spool

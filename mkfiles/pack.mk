@@ -7,7 +7,11 @@ pack: pack-base
 .INTERMEDIATE: $(ISO_TARGET)/.aaa_base.found
 $(ISO_TARGET)/.aaa_base.found: stage2
 	@echo pack-find
-	@find $(ISO_TARGET) ! -path '$(ISO_TARGET)/.*' -printf '/%P\n' \( \
+	@find $(ISO_TARGET) ! -path '$(ISO_TARGET)/.*' -a \
+	! -path '$(ISO_TARGET)/etc/machine-id' -a \
+	! -path '$(ISO_TARGET)/etc/ssh/ssh_host_*' -a \
+	! -path '$(ISO_TARGET)/etc/dracut.conf.d/02-lunar-live.conf' \
+	-printf '/%P\n' \( \
 	-path '$(ISO_TARGET)/dev' -o \
 	-path '$(ISO_TARGET)/etc/lunar/local' -o \
 	-path '$(ISO_TARGET)/mnt' -o \

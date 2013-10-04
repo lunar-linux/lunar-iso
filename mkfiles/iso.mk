@@ -38,8 +38,12 @@ $(ISO_TARGET)/etc/%: $(ISO_SOURCE)/livecd/template/etc/% iso-modules
 # Symlinks need special care
 $(ISO_TARGET)/.iso-files: iso-target
 	@echo iso-files
-	@ln -sf /usr/lib/systemd/system/multi-user.target $(ISO_TARGET)/etc/systemd/system/default.target
+	@rm -f $(ISO_TARGET)/etc/systemd/system/getty.target.wants/getty\@tty1.service $(ISO_TARGET)/etc/dracut.conf.d/02-lunar-live.conf $(ISO_TARGET)/etc/ssh/ssh_host_*
+	@[ ! -d $(ISO_TARGET)/etc/dracut.conf.d ] || rmdir --ignore-fail-on-non-empty $(ISO_TARGET)/etc/dracut.conf.d
+	@cp -r $(ISO_SOURCE)/livecd/template/etc/systemd $(ISO_TARGET)/etc/systemd
+	@> $(ISO_TARGET)/etc/machine-id
 	@ln -sf ../../tmp/random-seed $(ISO_TARGET)/var/lib/random-seed
+	@mkdir $(ISO_TARGET)/var/cache/man
 	@touch $@
 
 iso-files: $(ISO_TARGET)/.iso-files $(addprefix $(ISO_TARGET)/etc/, $(ISO_ETC_FILES))
