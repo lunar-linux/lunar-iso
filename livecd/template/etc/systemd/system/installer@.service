@@ -17,7 +17,7 @@ ConditionPathExists=/dev/tty0
 
 [Service]
 # the VT is cleared by TTYVTDisallocate
-ExecStart=-/sbin/agetty --noclear %I -n -l su -o "-l -c /sbin/lunar-install"
+ExecStart=-/sbin/agetty --noclear %I -n -l /bin/su -o "-l -c /sbin/lunar-install"
 Type=idle
 Restart=always
 RestartSec=0
