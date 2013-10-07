@@ -107,10 +107,7 @@ goodbye()
 		exit 0
 	else
 		# bump the init level so we can exit safely!
-		init 3
-		# wait a bit so that we don't restart before level 3 has
-		# been reached
-		sleep 5
+		systemctl isolate multi-user.target
 		exit 0
 	fi
 }
@@ -967,11 +964,6 @@ transfer()
 					FORCE=$(echo ${PARTITIONS[$N]} | cut -d: -f7)
 					FORMAT=$(echo ${PARTITIONS[$N]} | cut -d: -f8)
 
-					# handle /tmp, TODO: Automatic fstab scanning for all mountpints
-					if [ "$MOUNTPOINT" == "/tmp" ]; then
-					    TMP_TMPFS_NO=1
-					fi
-
 					# handle swap
 					if [ "$FSYS" == "swap" ]; then
 						echo "Setting up swap on $PART..."
@@ -1126,8 +1118,9 @@ transfer()
 
 			# pass through some of the configuration at this point:
 			percent_msg "Finishing up installation"
+			chroot_run systemd-machine-id-setup
 			echo -e "KEYMAP=$KEYMAP\nFONT=$CONSOLEFONT" > $TARGET/etc/vconsole.conf
-			[ -z "$LANG" ] || chroot_run localectl --no-ask-password set-locale "$LANG"
+			[ -z "$LANG" ] || chroot_run localectl --no-ask-password set-locale "LANG=$LANG"
 			[ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
 
 			# post-first-boot message:
@@ -1148,10 +1141,6 @@ transfer()
 
 			if [ -e etc/fstab ]; then
 				cp etc/fstab etc/fstab-
-			fi
-
-			if [ -n "$TMP_TMPFS_NO" ]; then
-			    sed -i 's;^tmpfs.*/tmp;#&;' etc/fstab
 			fi
 
 			echo -e "$FSTAB" >> etc/fstab

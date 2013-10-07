@@ -8,12 +8,13 @@ After=systemd-user-sessions.service plymouth-quit-wait.service
 # sure that this is synchronized before getty.target, even though
 # getty.target didn't actually pull it in.
 Before=getty.target
-IgnoreOnIsolate=yes
 
 # On systems without virtual consoles, don't start any getty. Note
 # that serial gettys are covered by serial-getty@.service, not this
 # unit.
 ConditionPathExists=/dev/tty0
+
+Conflicts=getty@%i.service
 
 [Service]
 # the VT is cleared by TTYVTDisallocate
@@ -30,4 +31,4 @@ KillMode=process
 IgnoreSIGPIPE=no
 
 [Install]
-WantedBy=getty.target
+WantedBy=installer.target

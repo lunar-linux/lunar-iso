@@ -1,0 +1,8 @@
+[Unit]
+Description=Guided Installer
+Requires=multi-user.target
+After=multi-user.target
+AllowIsolate=yes
+
+[Install]
+Alias=default.target
