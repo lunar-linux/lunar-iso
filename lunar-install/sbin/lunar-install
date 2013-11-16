@@ -1466,9 +1466,15 @@ install_kernels()
 	}
 
 	while true ; do
-		KCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "P" --item-help --menu "In order to succesfully run linux you need to install the linux kernel, the heart of the operating system. You can choose between compiling one yourself or select a precompiled modular kernel." 0 0 0 \
+    # Lets shortcut here, if we only have one kernel we just install it without a dialog
+    KERNELS_AVAIL=$(wc -l $KERNEL_LIST | cut -d' ' -f1)
+    if [[ $KERNELS_AVAIL == 1 ]]; then
+      KCOMMAND="P"
+    else
+		  KCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "P" --item-help --menu "In order to succesfully run linux you need to install the linux kernel, the heart of the operating system. You can choose between compiling one yourself or select a precompiled modular kernel." 0 0 0 \
 		  "P" "Install a precompiled kernel" "Fast and safe: these kernels should work on almost all machines" \
 		  "C" "Compile a kernel" "Custom configure and compile one of the linux kernels"`
+    fi
 
 		if [ $? != 0 ]; then
 			return
@@ -1479,11 +1485,18 @@ install_kernels()
 				msgbox "This option is not available from the installer."
 			;;
 			P)
-				CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --item-help --menu "" 0 0 0 \
-					$(list_precompiled_kernels)`
+        # Lets shortcut here, if we only have one kernel we just install it without a dialog
+        if [[ $KERNELS_AVAIL == 1 ]]; then
+          CCOMMAND=$(cut -d: -f1 $KERNEL_LIST)
+        else
+				  CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --item-help --menu "" 0 0 0 \
+					  $(list_precompiled_kernels)`
+        fi
 				if [ -f "/var/cache/lunar/$CCOMMAND.tar.xz" ]; then
-					cd $TARGET && tar xJf /var/cache/lunar/$CCOMMAND.tar.xz
-					#ln -s /usr/src/linux-$CCOMMAND $TARGET/usr/src/linux
+          clear
+          echo "Installing kernel, please wait..."
+					cd $TARGET && tar xJf /var/cache/lunar/$CCOMMAND.tar.xz &> /dev/null
+          chroot_run cp /usr/src/linux/.config /etc/lunar/local/.config.current
 
 					KVER=$(grep "^$CCOMMAND:" $KERNEL_LIST | cut -d: -f2)
 					KVER_PATCH=$(echo $KVER | cut -d . -f 3)
@@ -1502,7 +1515,7 @@ install_kernels()
 
 					# let the plugin code handle the hard work
 					chroot_run depmod
-					chroot_run lsh update_bootloader $KVER_FULL $KVER
+					chroot_run lsh update_bootloader $KVER_FULL $KVER &> /dev/null
 
 					msgbox "The precompiled kernel \"$CCOMMAND\" has been installed to your system."
 					if (( STEP == 8 )); then
