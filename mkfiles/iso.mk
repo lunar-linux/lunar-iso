@@ -52,7 +52,7 @@ iso-files: $(ISO_TARGET)/.iso-files $(addprefix $(ISO_TARGET)/etc/, $(ISO_ETC_FI
 # Strip executables and libraries
 $(ISO_TARGET)/.iso-strip: iso-modules
 	@echo iso-strip
-	@find \( -type f -perm /u=x -o -name 'lib*.so*' -o -name '*.ko' \) -exec strip --strip-unneeded {} \;
+	@find $(ISO_TARGET) \( -type f -perm /u=x -o -name 'lib*.so*' -o -name '*.ko' \) -exec strip --strip-unneeded {} \;
 	@touch $@
 
 iso-strip: $(ISO_TARGET)/.iso-strip
