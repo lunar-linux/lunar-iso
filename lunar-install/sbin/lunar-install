@@ -1152,8 +1152,15 @@ transfer()
 			cp /etc/lsb-release $TARGET/etc/
 			cp /etc/issue{,.net} $TARGET/etc/
 
-			echo "    LUNAR_MODULE=lunar" > $TARGET/etc/lunar/local/config
-			#cp /etc/lunar/local/.config* $TARGET/etc/lunar/local/
+      # Some sane defaults
+      GCC_VER=$(chroot_run lsh installed_version gcc)
+      GCC_VER=${GCC_VER%.*}
+      cat <<EOF> $TARGET/etc/lunar/local/config
+  LUNAR_COMPILER="GCC_${GCC_VER/./_}"
+    LUNAR_MODULE="lunar"
+LUNAR_ALIAS_UDEV="systemd"
+LUNAR_ALIAS_KMOD="kmod"
+EOF
 
 			# root user skel files
 			find $TARGET/etc/skel ! -type d | xargs -i cp '{}' $TARGET/root
