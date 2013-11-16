@@ -297,7 +297,6 @@ menu_list_targets()
 				*ext2*) PTYPE="(ext2)" ;;
 				*XFS*) PTYPE="(XFS)" ;;
 				*Minix*) PTYPE="(minix)" ;;
-				*Reiser*) PTYPE="(reiserfs)" ;;
 				*BTRFS*) PTYPE="(btrfs)" ;;
 				*) PTYPE="(unknown)" ;;
 			esac
@@ -401,7 +400,6 @@ menu_get_filesystem()
 		   "btrfs"     "$BTRFS"   \
 		   "ext3"      "$EXT3"    \
 		   "ext2"      "$EXT2"    \
-		   "reiserfs"  "$REISER"  \
 		   "xfs"       "$XFS"     \
 		   "jfs"       "$JFS"     \
 		   "swap"      "$SWAP"
@@ -726,11 +724,11 @@ menu_select_partitions()
 		fi &&
 
 		case "$FSYS" in
-		#xfs|jfs|reiserfs)
-		#	msgbox "Selecting XFS, JFS or reiserfs for your root and/or boot filesystem *requires* you to compile a kernel later on with XFS, JFS or reiserfs built in to the kernel. The default pre-compiled lunar-linux kernel will NOT work in your case!"
+		#xfs|jfs)
+		#	msgbox "Selecting XFS or JFS for your root and/or boot filesystem *requires* you to compile a kernel later on with XFS or JFS built in to the kernel. The default pre-compiled lunar-linux kernel will NOT work in your case!"
 		#	;;
 		   btrfs)
-			msgbox "Selecting btrfs as /boot is currently not supported, you will need to create a /boot partition and format it as ext2, ext3 or ext4 in order to boot from it."
+			msgbox "Selecting btrfs as /boot is only supported with grub2, you will need to create a /boot partition and format it as ext2, ext3 or ext4 in order to use different bootloaders."
 			;;
 		    swap)
 			SWAP_ENABLED=1
@@ -751,7 +749,7 @@ menu_select_partitions()
 			MNT_PNT=${MNT_PNT%%/}
 		fi
 		FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
-		if [ "$FSYS" == "xfs" -o "$FSYS" == "reiserfs" ]; then
+		if [ "$FSYS" == "xfs" ]; then
 			FORCE="-f"
 		elif [ "$FSYS" == "jfs" ]; then
 			FORCE="-q"
@@ -1259,7 +1257,7 @@ fstab_style_menu()
 #
 fstab_style() 
 {
-    local PART PTYPE MNTPT
+    local PART PTYPE MNTPT UUID
     
     PART=$1
     PTYPE=$2
@@ -1279,8 +1277,7 @@ fstab_style()
 	    fi
 	    ;;
 	UUID)
-	    UUID=$(uuidgen)
-	    set_fs_uuid $PART $PTYPE $UUID
+	    UUID=$(blkid -s UUID -o value $PART)
 	    echo "UUID=$UUID"
 	    ;;
     esac
@@ -1300,11 +1297,8 @@ set_fs_label() {
 	ext*)
 	    tune2fs -L $LABEL $PART &> /dev/null
 	    ;;
-	reiserfs)
-	    reiserfstune -l $LABEL $PART &> /dev/null
-	    ;;
 	btrfs)
-	    msgbox "Installer internal error: Settign a label for btrfs is not supported"
+	    btrfs filesystem label $PART $LABEL &> /dev/null
 	    ;;
 	xfs)
 	    xfs_admin -L $LABEL $PART &> /dev/null
@@ -1314,38 +1308,6 @@ set_fs_label() {
 	    ;;
 	swap)
 	    mkswap -L swap${PART##*/} $PART &> /dev/null
-	    ;;
-    esac	
-}
-
-##
-# set_fs_uuid partition fstype uuid
-#
-set_fs_uuid() {
-    local PART PTYPE UUID
-
-    PART=$1
-    PTYPE=$2
-    UUID=$3
-
-    case "$PTYPE" in
-	ext*)
-	    tune2fs -U $UUID $PART &> /dev/null
-	    ;;
-	btrfs)
-	    msgbox "Installer internal error: Settign a fs uuid for btrfs is not supported"
-	    ;;
-	reiserfs)
-	    reiserfstune -u $UUID $PART &> /dev/null
-	    ;;
-	xfs)
-	    xfs_admin -U $UUID $PART &> /dev/null
-	    ;;
-	jfs)
-	    jfs_tune -U $UUID $PART &> /dev/null
-	    ;;
-	swap)
-	    mkswap -U $UUID $PART &> /dev/null
 	    ;;
     esac	
 }
