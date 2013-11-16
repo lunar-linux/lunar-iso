@@ -44,6 +44,7 @@ $(ISO_TARGET)/.iso-files: iso-target
 	@> $(ISO_TARGET)/etc/machine-id
 	@ln -sf ../../tmp/random-seed $(ISO_TARGET)/var/lib/random-seed
 	@mkdir -p $(ISO_TARGET)/var/cache/man
+	@cp $(ISO_TARGET)/etc/skel/.* $(ISO_TARGET)/root/
 	@touch $@
 
 iso-files: $(ISO_TARGET)/.iso-files $(addprefix $(ISO_TARGET)/etc/, $(ISO_ETC_FILES))
@@ -111,7 +112,6 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-str
 	-m '$(ISO_TARGET)/var/tmp/*' \
 	-m '$(ISO_TARGET)/var/spool/*' \
 	-m '$(ISO_TARGET)/var/log/*' \
-	-m '$(ISO_TARGET)/root/*' \
 	-m '$(ISO_TARGET)/usr/lib/locale' \
 	-m '$(ISO_TARGET)/usr/share/locale' \
 	-m '$(ISO_TARGET)/usr/share/man/man2' \
