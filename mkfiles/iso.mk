@@ -44,7 +44,9 @@ $(ISO_TARGET)/.iso-files: iso-target
 	@> $(ISO_TARGET)/etc/machine-id
 	@ln -sf ../../tmp/random-seed $(ISO_TARGET)/var/lib/random-seed
 	@mkdir -p $(ISO_TARGET)/var/cache/man
-	@cp $(ISO_TARGET)/etc/skel/.* $(ISO_TARGET)/root/
+	@find $(ISO_TARGET)/etc/skel/ -type f -exec cp {} $(ISO_TARGET)/root/ \;
+	@ln -sf /tmp/resolv.conf $(ISO_TARGET)/etc/resolv.conf
+	@ln -sf /tmp/dhcpcd.duid $(ISO_TARGET)/etc/dhcpcd.duid
 	@touch $@
 
 iso-files: $(ISO_TARGET)/.iso-files $(addprefix $(ISO_TARGET)/etc/, $(ISO_ETC_FILES))
