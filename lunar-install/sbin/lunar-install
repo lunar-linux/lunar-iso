@@ -292,7 +292,7 @@ menu_list_targets()
 
       PTYPE=$(file -Ls $DEVICE 2>&1 | cat)
       case $PTYPE in
-              *ext4*) PTYPE="(ext4)" ;;
+        *ext4*) PTYPE="(ext4)" ;;
         *ext3*) PTYPE="(ext3)" ;;
         *ext2*) PTYPE="(ext2)" ;;
         *XFS*) PTYPE="(XFS)" ;;
@@ -547,10 +547,34 @@ determine_fsck_pass()
 
 get_mount_point()
 {
+  local POINT ROOT_H BOOT_H HOME_H USR_H VAR_H SRV_H OPT_H LOCAL_H C_H
+
+  ROOT_H="The root file system"
+  BOOT_H="Kernels and static files for the boot loader"
+  HOME_H="User home directories"
+  USR_H="Static data"
+  VAR_H="Variable data (logs, tarball cache etc)"
+  SRV_H="Data for services"
+  OPT_H="Add-on application software packages (legacy)"
+  LOCAL_H="Local hierarchy"
+  C_H="Enter mount point manually"
+
   if [ "$1" == "swap" ]; then
     echo "swap"
   else
-    POINT=$(inputbox "Please enter a mount point" "") &&
+    POINT=$($DIALOG --title "Select a mount point" --menu "" 0 0 0 \
+      "/"          "$ROOT_H" \
+      "/boot"      "$BOOT_H" \
+      "/home"      "$HOME_H" \
+      "/usr"       "$USR_H" \
+      "/var"       "$VAR_H" \
+      "/srv"       "$SRV_H" \
+      "/opt"       "$OPT_H" \
+      "/usr/local" "$LOCAL_H" \
+      "C"          "$C_H")
+    if [ "$POINT" = "C" ]; then
+      POINT=$(inputbox "Please enter a mount point" "")
+    fi
     if [ -z "$POINT" -a -z "$ROOT" ]; then
       echo "/"
     else
