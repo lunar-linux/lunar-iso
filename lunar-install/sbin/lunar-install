@@ -247,8 +247,8 @@ list_block_devices()
   export IFS=$' \t\n'
   local DEVICE FDEVICE PDEVICE
 
-    # Grab protected device when booting iso from other media then cdrom
-    PDEVICE=$(basename `grep -v '^rootfs' /proc/mounts | fgrep -w '/' | cut -d' ' -f1` 2> /dev/null)
+  # Grab protected device when booting iso from other media then cdrom
+  PDEVICE=$(basename `grep -v '^rootfs' /proc/mounts | fgrep -w '/' | cut -d' ' -f1` 2> /dev/null)
 
   for DEVICE in $(tail +3 /proc/partitions | awk '{print $4}' | grep -v -e ${PDEVICE:-^$} -e loop); do
     FDEVICE=$(lsh unmap_device /dev/$DEVICE)
@@ -396,13 +396,13 @@ menu_get_filesystem()
   SWAP="Swap (Virtual memory or paging filesystem)"
 
   $DIALOG --title "$TITLE" --default-item "ext4" --menu "$HELP" 0 0 0 \
-             "ext4"      "$EXT4"    \
-       "btrfs"     "$BTRFS"   \
-       "ext3"      "$EXT3"    \
-       "ext2"      "$EXT2"    \
-       "xfs"       "$XFS"     \
-       "jfs"       "$JFS"     \
-       "swap"      "$SWAP"
+    "ext4"      "$EXT4"    \
+    "btrfs"     "$BTRFS"   \
+    "ext3"      "$EXT3"    \
+    "ext2"      "$EXT2"    \
+    "xfs"       "$XFS"     \
+    "jfs"       "$JFS"     \
+    "swap"      "$SWAP"
 }
 
 
@@ -487,7 +487,7 @@ check_partition()
   case $1 in
     ext2|ext3|ext4|swap)
       if confirm "$PROMPT" "--defaultno"; then
-          echo "-c";
+        echo "-c";
       fi
       ;;
     *)
@@ -665,7 +665,6 @@ raid_setup()
             mdadm --create --level $LEVEL -n ${#DISCS_A[@]} -x ${#SPARE_A[@]} /dev/$ARRAYNAME ${DISCS_A[@]} ${SPARE_A[@]}
             sleep 2
             if ! grep -qw "^$ARRAYNAME" /proc/mdstat ; then
-
               sleep 5
               msgbox "Initialization and starting of the RAID array failed. You should inspect the output for errors and try manually to start the array before using it."
             else
@@ -727,12 +726,12 @@ menu_select_partitions()
     #xfs|jfs)
     # msgbox "Selecting XFS or JFS for your root and/or boot filesystem *requires* you to compile a kernel later on with XFS or JFS built in to the kernel. The default pre-compiled lunar-linux kernel will NOT work in your case!"
     # ;;
-       btrfs)
-      msgbox "Selecting btrfs as /boot is only supported with grub2, you will need to create a /boot partition and format it as ext2, ext3 or ext4 in order to use different bootloaders."
-      ;;
-        swap)
-      SWAP_ENABLED=1
-      ;;
+      btrfs)
+        msgbox "Selecting btrfs as /boot is only supported with grub2, you will need to create a /boot partition and format it as ext2, ext3 or ext4 in order to use different bootloaders."
+        ;;
+      swap)
+        SWAP_ENABLED=1
+        ;;
     esac
 
     MNTPNT=$(get_mount_point $FSYS) &&
@@ -781,9 +780,9 @@ select_partitions()
     if confirm "Are you done making partitions?"; then
       DONE_PARTITIONING=1
       case $ARCH in
-          "alpha")
-                  msgbox \
-"The partition on which the kernel is located must
+        "alpha")
+          msgbox \
+            "The partition on which the kernel is located must
 be formatted with the ext2 filesystem. Normally this
 means that your root or boot filesystem should be ext2."
           ;;
@@ -796,12 +795,12 @@ means that your root or boot filesystem should be ext2."
 
   if [ -n "$ROOT" ]; then
     if (( STEP <= 4 )) ; then
-            # Skip swapfile step if swap partition was set
-            if [ -n "$SWAP_ENABLED" ]; then
-              S_OK=\\Z2
-              STEP=6
+      # Skip swapfile step if swap partition was set
+      if [ -n "$SWAP_ENABLED" ]; then
+        S_OK=\\Z2
+        STEP=6
       else
-              S_OK=
+        S_OK=
         STEP=5
       fi
     fi
@@ -831,11 +830,11 @@ make_lilo_conf()
     echo "read-only"
     echo ""
     if echo $BOOT | grep -q md ; then
-        echo "boot=$BOOT"
-        BOOTDISCS=$(mdadm --detail $BOOT | tail -n2 | awk '{print $7}')
-        echo "raid-extra-boot=$(echo $BOOTDISCS | sed -e 's@[0-9]@@g' -e 's@\ @,@g')"
+      echo "boot=$BOOT"
+      BOOTDISCS=$(mdadm --detail $BOOT | tail -n2 | awk '{print $7}')
+      echo "raid-extra-boot=$(echo $BOOTDISCS | sed -e 's@[0-9]@@g' -e 's@\ @,@g')"
     else
-        echo "boot=$DISC"
+      echo "boot=$DISC"
     fi
     echo "root=$ROOT"
     echo ""
@@ -969,7 +968,7 @@ transfer()
               sleep 3
               msgbox "Problem creating swap on $PART. Installation will continue."
             fi
-          # create the filesystems if needed for every partition
+            # create the filesystems if needed for every partition
           elif [ "$FORMAT" == "yes" ]; then
             echo "Formatting $PART as $FSYS..."
             if ! mkfs.$FSYS $FORCE $PART $CHECK ; then
@@ -979,20 +978,20 @@ transfer()
           fi
           # again, weed out swap first
           if [ "$FSYS" == "swap" ]; then
-                                               # We need to check that the swap device wasn't added already
-                                               # or we end up with double entries in fstab if more than one
-                                               # swap device was added
-                                               if ! echo $FSTAB | grep -q $PART; then
-                        LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
-                        if swapon $PART; then
-                          FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
-                          swapoff $PART
-                        else
-                          sleep 3
-                           msgbox "Problem mounting swap on $PART. Installation will continue."
-                        fi
-                                                fi
-          # then try to mount normal FS's
+            # We need to check that the swap device wasn't added already
+            # or we end up with double entries in fstab if more than one
+            # swap device was added
+            if ! echo $FSTAB | grep -q $PART; then
+              LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
+              if swapon $PART; then
+                FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+                swapoff $PART
+              else
+                sleep 3
+                msgbox "Problem mounting swap on $PART. Installation will continue."
+              fi
+            fi
+            # then try to mount normal FS's
           else
             if [ ! -d $TARGET$MOUNTPOINT ] ; then
               mkdir -p $TARGET$MOUNTPOINT
@@ -1003,7 +1002,7 @@ transfer()
               MNTOPTARGS=""
             fi
             echo "Mounting $PART as $FSYS"
-                        LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
+            LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
             if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
               FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
               if [ "$FSYS" == "swap" ]; then
@@ -1023,8 +1022,8 @@ transfer()
       mkdir -p $TARGET$(dirname $SWAPFILE) &&
       echo "Creating a swapfile of $SWAPSIZE MB at \"$SWAPFILE\"..." &&
       if dd if=/dev/zero of=$TARGET$SWAPFILE bs=1M count=$SWAPSIZE &&
-            mkswap $TARGET$SWAPFILE &&
-            chmod 000 $TARGET$SWAPFILE
+        mkswap $TARGET$SWAPFILE &&
+        chmod 000 $TARGET$SWAPFILE
       then
         FSTAB="$FSTAB\n$SWAPFILE\tswap\tswap\tdefaults\t\t0 0"
       else
@@ -1056,9 +1055,9 @@ transfer()
       ln -sf share/man usr/man
       ln -sf share/info usr/info
       mkdir -p etc/lunar/local/depends
-                        mkdir -p run/lock
-                        ln -sf ../run var/run
-                        ln -sf ../run/lock var/lock
+      mkdir -p run/lock
+      ln -sf ../run var/run
+      ln -sf ../run/lock var/lock
       mkdir -p var/log/lunar/{install,md5sum,compile,queue}
       mkdir -p var/{cache,empty,lib,log,spool,state,tmp}
       mkdir -p var/{cache,lib,log,spool,state}/lunar
@@ -1264,59 +1263,59 @@ fstab_style_menu()
 #
 fstab_style()
 {
-    local PART PTYPE MNTPT UUID
+  local PART PTYPE MNTPT UUID
 
-    PART=$1
-    PTYPE=$2
-    MNTPT=$3
+  PART=$1
+  PTYPE=$2
+  MNTPT=$3
 
-    case "$FSTAB_STYLE" in
-  DEV)
+  case "$FSTAB_STYLE" in
+    DEV)
       # Do nothing
       echo $PART
       ;;
-  LABEL)
+    LABEL)
       set_fs_label $PART $PTYPE $MNTPT
       if [ "$PTYPE" == "swap" ]; then
-    echo "LABEL=swap${PART##*/}"
+        echo "LABEL=swap${PART##*/}"
       else
-    echo "LABEL=$MNTPT"
+        echo "LABEL=$MNTPT"
       fi
       ;;
-  UUID)
+    UUID)
       UUID=$(blkid -s UUID -o value $PART)
       echo "UUID=$UUID"
       ;;
-    esac
+  esac
 }
 
 ##
 # set_fs_label partition fstype label
 #
 set_fs_label() {
-    local PART PTYPE LABEL
+  local PART PTYPE LABEL
 
-    PART=$1
-    PTYPE=$2
-    LABEL=$3
+  PART=$1
+  PTYPE=$2
+  LABEL=$3
 
-    case "$PTYPE" in
-  ext*)
+  case "$PTYPE" in
+    ext*)
       tune2fs -L $LABEL $PART &> /dev/null
       ;;
-  btrfs)
+    btrfs)
       btrfs filesystem label $PART $LABEL &> /dev/null
       ;;
-  xfs)
+    xfs)
       xfs_admin -L $LABEL $PART &> /dev/null
       ;;
-  jfs)
+    jfs)
       jfs_tune -L $LABEL $PART &> /dev/null
       ;;
-  swap)
+    swap)
       mkswap -L swap${PART##*/} $PART &> /dev/null
       ;;
-    esac
+  esac
 }
 
 show_consolefonts()
@@ -1417,20 +1416,20 @@ install_kernels()
   {
     local LINE
     while read LINE; do
-        (
-      unset MISSING
-      MODULE=$(echo $LINE | cut -d: -f2)
-      for SOURCE in $(chroot_run lvu sources $MODULE) ; do
-        if [ ! -e $TARGET/var/spool/lunar/$SOURCE ]; then
-          MISSING=yes
+      (
+        unset MISSING
+        MODULE=$(echo $LINE | cut -d: -f2)
+        for SOURCE in $(chroot_run lvu sources $MODULE) ; do
+          if [ ! -e $TARGET/var/spool/lunar/$SOURCE ]; then
+            MISSING=yes
+          fi
+        done
+        if [ -z "$MISSING" ]; then
+          echo $LINE | cut -d: -f1
+          echo $MODULE
+          echo $LINE | cut -d: -f3-
         fi
-      done
-      if [ -z "$MISSING" ]; then
-        echo $LINE | cut -d: -f1
-        echo $MODULE
-        echo $LINE | cut -d: -f3-
-      fi
-        )
+      )
     done < $KMOD_LIST
   }
 
@@ -1519,28 +1518,28 @@ install_bootloader() {
 
     case $BCOMMAND in
       L)
-      BOOTLOADER=lilo
-      transfer_package $BOOTLOADER
-      chroot_run lsh update_plugin $BOOTLOADER "install"
-      msgbox "The lilo boot loader package was installed. From now on, when you add a kernel, lilo will be run after the /etc/lilo.conf configuration file has been updated. "
-    ;;
+        BOOTLOADER=lilo
+        transfer_package $BOOTLOADER
+        chroot_run lsh update_plugin $BOOTLOADER "install"
+        msgbox "The lilo boot loader package was installed. From now on, when you add a kernel, lilo will be run after the /etc/lilo.conf configuration file has been updated. "
+        ;;
       G)
-      BOOTLOADER=grub2
-      transfer_package $BOOTLOADER
-      chroot_run lsh update_plugin $BOOTLOADER "install"
-      install_grub2
-      msgbox "The grub2 boot loader package was installed. From now on, when you add a kernel, it will be available through grub2 on boot."
-    ;;
+        BOOTLOADER=grub2
+        transfer_package $BOOTLOADER
+        chroot_run lsh update_plugin $BOOTLOADER "install"
+        install_grub2
+        msgbox "The grub2 boot loader package was installed. From now on, when you add a kernel, it will be available through grub2 on boot."
+        ;;
       B)
-      BOOTLOADER=grub
-      transfer_package $BOOTLOADER
-      chroot_run lsh update_plugin $BOOTLOADER "install"
-      install_grub
-      msgbox "The grub boot loader package was installed. From now on, when you add a kernel, it will be available through grub on boot."
-    ;;
-    N)
-      msgbox "Not installing a boot loader requires you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also does not install lilo or grub on the hard disc."
-      ;;
+        BOOTLOADER=grub
+        transfer_package $BOOTLOADER
+        chroot_run lsh update_plugin $BOOTLOADER "install"
+        install_grub
+        msgbox "The grub boot loader package was installed. From now on, when you add a kernel, it will be available through grub on boot."
+        ;;
+      N)
+        msgbox "Not installing a boot loader requires you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also does not install lilo or grub on the hard disc."
+        ;;
     esac
 
     if (( STEP == 7 )); then
@@ -1731,7 +1730,7 @@ cd-rom tray and reboot. See you at the login prompt!"
           G) toggle GUIDE ;;
           C) toggle CONFIRM ;;
           D) toggle DISABLE ;;
-                                        F) fstab_style_menu ;;
+          F) fstab_style_menu ;;
           S) shell ;;
           M) load_module ;;
           Q) goodbye ;;
@@ -1842,4 +1841,3 @@ if [ -x /run.sh ]; then
 else
   main
 fi
-
