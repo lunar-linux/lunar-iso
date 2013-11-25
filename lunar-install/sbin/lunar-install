@@ -836,6 +836,8 @@ means that your root or boot filesystem should be ext2."
 
 make_lilo_conf()
 {
+  local UUID DISC
+
   if ! pkg_avail lilo ; then
     return
   fi
@@ -843,24 +845,30 @@ make_lilo_conf()
     return
   fi
 
+  UUID=$(blkid -s UUID -o value $ROOT)
+
   DISC=$(echo $ROOT | sed 's/[0-9]*$//')
   (
-    echo "# lba32"
+    echo "lba32"
     echo "prompt"
+    echo "compact"
     echo "delay=100"
     echo "timeout=100"
     echo "install=menu"
-    echo "append=\"devfs=nomount\""
+    echo "append=\"loglevel=3\""
     echo "read-only"
     echo ""
-    if echo $BOOT | grep -q md ; then
+    if [[ "$BOOT" =~ ^/dev/md ]]; then
       echo "boot=$BOOT"
       BOOTDISCS=$(mdadm --detail $BOOT | tail -n2 | awk '{print $7}')
       echo "raid-extra-boot=$(echo $BOOTDISCS | sed -e 's@[0-9]@@g' -e 's@\ @,@g')"
     else
       echo "boot=$DISC"
     fi
-    echo "root=$ROOT"
+    echo "root=\"UUID=$UUID\""
+    if [[ "$DISC" =~ ^/dev/vd ]]; then
+      echo -e "disk=$DISC\n    bios=0x80\n    max-partitions=7"
+    fi
     echo ""
   ) > $TARGET/etc/lilo.conf
 }
