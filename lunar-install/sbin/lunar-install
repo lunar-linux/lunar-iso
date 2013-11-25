@@ -1182,14 +1182,16 @@ transfer()
       cp /etc/issue{,.net} $TARGET/etc/
 
       # Some sane defaults
-      GCC_VER=$(chroot_run lsh installed_version gcc)
-      GCC_VER=${GCC_VER%.*}
       cat <<EOF> $TARGET/etc/lunar/local/config
-  LUNAR_COMPILER="GCC_${GCC_VER/./_}"
     LUNAR_MODULE="lunar"
 LUNAR_ALIAS_UDEV="systemd"
 LUNAR_ALIAS_KMOD="kmod"
+LUNAR_ALIAS_KERNEL_HEADERS="kernel-headers"
 EOF
+
+      # Disable services (user can choose to enable them using services menu)
+      rm -f $TARGET/etc/systemd/system/network.target.wants/wpa_supplicant.service
+      rm -f $TARGET/etc/systemd/system/sockets.target.wants/sshd.socket
 
       # root user skel files
       find $TARGET/etc/skel ! -type d | xargs -i cp '{}' $TARGET/root
@@ -1493,9 +1495,8 @@ install_kernels()
             $(list_precompiled_kernels)`
         fi
         if [ -f "/var/cache/lunar/$CCOMMAND.tar.xz" ]; then
-          clear
-          echo "Installing kernel, please wait..."
-          cd $TARGET && tar xJf /var/cache/lunar/$CCOMMAND.tar.xz &> /dev/null
+          $DIALOG --infobox "\nInstalling kernel $CCOMMAND, please wait..." 5 70
+          cd $TARGET && tar xf /var/cache/lunar/$CCOMMAND.tar.xz &> /dev/null
           chroot_run cp /usr/src/linux/.config /etc/lunar/local/.config.current
 
           KVER=$(grep "^$CCOMMAND:" $KERNEL_LIST | cut -d: -f2)
@@ -1515,7 +1516,7 @@ install_kernels()
 
           # let the plugin code handle the hard work
           chroot_run depmod
-          chroot_run lsh update_bootloader $KVER_FULL $KVER &> /dev/null
+          chroot_run lsh update_bootloader $KVER_FULL $KVER
 
           msgbox "The precompiled kernel \"$CCOMMAND\" has been installed to your system."
           if (( STEP == 8 )); then
