@@ -42,7 +42,7 @@ $(ISO_TARGET)/.iso-files: iso-target
 	@[ ! -d $(ISO_TARGET)/etc/dracut.conf.d ] || rmdir --ignore-fail-on-non-empty $(ISO_TARGET)/etc/dracut.conf.d
 	@cp -r $(ISO_SOURCE)/livecd/template/etc/systemd $(ISO_TARGET)/etc
 	@> $(ISO_TARGET)/etc/machine-id
-	@ln -sf ../../tmp/random-seed $(ISO_TARGET)/var/lib/random-seed
+	@ln -sf ../../../tmp/random-seed $(ISO_TARGET)/var/lib/systemd/random-seed
 	@mkdir -p $(ISO_TARGET)/var/cache/man
 	@find $(ISO_TARGET)/etc/skel/ -type f -exec cp {} $(ISO_TARGET)/root/ \;
 	@ln -sf /tmp/resolv.conf $(ISO_TARGET)/etc/resolv.conf
