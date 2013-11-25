@@ -1589,7 +1589,7 @@ install_menu()
 {
   if [ -z "$STEPS" ]; then
     # the total number of steps in the installer:
-    STEPS=15
+    STEPS=14
 
     SH[1]="Please read the introduction if you are new to lunar-linux.
 If you want to know more about the installation procedure
@@ -1626,14 +1626,10 @@ and configure it's networking connections."
     SH[12]="By default there are no services installed and
 running. With this tool you can add or remove them to
 the list of startup services and enable or disable them."
-    SH[13]="If you want to run a ssh server (recommended) then
-you must once create unique keys for this system. These
-keys are the identification of your system and make it
-recognizeable across the network."
-    SH[14]="Select the local timezone of your computer
+    SH[13]="Select the local timezone of your computer
 to make sure that applications running are using the correct
 time zone information and adjust daylight savings."
-    SH[15]="You are done! you should remove the ISO from the
+    SH[14]="You are done! you should remove the ISO from the
 cd-rom tray and reboot. See you at the login prompt!"
 
     B_LABEL="One step back"
@@ -1687,9 +1683,6 @@ cd-rom tray and reboot. See you at the login prompt!"
     V_LABEL="Administrate services"
     V_HELP="Configure services to start automatically at boot time"
     V_OK="\\Z1"
-    G_LABEL="Create SSH server keys"
-    G_HELP="Generate the SSH server keys"
-    G_OK="\\Z1"
     A_LABEL="Select a timezone"
     A_HELP="Select a timezone"
     A_OK="\\Z1"
@@ -1717,7 +1710,7 @@ cd-rom tray and reboot. See you at the login prompt!"
   }
 
   if [ "$GUIDE" == "off" ]; then
-    CHOICES="X I C D E J P W M S T O L K R U H V G A Z"
+    CHOICES="X I C D E J P W M S T O L K R U H V A Z"
     STEPHELP="Step $STEP of $STEPS:"
   else
     case $STEP in
@@ -1733,9 +1726,8 @@ cd-rom tray and reboot. See you at the login prompt!"
     10) DEFAULT=U ; CHOICES="B R U F" ;;
     11) DEFAULT=H ; CHOICES="B H F" ;;
     12) DEFAULT=V ; CHOICES="B H V F" ;;
-    13) DEFAULT=G ; CHOICES="B H V G F" ;;
-    14) DEFAULT=A ; CHOICES="B H V G A F" ;;
-    15) DEFAULT=Z ; CHOICES="B Z"
+    13) DEFAULT=A ; CHOICES="B H V A F" ;;
+    14) DEFAULT=Z ; CHOICES="B Z"
     esac
   fi
   COMMAND=`$DIALOG --title "Lunar-Linux install menu" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)`
@@ -1804,8 +1796,7 @@ cd-rom tray and reboot. See you at the login prompt!"
     U)  chroot_run luser     ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; U_OK=\\Z2 ;;
     H)  chroot_run lnet      ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
     V)  chroot_run lservices ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
-    G)  chroot_run make -C /etc/ssh server-keys ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; G_OK=\\Z2 ;;
-    A)  chroot_run ltime     ; if (( STEP == 14 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
+    A)  chroot_run ltime     ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
 
     Z)  goodbye                ;;
   esac
