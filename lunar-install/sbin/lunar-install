@@ -1134,8 +1134,8 @@ transfer()
       cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
       cp /var/state/lunar/depends        $TARGET/var/state/lunar/
       cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
-      cp /var/state/lunar/depends.cache  $TARGET/var/state/lunar/
-      cp /var/state/lunar/module.index   $TARGET/var/state/lunar/
+      chroot_run lsh create_module_index
+      chroot_run lsh create_depends_cache
 
       # more moonbase related stuff
       percent_msg "Updating moonbase plugins"
