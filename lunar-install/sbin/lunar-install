@@ -675,6 +675,11 @@ raid_setup()
               fi
             fi
           elif [ "$RRCHOICE" == "start" ] ; then
+            # Ask for metadata version
+            METADATA=$($DIALOG --title " Choose metadata version " --menu "" 0 0 0 \
+                       "0.90" "Use with LILO bootloader" \
+                       "1.0" "Use with SYSLINUX bootloader" \
+                       "1.2" "Use with GRUB bootloader")
             # udev might fail to create these devices
             if [ ! -b /dev/md/${ARRAYNAME/md/} ]; then
               mkdir -p /dev/md
@@ -686,7 +691,7 @@ raid_setup()
             DISCS_A=( $(for DISC in $(echo $DISCS | sed 's/,/\t/g') ; do echo $DISC ; done) )
             SPARE_A=( $(for DISC in $(echo $SPARE | sed 's/,/\t/g') ; do echo $DISC ; done) )
             # note we do not force creation here
-            mdadm --create --level $LEVEL -n ${#DISCS_A[@]} -x ${#SPARE_A[@]} /dev/$ARRAYNAME ${DISCS_A[@]} ${SPARE_A[@]}
+            mdadm --create --metadata=$METADATA --level $LEVEL -n ${#DISCS_A[@]} -x ${#SPARE_A[@]} /dev/$ARRAYNAME ${DISCS_A[@]} ${SPARE_A[@]}
             sleep 2
             if ! grep -qw "^$ARRAYNAME" /proc/mdstat ; then
               sleep 5
