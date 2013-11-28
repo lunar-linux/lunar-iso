@@ -1182,8 +1182,8 @@ transfer()
       make_grub_conf
 
       # some more missing files:
-      #cp /etc/lunar.release $TARGET/etc/
       cp /etc/lsb-release $TARGET/etc/
+      cp /etc/os-release $TARGET/etc/
       cp /etc/issue{,.net} $TARGET/etc/
 
       # Some sane defaults
