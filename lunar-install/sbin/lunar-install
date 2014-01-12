@@ -1187,7 +1187,10 @@ transfer()
       cp /etc/issue{,.net} $TARGET/etc/
 
       # Some sane defaults
+      GCCVER=$(chroot_run lvu installed gcc | awk -F\. '{ print $1"_"$2 }')
+
       cat <<EOF> $TARGET/etc/lunar/local/config
+  LUNAR_COMPILER="GCC_$GCCVER"
     LUNAR_MODULE="lunar"
 LUNAR_ALIAS_UDEV="systemd"
 LUNAR_ALIAS_KMOD="kmod"
@@ -1404,7 +1407,7 @@ Please select your preferred langauge.
 This process will ONLY set the LANG environment variable. Do
 not expect any changes till you finish and reboot."
 
-  LANG=${LANG:-en_US}
+  LANG=${LANG:-en_US.utf8}
   LANG=$($DIALOG --title "Language Selection Menu" --default-item "$LANG" --menu "$HELP" 0 0 0 `show_languages`)
   if [ $? == 0 ]; then
     export LANG
@@ -1813,6 +1816,8 @@ main()
   export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin"
   # setting this var is supposed to prevent the enviro_check code now!
   export LUNAR_INSTALL=1
+
+  unset EDITOR
 
   TARGET="/mnt"
   CONFIRM=on
