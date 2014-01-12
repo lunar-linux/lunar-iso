@@ -1,0 +1,7 @@
+NAME="Lunar Linux"
+VERSION="%VERSION% (%CODENAME%)"
+ID=lunar
+VERSION_ID=%VERSION%
+PRETTY_NAME="Lunar Linux %CNAME%"
+ANSI_COLOR="1;34"
+HOME_URL="http://lunar-linux.org/"

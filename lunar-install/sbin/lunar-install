@@ -6,7 +6,7 @@
 # portions Copyright 2002 by rodzilla                       #
 # portions Copyright 2003-2004 by tchan, kc8apf             #
 # portions Copyright 2004-2007 by Auke Kok                  #
-# portions Copyright 2008-2010 by Stefan Wold               #
+# portions Copyright 2008-2014 by Stefan Wold               #
 #                                                           #
 #############################################################
 #                                                           #
@@ -1182,8 +1182,8 @@ transfer()
       make_grub_conf
 
       # some more missing files:
-      #cp /etc/lunar.release $TARGET/etc/
       cp /etc/lsb-release $TARGET/etc/
+      cp /etc/os-release $TARGET/etc/
       cp /etc/issue{,.net} $TARGET/etc/
 
       # Some sane defaults

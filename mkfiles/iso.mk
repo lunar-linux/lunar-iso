@@ -30,7 +30,7 @@ iso-modules: $(ISO_TARGET)/.iso-modules
 
 
 # Prepare target files
-ISO_ETC_FILES=lsb-release fstab motd issue issue.net
+ISO_ETC_FILES=lsb-release os-release fstab motd issue issue.net
 
 $(ISO_TARGET)/etc/%: $(ISO_SOURCE)/livecd/template/etc/% iso-modules
 	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
