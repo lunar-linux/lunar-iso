@@ -881,14 +881,23 @@ make_lilo_conf()
 
 install_grub2()
 {
+  local DISC MBR
+
   if ! pkg_avail grub2 ; then
     return
   fi
 
   DISC=$(echo $ROOT | sed 's/[0-9]*$//')
-  chroot_run grub-install $DISC
+   MBR=$($DIALOG --title "grub2 MBR install" --menu "" 0 0 0 \
+    "$DISC" "Install grub2 MBR on this device" \
+    "C"     "Change grub2 MBR install device")
+  if [ "$MBR" = "C" ]; then
+    MBR=$(inputbox "Please enter a device where to install the grub2 MBR" "")
+  fi
 
-  echo "grub was installed on the MBR of $DISC"
+  chroot_run grub-install $MBR
+
+  echo "grub was installed on the MBR of $MBR"
   sleep 4
 }
 
