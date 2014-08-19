@@ -343,7 +343,7 @@ menu_get_partition()
   local TITLE HELP PART
   TITLE="Partition Selection Menu"
   HELP="Please select a partition"
-  PART=$($DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 `menu_list_targets` "New" "Add an unlisted device to this list...")
+  PART=$($DIALOG --title "$TITLE" --ok-label "Edit" --cancel-label "Done" --menu "$HELP" 0 0 0 `menu_list_targets` "New" "Add an unlisted device to this list...")
   if [ $? != 0 ]; then
     return 1
   fi
