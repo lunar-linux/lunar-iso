@@ -103,7 +103,9 @@ stage2-toolchain: $(ISO_TARGET)/.stage2-toolchain
 
 $(ISO_TARGET)/.stage2: stage2-toolchain
 	@echo stage2-build
-	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'echo `lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))` | xargs -n 1 lin -c'
+	@cp /etc/resolv.conf $(ISO_TARGET)/etc/resolv.conf
+	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'for mod in `lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))`; do lin -c $$mod || exit 1; done'
+	@rm -f $(ISO_TARGET)/etc/resolv.conf
 	@touch $@
 
 stage2-build: $(ISO_TARGET)/.stage2
