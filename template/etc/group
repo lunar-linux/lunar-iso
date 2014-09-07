@@ -30,3 +30,8 @@ dialout:x:27:
 wheel:x:30:
 users:x:100:
 nogroup:x:65534:
+systemd-journal-gateway:x:996:
+systemd-bus-proxy:x:995:
+systemd-network:x:994:
+systemd-resolve:x:993:
+systemd-timesync:x:992:
