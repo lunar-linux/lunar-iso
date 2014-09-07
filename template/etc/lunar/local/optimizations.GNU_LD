@@ -1,1 +1,1 @@
-LDF=( Strip )
+LDF=( Strip Relro Now )
