@@ -42,6 +42,7 @@ $(ISO_TARGET)/.iso-files: iso-target
 	@for unit in sockets.target.wants/sshd.socket multi-user.target.wants/sshd.service multi-user.target.wants/sshd-keys.service ; do \
 	  rm -f $(ISO_TARGET)/etc/systemd/system/$$unit ; \
 	done
+	@$(ISO_SOURCE)/scripts/chroot-build bash -c 'for unit in systemd-networkd systemd-resolved ; do systemctl disable $$unit; done'
 	@[ ! -d $(ISO_TARGET)/etc/dracut.conf.d ] || rmdir --ignore-fail-on-non-empty $(ISO_TARGET)/etc/dracut.conf.d
 	@cp -r $(ISO_SOURCE)/livecd/template/etc/systemd $(ISO_TARGET)/etc
 	@> $(ISO_TARGET)/etc/machine-id
