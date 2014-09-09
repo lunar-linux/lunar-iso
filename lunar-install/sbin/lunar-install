@@ -781,6 +781,8 @@ menu_select_partitions()
       FORCE="-f"
     elif [ "$FSYS" == "jfs" ]; then
       FORCE="-q"
+    elif [[ "$FSYS" =~ ext[234] ]]; then
+      FORCE="-F"
     else
       unset FORCE
     fi
