@@ -1165,12 +1165,10 @@ transfer()
       percent_msg "Finishing up installation"
       chroot_run systemd-machine-id-setup 2> /dev/null
       echo -e "KEYMAP=$KEYMAP\nFONT=$CONSOLEFONT" > $TARGET/etc/vconsole.conf
-      [ -z "$LANG" ] || chroot_run localectl --no-ask-password set-locale "LANG=$LANG"
+      echo -e "LANG=${LANG:-en_US.utf8}\nLC_ALL=${LANG:-en_US.utf8}" > $TARGET/etc/locale.conf
       [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
 
       # post-first-boot message:
-      #cp /etc/init.d/lunar-install $TARGET/etc/init.d/
-      #ln -sf /etc/init.d/lunar-install $TARGET/etc/rc3.d/S99lunar-install
       cp /README $TARGET/root/README
       cp $MOTD_FILE $TARGET/etc/motd
 
