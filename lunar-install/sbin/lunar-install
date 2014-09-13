@@ -898,9 +898,6 @@ install_grub2()
   fi
 
   chroot_run grub-install $MBR
-
-  echo "grub was installed on the MBR of $MBR"
-  sleep 4
 }
 
 
