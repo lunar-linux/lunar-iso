@@ -1218,10 +1218,12 @@ EOF
       # Tell dracut to auto enable md devices if used during install
       if [ -e /proc/mdstat ]; then
         if egrep -q ^md[0-9]+ /proc/mdstat; then
+          mdadm --examine --scan > $TARGET/etc/mdadm.conf
           cat <<EOF> $TARGET/etc/dracut.conf.d/02-raid.conf
 # Enable software raid automatically using dracut.
 # --  AUTO-GENERATED FILE DO NOT MODIFY --
 kernel_cmdline+=" rd.auto=1"
+mdadmconf="yes"
 EOF
         fi
       fi
