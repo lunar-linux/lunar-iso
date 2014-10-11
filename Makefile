@@ -58,3 +58,7 @@ clean:
 chroot:
 	$(ISO_SOURCE)/scripts/chroot-build /bin/bash
 
+dist:
+	@sha1sum lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.sha1
+	@xz lunar-$(ISO_VERSION).iso
+	@sha1sum lunar-$(ISO_VERSION).iso.xz > lunar-$(ISO_VERSION).iso.xz.sha1
