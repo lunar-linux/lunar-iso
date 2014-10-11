@@ -28,10 +28,11 @@ games:x:26:
 proxy:x:27:
 dialout:x:27:
 wheel:x:30:
+systemd-journal-gateway:x:31:
+systemd-bus-proxy:x:32:
+systemd-network:x:33:
+systemd-resolve:x:34:
+systemd-timesync:x:35:
+systemd-journal-remote:x:36:
 users:x:100:
 nogroup:x:65534:
-systemd-journal-gateway:x:996:
-systemd-bus-proxy:x:995:
-systemd-network:x:994:
-systemd-resolve:x:993:
-systemd-timesync:x:992:
