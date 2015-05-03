@@ -783,6 +783,8 @@ menu_select_partitions()
       FORCE="-q"
     elif [[ "$FSYS" =~ ext[234] ]]; then
       FORCE="-F"
+    elif [[ "$FSYS" == "btrfs" ]]; then
+      FORCE="-f"
     else
       unset FORCE
     fi
