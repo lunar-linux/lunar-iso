@@ -21,7 +21,9 @@ iso-tools:
 # Remove non iso modules
 include $(ISO_SOURCE)/conf/modules.iso
 
-$(ISO_TARGET)/.iso-modules: iso-target $(ISO_TARGET)/isolinux/isolinux.bin
+SYSLINUX_FILES=isolinux.bin ldlinux.c32 libcom32.c32 libutil.c32
+
+$(ISO_TARGET)/.iso-modules: iso-target $(addprefix $(ISO_TARGET)/isolinux/, $(SYSLINUX_FILES))
 	@echo iso-modules
 	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lrm -n $(filter-out $(ISO_MODULES), $(ALL_MODULES))
 	@touch $@
@@ -68,12 +70,21 @@ iso-strip: $(ISO_TARGET)/.iso-strip
 # Copy the isolinux files to the target
 ISOLINUX_FILES=README f1.txt f2.txt f3.txt f4.txt generate-iso.sh isolinux.cfg
 
-.SECONDARY: $(ISO_TARGET)/usr/share/syslinux/isolinux.bin
-$(ISO_TARGET)/usr/share/syslinux/isolinux.bin: $(ISO_TARGET)/.iso-isolinux
+.SECONDARY: $(addprefix $(ISO_TARGET)/usr/share/syslinux/, $(SYSLINUX_FILES))
+$(addprefix $(ISO_TARGET)/usr/share/syslinux/, $(SYSLINUX_FILES)): $(ISO_TARGET)/.iso-isolinux
 	@test -f $@
 	@touch $@
 
 $(ISO_TARGET)/isolinux/isolinux.bin: $(ISO_TARGET)/usr/share/syslinux/isolinux.bin
+	@cp $< $@
+
+$(ISO_TARGET)/isolinux/ldlinux.c32: $(ISO_TARGET)/usr/share/syslinux/ldlinux.c32
+	@cp $< $@
+
+$(ISO_TARGET)/isolinux/libcom32.c32: $(ISO_TARGET)/usr/share/syslinux/libcom32.c32
+	@cp $< $@
+
+$(ISO_TARGET)/isolinux/libutil.c32: $(ISO_TARGET)/usr/share/syslinux/libutil.c32
 	@cp $< $@
 
 $(ISO_TARGET)/boot/linux: $(ISO_TARGET)/.iso-isolinux
@@ -101,7 +112,7 @@ $(ISO_TARGET)/.iso-isolinux: iso-target
 	@mkdir -p $(ISO_TARGET)/isolinux
 	@touch $@
 
-iso-isolinux: $(ISO_TARGET)/.iso-isolinux $(ISO_TARGET)/isolinux/isolinux.bin $(ISO_TARGET)/isolinux/linux $(ISO_TARGET)/isolinux/initrd $(addprefix $(ISO_TARGET)/isolinux/, $(ISOLINUX_FILES))
+iso-isolinux: $(ISO_TARGET)/.iso-isolinux $(addprefix $(ISO_TARGET)/isolinux/, $(SYSLINUX_FILES)) $(ISO_TARGET)/isolinux/linux $(ISO_TARGET)/isolinux/initrd $(addprefix $(ISO_TARGET)/isolinux/, $(ISOLINUX_FILES))
 
 
 # Generate the actual image
