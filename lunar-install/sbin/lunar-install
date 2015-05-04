@@ -524,8 +524,17 @@ select_swap_file()
 
 determine_mount_opts()
 {
-  if [ "$1" == "swap" ]; then
-    echo "defaults"
+  # Check for TRIM support
+  if hdparm -I $1 | grep -q TRIM; then
+    if [ "$2" == "swap" ]; then
+      echo "defaults,discard"
+    else
+      if [[ "$2" =~ (ext4|btrfs|xfs|jfs) ]]; then
+        echo "defaults,noatime,discard"
+      else
+        echo "defaults,noatime"
+      fi
+    fi
   else
     echo "defaults"
   fi
@@ -772,7 +781,7 @@ menu_select_partitions()
     else
       FORMAT=no
     fi
-    MNT_OPTS=$(determine_mount_opts $FSYS) &&
+    MNT_OPTS=$(determine_mount_opts $PART $FSYS) &&
     if [ "$MNT_PNT" != "/" ]; then
       MNT_PNT=${MNT_PNT%%/}
     fi
