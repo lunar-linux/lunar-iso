@@ -31,7 +31,7 @@ include $(ISO_SOURCE)/conf/modules.toolchain
 
 $(ISO_TARGET)/.stage1-toolchain: stage1-moonbase stage1-spool
 	@echo stage1-toolchain
-	@rm -f BUILD/var/lib/lunar/plugins/postbuild-sanity.plugin
+	@rm -f $(ISO_TARGET)/var/lib/lunar/plugins/postbuild-sanity.plugin
 	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -rc $(TOOLCHAIN_MODULES)
 	@touch $@
 
