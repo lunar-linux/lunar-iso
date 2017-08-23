@@ -103,10 +103,23 @@ stage2-toolchain: $(ISO_TARGET)/.stage2-toolchain
 
 $(ISO_TARGET)/.stage2: stage2-toolchain
 	@echo stage2-build
-	# ugly hack
+	# XXX UGLY HACK XXX
+	# lvm has a confusing dependency on %UDEV, which is so confusing
+	# that it was commented out.  In the context of building an ISO,
+	# though, lvm gets built before any kind of udev is available.
+	# Edit lvm2's DEPENDS by arbitrarily nominating systemd which
+	# will be installed anyway, to ensure systemd is built before
+	# lbm2.
 	@echo 'depends systemd' >> $(ISO_TARGET)/var/lib/lunar/moonbase/core/filesys/lvm2/DEPENDS
 	@cp /etc/resolv.conf $(ISO_TARGET)/etc/resolv.conf
 	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'for mod in `lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))`; do lin -c $$mod || exit 1; done'
+	# XXX ugly hack XXX
+	# By default curl is compiled without support for SSL.  These
+	# days, that makes installing many software packages very
+	# difficult, as people are moving more and more to https as the
+	# default way to deliver web pages.  So compile it separately
+	# with explicit ssl support at the end of the build.
+	@yes nynnnnnnnnnn | $(ISO_SOURCE)/scripts/chroot-build lin -rc curl
 	@rm -f $(ISO_TARGET)/etc/resolv.conf
 	@touch $@
 
