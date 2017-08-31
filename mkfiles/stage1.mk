@@ -43,7 +43,6 @@ include $(ISO_SOURCE)/conf/modules.stage1
 
 $(ISO_TARGET)/.stage1: stage1-toolchain
 	@echo stage1-build
-	@grep LUNAR_ALIAS_OSSL $(ISO_TARGET)/etc/lunar/local/config || echo 'LUNAR_ALIAS_OSSL="openssl"' >> $(ISO_TARGET)/etc/lunar/local/config
 	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -rc $(filter-out $(TOOLCHAIN_MODULES),$(STAGE1_MODULES))
 	@touch $@
 
