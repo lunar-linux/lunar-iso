@@ -1,0 +1,6 @@
+BOPT=Small
+SPD=(  )
+XTRA=(  )
+FPM=None
+CC_OPTS=( Pipe Fortify )
+STACK=
