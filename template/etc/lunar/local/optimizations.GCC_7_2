@@ -1,4 +1,4 @@
-BOPT=Small
+BOPT=Faster
 SPD=(  )
 XTRA=(  )
 FPM=None
