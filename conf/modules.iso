@@ -28,6 +28,7 @@ ISO_MODULES=acl            \
             groff          \
             gzip           \
             iproute2       \
+            iputils        \
             irssi          \
             jfsutils       \
             joe            \
