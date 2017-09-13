@@ -22,7 +22,6 @@ function umount_system_fs ()
 mount_system_fs &&
 
 mkdir $ISO_TARGET/run/lock &&
-mkdir $ISO_TARGET/run/lock/lunar &&
 
 chroot "$ISO_TARGET" "$@"
 RESULT=$?
