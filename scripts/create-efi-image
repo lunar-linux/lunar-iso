@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -e
+
+MNTDIR=$(mktemp -d /tmp/efiboot-XXXXXX)
+BOOTIMGSIZE="${1:-50}M"
+BOOTIMGFILE="${2:-$ISO_TARGET/EFI/lunariso/efiboot.img}"
+
+finishScript() {
+  umount -d $MNTDIR
+  rmdir $MNTDIR
+}
+
+trap finishScript 0 2 3 15
+
+if [ ! -d "$(dirname $BOOTIMGFILE)" ]; then
+  echo "Missing EFI dir in $ISO_TARGET, previous step failed..."
+  exit 1
+fi
+
+truncate -s $BOOTIMGSIZE $BOOTIMGFILE
+mkfs.fat -n LUNAR_EFI $BOOTIMGFILE > /dev/null
+mount $BOOTIMGFILE $MNTDIR
+mkdir -p $MNTDIR/EFI/{lunariso,boot} $MNTDIR/loader/entries
+cp $ISO_TARGET/boot/{linux,initrd} $MNTDIR/EFI/lunariso/
+cp $ISO_TARGET/EFI/boot/{bootx64.efi,HashTool.efi} $MNTDIR/EFI/boot/
+cp $ISO_TARGET/usr/lib/systemd/boot/efi/systemd-bootx64.efi $MNTDIR/EFI/boot/loader.efi
+cp $ISO_SOURCE/efiboot/loader/loader.conf $MNTDIR/loader/loader.conf
+sed -e "s:%VERSION%:${ISO_VERSION}:g" \
+    -e "s:%CODENAME%:${ISO_CODENAME}:g" \
+    -e "s:%DATE%:${ISO_DATE}:g" \
+    -e "s:%LABEL%:${ISO_LABEL}:g" \
+    $ISO_SOURCE/efiboot/loader/entries/lunariso-x86_64-usb.conf > $MNTDIR/loader/entries/lunariso-x86_64.conf
