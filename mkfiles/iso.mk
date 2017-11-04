@@ -1,4 +1,4 @@
-.INTERMEDIATE: iso iso-target iso-modules iso-tools iso-files iso-strip iso-isolinux
+.INTERMEDIATE: iso iso-target iso-modules iso-tools iso-files iso-strip iso-isolinux iso-efi
 
 iso: $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso
 
@@ -14,14 +14,14 @@ iso-target: $(ISO_TARGET)/.iso-target
 
 # Host system iso tools
 iso-tools:
-	@which mkisofs || lin cdrtools
+	@which xorriso || lin libisoburn
 	@which isohybrid || lin syslinux
-
+	@which efitool-mkusb || lin efitools
 
 # Remove non iso modules
 include $(ISO_SOURCE)/conf/modules.iso
 
-SYSLINUX_FILES=isolinux.bin ldlinux.c32 libcom32.c32 libutil.c32
+SYSLINUX_FILES=isolinux.bin isohdpfx.bin ldlinux.c32 libcom32.c32 libutil.c32
 
 $(ISO_TARGET)/.iso-modules: iso-target $(addprefix $(ISO_TARGET)/isolinux/, $(SYSLINUX_FILES))
 	@echo iso-modules
@@ -78,6 +78,9 @@ $(addprefix $(ISO_TARGET)/usr/share/syslinux/, $(SYSLINUX_FILES)): $(ISO_TARGET)
 $(ISO_TARGET)/isolinux/isolinux.bin: $(ISO_TARGET)/usr/share/syslinux/isolinux.bin
 	@cp $< $@
 
+$(ISO_TARGET)/isolinux/isohdpfx.bin: $(ISO_TARGET)/usr/share/syslinux/isohdpfx.bin
+	@cp $< $@
+
 $(ISO_TARGET)/isolinux/ldlinux.c32: $(ISO_TARGET)/usr/share/syslinux/ldlinux.c32
 	@cp $< $@
 
@@ -114,16 +117,49 @@ $(ISO_TARGET)/.iso-isolinux: iso-target
 
 iso-isolinux: $(ISO_TARGET)/.iso-isolinux $(addprefix $(ISO_TARGET)/isolinux/, $(SYSLINUX_FILES)) $(ISO_TARGET)/isolinux/linux $(ISO_TARGET)/isolinux/initrd $(addprefix $(ISO_TARGET)/isolinux/, $(ISOLINUX_FILES))
 
+# Setup EFI for USB and CD
+$(ISO_TARGET)/.iso-efi: iso-target
+	@echo "Setting up iso-efi"
+	@mkdir -p $(ISO_TARGET)/EFI/boot $(ISO_TARGET)/loader/entries $(ISO_TARGET)/EFI/lunariso
+	@touch $@
+
+$(ISO_TARGET)/EFI/boot/bootx64.efi: /usr/share/efitools/efi/PreLoader.efi
+	@cp $< $@
+
+$(ISO_TARGET)/EFI/boot/HashTool.efi: /usr/share/efitools/efi/HashTool.efi
+	@cp $< $@
+
+$(ISO_TARGET)/EFI/boot/loader.efi: $(ISO_TARGET)/usr/lib/systemd/boot/efi/systemd-bootx64.efi
+	@cp $< $@
+
+$(ISO_TARGET)/loader/loader.conf: $(ISO_SOURCE)/efiboot/loader/loader.conf
+	@cp $< $@
+
+$(ISO_TARGET)/loader/entries/lunariso-x86_64.conf: $(ISO_SOURCE)/efiboot/loader/entries/lunariso-x86_64-cd.conf $(ISO_TARGET)/.iso-efi
+	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
+
+$(ISO_TARGET)/EFI/lunariso/efiboot.img: $(ISO_TARGET)/.iso-efi
+	@echo "Creating EFI boot image"
+	@$(ISO_SOURCE)/scripts/create-efi-image
+
+iso-efi: $(ISO_TARGET)/.iso-efi $(ISO_TARGET)/EFI/boot/bootx64.efi $(ISO_TARGET)/EFI/boot/HashTool.efi $(ISO_TARGET)/EFI/boot/loader.efi $(ISO_TARGET)/loader/loader.conf $(ISO_TARGET)/loader/entries/lunariso-x86_64.conf $(ISO_TARGET)/EFI/lunariso/efiboot.img
 
 # Generate the actual image
-$(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-strip installer
+$(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-efi iso-strip installer
 	@echo iso
-	@mkisofs -o $@.tmp -R -J -l \
-	-V '$(ISO_LABEL)' \
-	-d -D -N -no-emul-boot -boot-load-size 4 -boot-info-table \
-	-b isolinux/isolinux.bin \
-	-c isolinux/boot.cat \
+	@xorriso -as mkisofs \
+	-iso-level 3 \
+	-o $@.tmp -l \
+	-eltorito-boot isolinux/isolinux.bin \
+	-eltorito-catalog isolinux/boot.cat \
+	-no-emul-boot -boot-load-size 4 -boot-info-table \
+	-isohybrid-mbr $(ISO_TARGET)/isolinux/isohdpfx.bin \
+	-eltorito-alt-boot \
+	-e EFI/lunariso/efiboot.img \
+	-no-emul-boot \
+	-isohybrid-gpt-basdat \
 	-m '$(ISO_TARGET)/.*' \
+	-m '$(ISO_TARGET)/boot/*' \
 	-m '$(ISO_TARGET)/etc/lunar/local/*' \
 	-m '$(ISO_TARGET)/tmp/*' \
 	-m '$(ISO_TARGET)/var/tmp/*' \
@@ -141,6 +177,6 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-str
 	-m '$(ISO_TARGET)/usr/src' \
 	-m '$(ISO_TARGET)/var/state/lunar/module_history' \
 	-m 'doc' \
-	-A 'Lunar-$(ISO_VERSION)' $(ISO_TARGET)
-	@isohybrid $@.tmp
+	-volid '$(ISO_LABEL)' \
+	-appid 'Lunar-$(ISO_VERSION)' $(ISO_TARGET)
 	@mv $@.tmp $@

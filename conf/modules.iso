@@ -41,6 +41,7 @@ ISO_MODULES=acl            \
             libgpg-error   \
             libidn         \
             libmpc         \
+            libmnl         \
             libtool        \
             Linux-PAM      \
             lunar          \

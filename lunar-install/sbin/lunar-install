@@ -6,7 +6,7 @@
 # portions Copyright 2002 by rodzilla                       #
 # portions Copyright 2003-2004 by tchan, kc8apf             #
 # portions Copyright 2004-2007 by Auke Kok                  #
-# portions Copyright 2008-2014 by Stefan Wold               #
+# portions Copyright 2008-2017 by Stefan Wold               #
 #                                                           #
 #############################################################
 #                                                           #
@@ -62,6 +62,9 @@ chroot_run()
   mount --bind /tmp $TARGET/tmp
   mount --bind /sys $TARGET/sys
   mount --bind /run $TARGET/run
+  if mountpoint -q /sys/firmware/efi/efivars; then
+    mount --bind /sys/firmware/efi/efivars $TARGET/sys/firmware/efi/efivars
+  fi
   if [ -n "$USE_SWAP" ]; then
     chroot $TARGET swapon -a
   fi
@@ -74,6 +77,9 @@ chroot_run()
     chroot $TARGET swapoff -a
   fi
   umount $TARGET/run
+  if mountpoint -q $TARGET/sys/firmware/efi/efivars; then
+    umount $TARGET/sys/firmware/efi/efivars
+  fi
   umount $TARGET/sys
   umount $TARGET/tmp
   umount $TARGET/dev
@@ -298,6 +304,7 @@ menu_list_targets()
         *XFS*) PTYPE="(XFS)" ;;
         *Minix*) PTYPE="(minix)" ;;
         *BTRFS*) PTYPE="(btrfs)" ;;
+        *FAT*) PTYPE="(FAT/FAT32)" ;;
         *) PTYPE="(unknown)" ;;
       esac
 
@@ -393,6 +400,7 @@ menu_get_filesystem()
   REISER="Reiserfs file system (*)"
   XFS="XFS file system (*)"
   JFS="JFS file system (*)"
+  VFAT="FAT32 file system"
   SWAP="Swap (Virtual memory or paging filesystem)"
 
   $DIALOG --title "$TITLE" --default-item "ext4" --menu "$HELP" 0 0 0 \
@@ -402,6 +410,7 @@ menu_get_filesystem()
     "ext2"      "$EXT2"    \
     "xfs"       "$XFS"     \
     "jfs"       "$JFS"     \
+    "vfat"      "$VFAT"    \
     "swap"      "$SWAP"
 }
 
@@ -794,6 +803,8 @@ menu_select_partitions()
       FORCE="-F"
     elif [[ "$FSYS" == "btrfs" ]]; then
       FORCE="-f"
+    elif [[ "$FSYS" == "vfat" ]]; then  # Enforce creation of 32-bit filesystem
+      FORCE="-F 32"
     else
       unset FORCE
     fi
@@ -1212,6 +1223,8 @@ transfer()
 LUNAR_ALIAS_UDEV="systemd"
 LUNAR_ALIAS_KMOD="kmod"
 LUNAR_ALIAS_KERNEL_HEADERS="kernel-headers"
+LUNAR_ALIAS_SSL="openssl"
+LUNAR_ALIAS_OSSL="openssl"
 EOF
 
       # Disable services (user can choose to enable them using services menu)
@@ -1578,9 +1591,10 @@ install_kernels()
 install_bootloader() {
   while true ; do
     BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "G" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
-    $(if pkg_avail grub2 ; then echo "G" ; echo "grub2" ; echo "Install grub2 as boot loader"; fi) \
-    $(if pkg_avail grub ; then echo "B" ; echo "grub" ; echo "Install grub as boot loader"; fi) \
-    $(if pkg_avail lilo ; then echo "L" ; echo "lilo" ; echo "Install lilo as boot loader"; fi) \
+    $(if pkg_avail systemd && [ -d /sys/firmware/efi ]; then echo "S" ; echo "systemd (UEFI only))" ; echo "Install systemd-boot as boot loader (UEFI)"; fi) \
+    $(if pkg_avail grub2 ; then echo "G" ; echo "grub2" ; echo "Install grub2 as boot loader (BIOS)"; fi) \
+    $(if pkg_avail grub ; then echo "B" ; echo "grub" ; echo "Install grub as boot loader (BIOS)"; fi) \
+    $(if pkg_avail lilo ; then echo "L" ; echo "lilo" ; echo "Install lilo as boot loader (BIOS)"; fi) \
     "N" "none" "Do not install a boot loader"`
 
     if [ $? != 0 ] ; then
@@ -1588,6 +1602,12 @@ install_bootloader() {
     fi
 
     case $BCOMMAND in
+      S)
+        BOOTLOADER=systemd
+        chroot_run lsh update_plugin $BOOTLOADER "install"
+        chroot_run bootctl install
+        msgbox "The systemd boot loader package was installed. From now on, when you add a kernel, it will be available through UEFI on boot."
+        ;;
       L)
         BOOTLOADER=lilo
         transfer_package $BOOTLOADER
