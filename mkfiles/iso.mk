@@ -2,6 +2,8 @@
 
 iso: $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso
 
+# Blank for i686 builds for now
+XORRISO_EFI_OPTS :=
 
 # Clean stage2 markers and mark the start of iso
 $(ISO_TARGET)/.iso-target: kernel pack
@@ -142,22 +144,26 @@ $(ISO_TARGET)/EFI/lunariso/efiboot.img: $(ISO_TARGET)/.iso-efi
 	@echo "Creating EFI boot image"
 	@$(ISO_SOURCE)/scripts/create-efi-image
 
+ifeq ($(ISO_ARCH),x86_64)
+XORRISO_EFI_OPTS := -eltorito-alt-boot -e EFI/lunariso/efiboot.img -no-emul-boot -isohybrid-gpt-basdat
 iso-efi: $(ISO_TARGET)/.iso-efi $(ISO_TARGET)/EFI/boot/bootx64.efi $(ISO_TARGET)/EFI/boot/HashTool.efi $(ISO_TARGET)/EFI/boot/loader.efi $(ISO_TARGET)/loader/loader.conf $(ISO_TARGET)/loader/entries/lunariso-x86_64.conf $(ISO_TARGET)/EFI/lunariso/efiboot.img
+else
+iso-efi:
+	@$(SHELL) -c true
+endif
 
 # Generate the actual image
 $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-efi iso-strip installer
 	@echo iso
 	@xorriso -as mkisofs \
 	-iso-level 3 \
+  -full-iso9660-filenames \
 	-o $@.tmp -l \
 	-eltorito-boot isolinux/isolinux.bin \
 	-eltorito-catalog isolinux/boot.cat \
 	-no-emul-boot -boot-load-size 4 -boot-info-table \
 	-isohybrid-mbr $(ISO_TARGET)/isolinux/isohdpfx.bin \
-	-eltorito-alt-boot \
-	-e EFI/lunariso/efiboot.img \
-	-no-emul-boot \
-	-isohybrid-gpt-basdat \
+  $(XORRISO_EFI_OPTS) \
 	-m '$(ISO_TARGET)/.*' \
 	-m '$(ISO_TARGET)/boot/*' \
 	-m '$(ISO_TARGET)/etc/lunar/local/*' \
@@ -177,6 +183,7 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-efi
 	-m '$(ISO_TARGET)/usr/src' \
 	-m '$(ISO_TARGET)/var/state/lunar/module_history' \
 	-m 'doc' \
+  -publisher "Lunar Linux - http://www.lunar-linux.org/" \
 	-volid '$(ISO_LABEL)' \
 	-appid 'Lunar-$(ISO_VERSION)' $(ISO_TARGET)
 	@mv $@.tmp $@
