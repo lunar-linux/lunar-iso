@@ -25,18 +25,17 @@ ISO_MODULES=acl            \
             glibc          \
             gmp            \
             grep           \
-            groff          \
             gzip           \
             iproute2       \
             iputils        \
             irssi          \
             jfsutils       \
-            joe            \
             kbd            \
             kmod           \
             less           \
             libcap         \
             libffi         \
+            libidn         \
             libgcrypt      \
             libgpg-error   \
             libidn         \
@@ -47,7 +46,6 @@ ISO_MODULES=acl            \
             lunar          \
             lvm2           \
             lzo            \
-            man            \
             mdadm          \
             memtest86+     \
             mpfr           \
@@ -73,5 +71,4 @@ ISO_MODULES=acl            \
             which          \
             xfsprogs       \
             xz             \
-            zile           \
             zlib

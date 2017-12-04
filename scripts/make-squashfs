@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -e
+
+# !!! DO NOT CHANGE THE IMG NAMES !!!
+# Dracut requires a very specific fs hiearchy for squashfs
+# /LiveOS
+#    |- squashfs.img
+#       !(mount)
+#       /LiveOS
+#          |- rootfs.img
+ROOTFSMNTDIR=$(mktemp -d /tmp/rootfs-XXXXXX)
+SFSDIR=$ISO_SOURCE/_SFS
+ROOTFSIMGDIR=$SFSDIR/LiveOS
+ROOTFSIMG=$ROOTFSIMGDIR/rootfs.img
+
+finishScript() {
+  umount -d $ROOTFSMNTDIR || true
+  rmdir $ROOTFSMNTDIR
+  rm -rf "$SFSDIR"
+}
+
+trap finishScript 0 2 3 15
+
+mkdir -p $ROOTFSIMGDIR
+truncate -s 16G $ROOTFSIMG
+mkfs.ext4 -O ^has_journal,^resize_inode -E lazy_itable_init=0 -m 0 -F "$ROOTFSIMG"
+tune2fs -i 0 -c 0 $ROOTFSIMG &> /dev/null
+mount $ROOTFSIMG $ROOTFSMNTDIR
+rsync -av $ISO_TARGET/ $ROOTFSMNTDIR --exclude ".*" \
+                                     --exclude boot/* \
+                                     --exclude isolinux/ \
+                                     --exclude EFI/ \
+                                     --exclude etc/lunar/local/* \
+                                     --exclude tmp/* \
+                                     --exclude var/tmp/* \
+                                     --exclude var/spool/* \
+                                     --exclude var/log/* \
+                                     --exclude usr/include \
+                                     --exclude usr/lib/locale \
+                                     --exclude usr/share/locale \
+                                     --exclude usr/share/man \
+                                     --exclude usr/share/info \
+                                     --exclude usr/share/doc \
+                                     --exclude usr/share/gtk-doc \
+                                     --exclude usr/share/vim \
+                                     --exclude usr/src \
+                                     --exclude var/state/lunar/module_history
+umount $ROOTFSMNTDIR
+mkdir -p $ISO_TARGET/LiveOS
+mksquashfs "$SFSDIR" "$ISO_TARGET/LiveOS/squashfs.img" -noappend -comp "xz" -no-progress
