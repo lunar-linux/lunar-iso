@@ -773,7 +773,7 @@ menu_select_partitions()
     MNTPNT=$(get_mount_point $FSYS) &&
 
     PROMPT="$PART might already be formatted with the $FSYS filesystem and may contain data. Formatting it will destroy all the information on this partition. Are you sure you want to format it?"
-    if confirm "$PROMPT" ; then
+    if confirm "$PROMPT" "--defaultno"; then
       FORMAT=yes
       CHECK=$(check_partition $FSYS)
     else
