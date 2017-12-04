@@ -1,4 +1,4 @@
-.INTERMEDIATE: iso iso-target iso-modules iso-tools iso-files iso-strip iso-isolinux iso-efi
+.INTERMEDIATE: iso iso-target iso-modules iso-tools iso-files iso-strip iso-isolinux iso-efi iso-sfs
 
 iso: $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso
 
@@ -19,6 +19,8 @@ iso-tools:
 	@which xorriso || lin libisoburn
 	@which isohybrid || lin syslinux
 	@which efitool-mkusb || lin efitools
+	@which mksquashfs || lin squashfs
+	@which rsync || lin rsync
 
 # Remove non iso modules
 include $(ISO_SOURCE)/conf/modules.iso
@@ -152,38 +154,50 @@ iso-efi:
 	@$(SHELL) -c true
 endif
 
+# Generate squashfs image
+$(ISO_TARGET)/.iso-sfs: iso-target iso-strip
+	@echo "Preparing squashfs image"
+	@mkdir -p $(ISO_TARGET)/LiveOS
+	@touch $@
+
+$(ISO_TARGET)/LiveOS/squashfs.img: $(ISO_TARGET)/.iso-sfs
+	@echo "Creating squashfs image"
+	@$(ISO_SOURCE)/scripts/make-squashfs
+
+iso-sfs: $(ISO_TARGET)/LiveOS/squashfs.img
+
 # Generate the actual image
-$(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-efi iso-strip installer
+$(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-efi iso-strip iso-sfs installer
 	@echo iso
 	@xorriso -as mkisofs \
 	-iso-level 3 \
-  -full-iso9660-filenames \
+	-full-iso9660-filenames \
 	-o $@.tmp -l \
 	-eltorito-boot isolinux/isolinux.bin \
 	-eltorito-catalog isolinux/boot.cat \
 	-no-emul-boot -boot-load-size 4 -boot-info-table \
 	-isohybrid-mbr $(ISO_TARGET)/isolinux/isohdpfx.bin \
-  $(XORRISO_EFI_OPTS) \
+	$(XORRISO_EFI_OPTS) \
 	-m '$(ISO_TARGET)/.*' \
-	-m '$(ISO_TARGET)/boot/*' \
-	-m '$(ISO_TARGET)/etc/lunar/local/*' \
-	-m '$(ISO_TARGET)/tmp/*' \
-	-m '$(ISO_TARGET)/var/tmp/*' \
-	-m '$(ISO_TARGET)/var/spool/*' \
-	-m '$(ISO_TARGET)/var/log/*' \
-	-m '$(ISO_TARGET)/usr/lib/locale' \
-	-m '$(ISO_TARGET)/usr/share/locale' \
-	-m '$(ISO_TARGET)/usr/share/man/man2' \
-	-m '$(ISO_TARGET)/usr/share/man/man3' \
-	-m '$(ISO_TARGET)/usr/share/man/*/man2' \
-	-m '$(ISO_TARGET)/usr/share/man/*/man3' \
-	-m '$(ISO_TARGET)/usr/share/info' \
-	-m '$(ISO_TARGET)/usr/share/gtk-doc' \
-	-m '$(ISO_TARGET)/usr/include' \
-	-m '$(ISO_TARGET)/usr/src' \
-	-m '$(ISO_TARGET)/var/state/lunar/module_history' \
-	-m 'doc' \
-  -publisher "Lunar Linux - http://www.lunar-linux.org/" \
+	-m '$(ISO_TARGET)/boot' \
+	-m '$(ISO_TARGET)/bin' \
+	-m '$(ISO_TARGET)/sbin' \
+	-m '$(ISO_TARGET)/usr' \
+	-m '$(ISO_TARGET)/dev' \
+	-m '$(ISO_TARGET)/etc' \
+	-m '$(ISO_TARGET)/home' \
+	-m '$(ISO_TARGET)/lib*' \
+	-m '$(ISO_TARGET)/root' \
+	-m '$(ISO_TARGET)/var' \
+	-m '$(ISO_TARGET)/media' \
+	-m '$(ISO_TARGET)/mnt' \
+	-m '$(ISO_TARGET)/opt' \
+	-m '$(ISO_TARGET)/run' \
+	-m '$(ISO_TARGET)/proc' \
+	-m '$(ISO_TARGET)/srv' \
+	-m '$(ISO_TARGET)/sys' \
+	-m '$(ISO_TARGET)/tmp' \
+	-publisher "Lunar Linux - http://www.lunar-linux.org/" \
 	-volid '$(ISO_LABEL)' \
 	-appid 'Lunar-$(ISO_VERSION)' $(ISO_TARGET)
 	@mv $@.tmp $@
