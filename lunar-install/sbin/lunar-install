@@ -250,24 +250,14 @@ block_devices()
 
 list_block_devices()
 {(
+  local DEVICE TYPE
   export IFS=$' \t\n'
-  local DEVICE FDEVICE PDEVICE
 
-  # Grab protected device when booting iso from other media then cdrom
-  PDEVICE=$(basename `grep -v '^rootfs' /proc/mounts | fgrep -w '/' | cut -d' ' -f1` 2> /dev/null)
-
-  for DEVICE in $(tail +3 /proc/partitions | awk '{print $4}' | grep -v -e ${PDEVICE:-^$} -e loop); do
-    FDEVICE=$(lsh unmap_device /dev/$DEVICE)
-    # if the device node ends with [0-9] then it's never a disc
-    if [[ $DEVICE =~ [0-9]$ ]]; then
-      # partitions always sit on a disc - which is also listed
-      if grep -qw "${DEVICE/[0-9]*/}" /proc/partitions ; then
-        echo $FDEVICE:part
-      else
-        echo $FDEVICE:other
-      fi
+  lsblk -o NAME,TYPE -p -n --raw -I 3,8,9 | while read DEVICE TYPE; do
+    if [[ "$TYPE" == "disk" || "$TYPE" == "part" ]]; then
+      echo $DEVICE:$TYPE
     else
-      echo $FDEVICE:disc
+      echo $DEVICE:other
     fi
   done
   export IFS=$'\t\n'
@@ -277,7 +267,7 @@ list_block_devices()
 menu_list_devices()
 {
   local DEVICE
-  for DEVICE in $(block_devices list part; block_devices list disc ; block_devices list other); do
+  for DEVICE in $(block_devices list part; block_devices list disk; block_devices list other); do
     echo $DEVICE
     echo "Block device"
   done
@@ -372,18 +362,17 @@ menu_get_partition()
 
 menu_list_discs()
 {
-  for DISC in $(block_devices listall disc); do
+  for DISC in $(block_devices listall disk); do
     echo $DISC
-    echo "disc"
+    echo "disk"
   done
-
 }
 
 
 menu_get_disc()
 {
   TITLE="Disk Selection Menu"
-  HELP="Please select a disc"
+  HELP="Please select a disk"
   $DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 $(menu_list_discs)
 }
 
@@ -784,7 +773,7 @@ menu_select_partitions()
     MNTPNT=$(get_mount_point $FSYS) &&
 
     PROMPT="$PART might already be formatted with the $FSYS filesystem and may contain data. Formatting it will destroy all the information on this partition. Are you sure you want to format it?"
-    if confirm "$PROMPT" ; then
+    if confirm "$PROMPT" "--defaultno"; then
       FORMAT=yes
       CHECK=$(check_partition $FSYS)
     else
