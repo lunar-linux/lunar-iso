@@ -155,7 +155,7 @@ iso-efi:
 endif
 
 # Generate squashfs image
-$(ISO_TARGET)/.iso-sfs: iso-target iso-strip
+$(ISO_TARGET)/.iso-sfs: iso-target iso-strip installer
 	@echo "Preparing squashfs image"
 	@mkdir -p $(ISO_TARGET)/LiveOS
 	@touch $@
@@ -167,7 +167,7 @@ $(ISO_TARGET)/LiveOS/squashfs.img: $(ISO_TARGET)/.iso-sfs
 iso-sfs: $(ISO_TARGET)/LiveOS/squashfs.img
 
 # Generate the actual image
-$(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-efi iso-strip iso-sfs installer
+$(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-efi iso-strip iso-sfs
 	@echo iso
 	@xorriso -as mkisofs \
 	-iso-level 3 \
