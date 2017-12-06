@@ -127,6 +127,9 @@ $(ISO_TARGET)/.iso-efi: iso-target
 	@mkdir -p $(ISO_TARGET)/EFI/boot $(ISO_TARGET)/loader/entries $(ISO_TARGET)/EFI/lunariso
 	@touch $@
 
+/usr/share/efitools/efi/PreLoader.efi:
+	lin efitools
+
 $(ISO_TARGET)/EFI/boot/bootx64.efi: /usr/share/efitools/efi/PreLoader.efi
 	@cp $< $@
 
