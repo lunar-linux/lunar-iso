@@ -71,4 +71,7 @@ ISO_MODULES=acl            \
             which          \
             xfsprogs       \
             xz             \
-            zlib
+            zlib           \
+            spl            \
+            zfs            \
+            zfs-utils
