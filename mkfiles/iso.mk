@@ -1,4 +1,5 @@
 .INTERMEDIATE: iso iso-target iso-modules iso-tools iso-files iso-strip iso-isolinux iso-efi iso-sfs
+.PHONY: iso-tools
 
 iso: $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso
 
@@ -16,11 +17,11 @@ iso-target: $(ISO_TARGET)/.iso-target
 
 # Host system iso tools
 iso-tools:
-	@which xorriso || lin libisoburn
-	@which isohybrid || lin syslinux
-	@which efitool-mkusb || lin efitools
-	@which mksquashfs || lin squashfs
-	@which rsync || lin rsync
+	@which xorriso &> /dev/null || lin libisoburn
+	@which isohybrid &> /dev/null || lin syslinux
+	@which efitool-mkusb &> /dev/null || lin efitools
+	@which mksquashfs &> /dev/null || lin squashfs
+	@which rsync &> /dev/null || lin rsync
 
 # Remove non iso modules
 include $(ISO_SOURCE)/conf/modules.iso
