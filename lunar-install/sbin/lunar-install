@@ -1223,8 +1223,8 @@ transfer()
 LUNAR_ALIAS_UDEV="systemd"
 LUNAR_ALIAS_KMOD="kmod"
 LUNAR_ALIAS_KERNEL_HEADERS="kernel-headers"
-LUNAR_ALIAS_SSL="openssl"
-LUNAR_ALIAS_OSSL="openssl"
+LUNAR_ALIAS_SSL="libressl"
+LUNAR_ALIAS_OSSL="libressl"
 EOF
 
       # Disable services (user can choose to enable them using services menu)
