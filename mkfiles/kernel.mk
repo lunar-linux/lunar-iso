@@ -2,10 +2,14 @@
 
 kernel: linux
 
-
 .SECONDARY: $(ISO_TARGET)/var/cache/lunar/linux-$(ISO_ARCH).tar
 $(ISO_TARGET)/var/cache/lunar/linux-$(ISO_ARCH).tar: stage2
 	@echo linux
+	# cheat it into thinking zfs is installed so that the kernel
+	# POST_INSTALL takes care of that
+	@echo "zfs:$(date +%Y%m%d):installed:x:x" >> $(ISO_TARGET)/var/state/lunar/packages
+	# This is naughtier. Fiddle with accepted licenses to allow zfs to build.
+	@echo 'ACCEPTED_LICENSES="cddl"' >> $(ISO_TARGET)/etc/lunar/local/config
 	@cp $(ISO_SOURCE)/kernels/conf/generic.$(ISO_ARCH) $(ISO_TARGET)/etc/lunar/local/.config.current
 	@for mod in $(KERNEL_MODULES); do \
 		yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c $$mod; \
