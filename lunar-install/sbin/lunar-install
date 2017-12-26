@@ -389,6 +389,7 @@ menu_get_filesystem()
   REISER="Reiserfs file system (*)"
   XFS="XFS file system (*)"
   JFS="JFS file system (*)"
+  ZFS="ZFS file system (*)"
   VFAT="FAT32 file system"
   SWAP="Swap (Virtual memory or paging filesystem)"
 
@@ -399,6 +400,7 @@ menu_get_filesystem()
     "ext2"      "$EXT2"    \
     "xfs"       "$XFS"     \
     "jfs"       "$JFS"     \
+    "zfs"       "$ZFS"     \
     "vfat"      "$VFAT"    \
     "swap"      "$SWAP"
 }
@@ -786,6 +788,8 @@ menu_select_partitions()
     FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
     if [ "$FSYS" == "xfs" ]; then
       FORCE="-f"
+    elif [ "$FSYS" == "zfs" ]; then
+      FORCE="-f"
     elif [ "$FSYS" == "jfs" ]; then
       FORCE="-q"
     elif [[ "$FSYS" =~ ext[234] ]]; then
@@ -1038,7 +1042,7 @@ transfer()
             # create the filesystems if needed for every partition
           elif [ "$FORMAT" == "yes" ]; then
             echo "Formatting $PART as $FSYS..."
-            if ! mkfs.$FSYS $FORCE $PART $CHECK ; then
+            if ! MOUNTPOINT=$MOUNTPOINT mkfs.$FSYS $FORCE $PART $CHECK ; then
               sleep 3
               msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue."
             fi
@@ -1250,6 +1254,16 @@ kernel_cmdline+=" rd.auto=1"
 mdadmconf="yes"
 EOF
         fi
+      fi
+
+      # tell dracut to enable ZFS if root filesystem
+      if grep -q ' /mnt zfs' /proc/mounts; then
+          cat << EOF > $TARGE/etc/dracut.conf.d/03-zfs.conf
+# Make sure zfs works
+# -- AUTO-GENERATED FILE DO NOT MODIFY --
+# -- UNLESS YOU KNOW WHAT YOU'RE DOING --
+install_items+=" zfs "
+EOF
       fi
 
     # really we are done now ;^)
