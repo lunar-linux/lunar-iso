@@ -2,9 +2,14 @@
 
 # create a zpool, populate it with some popular filesystems
 
-FORCE=$1
-PART=$2
-CHECK=$3
+if [[ $1 == -f ]]
+then
+    FORCE=$1
+    shift
+fi
+
+PART=$1
+CHECK=$2
 
 if [[ $MOUNTPOINT == / ]]
 then
@@ -18,14 +23,16 @@ then
                  -R /mnt                 \
                  rpool $PART
 
-    /usr/sbin/zfs create -o canmount=off,mountpoint=none     rpool/ROOT
+    /usr/sbin/zfs create -o canmount=off -o mountpoint=none  rpool/ROOT
 
-    /usr/sbin/zfs create -o canmount=noauto,mountpoint=/     rpool/ROOT/lunar
+    /usr/sbin/zfs create -o canmount=noauto -o mountpoint=/  rpool/ROOT/lunar
     /usr/sbin/zfs mount rpool/ROOT/lunar
 
     /usr/sbin/zfs create -o setuid=off                       rpool/home
     /usr/sbin/zfs create -o mountpoint=/root                 rpool/home/root
-    /usr/sbin/zfs create -o canmount=off,setuid=off,exec=off rpool/var
+    /usr/sbin/zfs create -o canmount=off \
+                         -o setuid=off   \
+                         -o exec=off                         rpool/var
     /usr/sbin/zfs create -o com.sun:auto-snapshot=false      rpool/var/cache
     /usr/sbin/zfs create                                     rpool/var/log
     /usr/sbin/zfs create                                     rpool/var/spool
