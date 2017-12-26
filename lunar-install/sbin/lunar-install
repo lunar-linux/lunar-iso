@@ -1264,6 +1264,9 @@ EOF
 # -- UNLESS YOU KNOW WHAT YOU'RE DOING --
 install_items+=" zfs "
 EOF
+        transfer_package spl
+        transfer_package zfs
+        transfer_package zfs-utils
       fi
 
     # really we are done now ;^)
