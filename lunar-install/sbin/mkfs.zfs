@@ -8,6 +8,8 @@ then
     shift
 fi
 
+modprobe zfs
+
 PART=$1
 CHECK=$2
 
