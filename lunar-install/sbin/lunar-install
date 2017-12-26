@@ -1267,6 +1267,7 @@ EOF
         transfer_package spl
         transfer_package zfs
         transfer_package zfs-utils
+        chroot_run /sbin/depmod -a
       fi
 
     # really we are done now ;^)
