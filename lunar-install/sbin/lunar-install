@@ -1001,6 +1001,17 @@ transfer_package()
   cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
 }
 
+transfer_excluded_package()
+{
+  cd $TARGET &&
+  LINE=$(grep "^$1:" /var/state/lunar/packages)
+  MOD=$(echo $LINE | cut -d: -f1)
+  VER=$(echo $LINE | cut -d: -f4)
+  cp /var/cache/lunar/$MOD-$VER-*.tar.xz $TARGET/var/cache/lunar/
+  tar xJf $TARGET/var/cache/lunar/$MOD-$VER-*.tar.xz 2> /dev/null
+  echo $LINE >> $TARGET/var/state/lunar/packages
+  cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
+}
 
 percent_msg()
 {
@@ -1264,9 +1275,9 @@ EOF
 # -- UNLESS YOU KNOW WHAT YOU'RE DOING --
 install_items+=" zfs "
 EOF
-        transfer_package spl
-        transfer_package zfs
-        transfer_package zfs-utils
+        transfer_excluded_package spl
+        transfer_excluded_package zfs
+        transfer_excluded_package zfs-utils
       fi
 
     # really we are done now ;^)
