@@ -1258,7 +1258,7 @@ EOF
 
       # tell dracut to enable ZFS if root filesystem
       if grep -q ' /mnt zfs' /proc/mounts; then
-          cat << EOF > $TARGE/etc/dracut.conf.d/03-zfs.conf
+          cat << EOF > $TARGET/etc/dracut.conf.d/03-zfs.conf
 # Make sure zfs works
 # -- AUTO-GENERATED FILE DO NOT MODIFY --
 # -- UNLESS YOU KNOW WHAT YOU'RE DOING --
@@ -1267,7 +1267,6 @@ EOF
         transfer_package spl
         transfer_package zfs
         transfer_package zfs-utils
-        chroot_run /sbin/depmod -a
       fi
 
     # really we are done now ;^)
