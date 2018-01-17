@@ -19,6 +19,7 @@ ISO_MODULES=acl            \
             fhs            \
             file           \
             findutils      \
+            flex           \
             gawk           \
             gc             \
             glib-2         \
@@ -28,6 +29,7 @@ ISO_MODULES=acl            \
             gzip           \
             iproute2       \
             iputils        \
+            iptables       \
             irssi          \
             jfsutils       \
             json-c         \
@@ -59,6 +61,7 @@ ISO_MODULES=acl            \
             parted         \
             pcre           \
             procps         \
+            popt           \
             readline       \
             sed            \
             shadow         \
