@@ -30,6 +30,7 @@ ISO_MODULES=acl            \
             iputils        \
             irssi          \
             jfsutils       \
+            json-c         \
             kbd            \
             kmod           \
             less           \
