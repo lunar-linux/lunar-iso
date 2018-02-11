@@ -40,8 +40,10 @@ then
     /usr/sbin/zfs create                                     rpool/var/log
     /usr/sbin/zfs create                                     rpool/var/spool
     /usr/sbin/zfs create -o com.sun:auto-snapshot=false      rpool/var/tmp
+    swapsize=$(awk '/MemTotal/ {print (($2/128)+1)*256}' /proc/meminfo)
+    /usr/sbin/zfs create -V ${swapsize}k                     rpool/swap
 else
-    /usr/bin/zpool create $FORCE
+    /usr/sbin/zpool create $FORCE
                  -o ashift=12            \
                  -O atime=off            \
                  -O compression=lz4      \
