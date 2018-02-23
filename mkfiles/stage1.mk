@@ -31,7 +31,7 @@ include $(ISO_SOURCE)/conf/modules.toolchain
 
 $(ISO_TARGET)/.stage1-toolchain: stage1-moonbase stage1-spool
 	@echo stage1-toolchain
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -rc $(TOOLCHAIN_MODULES)
+	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build bash -c 'for mod in $(TOOLCHAIN_MODULES); do lin -rc $$mod || exit 1; done'
 	@touch $@
 
 stage1-toolchain: $(ISO_TARGET)/.stage1-toolchain
@@ -42,7 +42,7 @@ include $(ISO_SOURCE)/conf/modules.stage1
 
 $(ISO_TARGET)/.stage1: stage1-toolchain
 	@echo stage1-build
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -rc $(filter-out $(TOOLCHAIN_MODULES),$(STAGE1_MODULES))
+	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build bash -c 'for mod in $(filter-out $(TOOLCHAIN_MODULES),$(STAGE1_MODULES)); do lin -rc $$mod || exit 1; done'
 	@touch $@
 
 stage1-build: $(ISO_TARGET)/.stage1
