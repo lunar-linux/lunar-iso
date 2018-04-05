@@ -42,6 +42,7 @@ then
     /usr/sbin/zfs create -o com.sun:auto-snapshot=false      rpool/var/tmp
     swapsize=$(awk '/MemTotal/ {print (($2/128)+1)*256}' /proc/meminfo)
     /usr/sbin/zfs create -V ${swapsize}k                     rpool/swap
+    /sbin/mkswap /dev/zvol/rpool/swap
 else
     /usr/sbin/zpool create $FORCE
                  -o ashift=12            \
