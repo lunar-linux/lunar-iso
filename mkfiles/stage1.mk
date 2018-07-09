@@ -42,7 +42,7 @@ include $(ISO_SOURCE)/conf/modules.stage1
 
 $(ISO_TARGET)/.stage1: stage1-toolchain
 	@echo stage1-build
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build bash -c 'for mod in $(filter-out $(TOOLCHAIN_MODULES),$(STAGE1_MODULES)); do lin -rc $$mod || exit 1; done'
+	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build bash -c 'for mod in `lsh sort_by_dependency $(filter-out $(TOOLCHAIN_MODULES),$(STAGE1_MODULES))`; do lin -rc $$mod || exit 1; done'
 	@touch $@
 
 stage1-build: $(ISO_TARGET)/.stage1
