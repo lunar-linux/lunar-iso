@@ -39,6 +39,7 @@ ISO_MODULES=acl            \
             libcap         \
             libffi         \
             libidn         \
+            libidn2        \
             libgcrypt      \
             libgpg-error   \
             libidn         \
