@@ -386,9 +386,6 @@ menu_get_filesystem()
   BTRFS="BTree file system (*)"
   EXT3="Third Extended file system (*)"
   EXT2="Second Extended file system"
-  REISER="Reiserfs file system (*)"
-  XFS="XFS file system (*)"
-  JFS="JFS file system (*)"
   VFAT="FAT32 file system"
   SWAP="Swap (Virtual memory or paging filesystem)"
 
@@ -397,8 +394,6 @@ menu_get_filesystem()
     "btrfs"     "$BTRFS"   \
     "ext3"      "$EXT3"    \
     "ext2"      "$EXT2"    \
-    "xfs"       "$XFS"     \
-    "jfs"       "$JFS"     \
     "vfat"      "$VFAT"    \
     "swap"      "$SWAP"
 }
@@ -527,7 +522,7 @@ determine_mount_opts()
     if [ "$2" == "swap" ]; then
       echo "defaults,discard"
     else
-      if [[ "$2" =~ (ext4|btrfs|xfs|jfs) ]]; then
+      if [[ "$2" =~ (ext4|btrfs) ]]; then
         echo "defaults,noatime,discard"
       else
         echo "defaults,noatime"
@@ -759,9 +754,6 @@ menu_select_partitions()
     fi &&
 
     case "$FSYS" in
-    #xfs|jfs)
-    # msgbox "Selecting XFS or JFS for your root and/or boot filesystem *requires* you to compile a kernel later on with XFS or JFS built in to the kernel. The default pre-compiled lunar-linux kernel will NOT work in your case!"
-    # ;;
       btrfs)
         msgbox "Selecting btrfs as /boot is only supported with grub2, you will need to create a /boot partition and format it as ext2, ext3 or ext4 in order to use different bootloaders."
         ;;
@@ -784,11 +776,7 @@ menu_select_partitions()
       MNT_PNT=${MNT_PNT%%/}
     fi
     FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
-    if [ "$FSYS" == "xfs" ]; then
-      FORCE="-f"
-    elif [ "$FSYS" == "jfs" ]; then
-      FORCE="-q"
-    elif [[ "$FSYS" =~ ext[234] ]]; then
+    if [[ "$FSYS" =~ ext[234] ]]; then
       FORCE="-F"
     elif [[ "$FSYS" == "btrfs" ]]; then
       FORCE="-f"
@@ -1379,12 +1367,6 @@ set_fs_label() {
       ;;
     btrfs)
       btrfs filesystem label $PART $LABEL &> /dev/null
-      ;;
-    xfs)
-      xfs_admin -L $LABEL $PART &> /dev/null
-      ;;
-    jfs)
-      jfs_tune -L $LABEL $PART &> /dev/null
       ;;
     swap)
       mkswap -L swap${PART##*/} $PART &> /dev/null
