@@ -902,7 +902,18 @@ install_grub2()
     MBR=$(inputbox "Please enter a device where to install the grub2 MBR" "")
   fi
 
-  chroot_run grub-install $MBR
+  if [[ -d /sys/firmware/efi ]]
+  then
+    if grep '/mnt/boot vfat' /proc/mounts > /dev/null 2>&1
+    then
+      chroot_run grub-install --efi-directory=/boot $MBR
+    else
+      msgbox "Grub2 installation failed.  This is an EFI system, but no VFAT boot partition has been detected.  You need to create a VFAT /boot partition large enough for the EFI data, your kernels and the initramfs."
+      return 1
+    fi
+  else
+    chroot_run grub-install $MBR
+  fi
 }
 
 
@@ -1599,7 +1610,7 @@ install_bootloader() {
         BOOTLOADER=grub2
         transfer_package $BOOTLOADER
         chroot_run lsh update_plugin $BOOTLOADER "install"
-        install_grub2
+        install_grub2 &&
         msgbox "The grub2 boot loader package was installed. From now on, when you add a kernel, it will be available through grub2 on boot."
         ;;
       B)
