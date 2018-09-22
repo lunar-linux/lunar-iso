@@ -36,15 +36,18 @@ ISO_MODULES=acl            \
             kbd            \
             kmod           \
             less           \
+            libaio         \
             libcap         \
             libffi         \
             libidn         \
+            libidn2        \
             libgcrypt      \
             libgpg-error   \
             libidn         \
             libmpc         \
             libmnl         \
             libtool        \
+            libunistring   \
             Linux-PAM      \
             lunar          \
             lvm2           \

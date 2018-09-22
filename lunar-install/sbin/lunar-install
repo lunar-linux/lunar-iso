@@ -398,7 +398,6 @@ menu_get_filesystem()
     "ext3"      "$EXT3"    \
     "ext2"      "$EXT2"    \
     "xfs"       "$XFS"     \
-    "jfs"       "$JFS"     \
     "vfat"      "$VFAT"    \
     "swap"      "$SWAP"
 }
@@ -527,7 +526,7 @@ determine_mount_opts()
     if [ "$2" == "swap" ]; then
       echo "defaults,discard"
     else
-      if [[ "$2" =~ (ext4|btrfs|xfs|jfs) ]]; then
+      if [[ "$2" =~ (ext4|btrfs|xfs) ]]; then
         echo "defaults,noatime,discard"
       else
         echo "defaults,noatime"
@@ -759,9 +758,6 @@ menu_select_partitions()
     fi &&
 
     case "$FSYS" in
-    #xfs|jfs)
-    # msgbox "Selecting XFS or JFS for your root and/or boot filesystem *requires* you to compile a kernel later on with XFS or JFS built in to the kernel. The default pre-compiled lunar-linux kernel will NOT work in your case!"
-    # ;;
       btrfs)
         msgbox "Selecting btrfs as /boot is only supported with grub2, you will need to create a /boot partition and format it as ext2, ext3 or ext4 in order to use different bootloaders."
         ;;
@@ -786,8 +782,6 @@ menu_select_partitions()
     FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
     if [ "$FSYS" == "xfs" ]; then
       FORCE="-f"
-    elif [ "$FSYS" == "jfs" ]; then
-      FORCE="-q"
     elif [[ "$FSYS" =~ ext[234] ]]; then
       FORCE="-F"
     elif [[ "$FSYS" == "btrfs" ]]; then
@@ -908,7 +902,18 @@ install_grub2()
     MBR=$(inputbox "Please enter a device where to install the grub2 MBR" "")
   fi
 
-  chroot_run grub-install $MBR
+  if [[ -d /sys/firmware/efi ]]
+  then
+    if grep '/mnt/boot vfat' /proc/mounts > /dev/null 2>&1
+    then
+      chroot_run grub-install --efi-directory=/boot $MBR
+    else
+      msgbox "Grub2 installation failed.  This is an EFI system, but no VFAT boot partition has been detected.  You need to create a VFAT /boot partition large enough for the EFI data, your kernels and the initramfs."
+      return 1
+    fi
+  else
+    chroot_run grub-install $MBR
+  fi
 }
 
 
@@ -1383,8 +1388,6 @@ set_fs_label() {
     xfs)
       xfs_admin -L $LABEL $PART &> /dev/null
       ;;
-    jfs)
-      jfs_tune -L $LABEL $PART &> /dev/null
       ;;
     swap)
       mkswap -L swap${PART##*/} $PART &> /dev/null
@@ -1607,7 +1610,7 @@ install_bootloader() {
         BOOTLOADER=grub2
         transfer_package $BOOTLOADER
         chroot_run lsh update_plugin $BOOTLOADER "install"
-        install_grub2
+        install_grub2 &&
         msgbox "The grub2 boot loader package was installed. From now on, when you add a kernel, it will be available through grub2 on boot."
         ;;
       B)
