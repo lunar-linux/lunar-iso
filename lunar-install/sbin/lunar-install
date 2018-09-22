@@ -1388,7 +1388,6 @@ set_fs_label() {
     xfs)
       xfs_admin -L $LABEL $PART &> /dev/null
       ;;
-      ;;
     swap)
       mkswap -L swap${PART##*/} $PART &> /dev/null
       ;;
