@@ -62,6 +62,7 @@ ISO_MODULES=acl            \
             openssh        \
             openssl        \
             parted         \
+            perl           \
             pcre           \
             procps         \
             popt           \
