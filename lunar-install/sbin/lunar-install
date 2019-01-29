@@ -1106,8 +1106,8 @@ transfer()
       mkdir -p proc root sbin srv tmp usr var opt
       mkdir -p sys
       if [ `arch` == "x86_64" ]; then
-        ln -sf /lib lib64
-        ln -sf /usr/lib usr/lib64
+        ln -sf lib lib64
+        ln -sf lib usr/lib64
       fi
       mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
       mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
