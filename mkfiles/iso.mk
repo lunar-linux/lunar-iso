@@ -31,6 +31,7 @@ SYSLINUX_FILES=isolinux.bin isohdpfx.bin ldlinux.c32 libcom32.c32 libutil.c32
 $(ISO_TARGET)/.iso-modules: iso-target $(addprefix $(ISO_TARGET)/isolinux/, $(SYSLINUX_FILES))
 	@echo iso-modules
 	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lrm -n $(filter-out $(ISO_MODULES), $(ALL_MODULES))
+	@rm -rf $(ISO_TARGET)/usr/lib/python*
 	@touch $@
 
 iso-modules: $(ISO_TARGET)/.iso-modules
