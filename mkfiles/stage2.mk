@@ -104,9 +104,10 @@ stage2-toolchain: $(ISO_TARGET)/.stage2-toolchain
 $(ISO_TARGET)/.stage2: stage2-toolchain
 	@echo stage2-build
 	@cp /etc/resolv.conf $(ISO_TARGET)/etc/resolv.conf
-	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'for mod in `lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))`; do lvu installed $$mod > /dev/null || lin -c $$mod || exit 1; done'
-# Rebuild systemd again to enable cryptsetup (cyclic dependency)
-	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'lin -cr systemd'
+	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'for mod in `lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))`; do lin -c $$mod || exit 1; done'
+	# Rebuild systemd again to enable cryptsetup (cyclic dependency)
+	@perl -pe -i 'if(/^systemd:cryptsetup/) { s/:off:/:on:/; }' $(ISO_TARGET)/var/state/lunar/depends
+	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'lin -c systemd'
 	@rm -f $(ISO_TARGET)/etc/resolv.conf
 	@touch $@
 
