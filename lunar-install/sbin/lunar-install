@@ -1271,7 +1271,6 @@ EOF
 # -- UNLESS YOU KNOW WHAT YOU'RE DOING --
 install_items+=" zfs "
 EOF
-        transfer_excluded_package spl
         transfer_excluded_package zfs
         transfer_excluded_package zfs-utils
         ( cd $TARGET/usr/lib/systemd/system/local-fs.target.wants &&
