@@ -20,6 +20,7 @@ KERNEL_LIST=/var/cache/lunar/kernels
 KMOD_LIST=/var/spool/lunar/kmodules
 MOONBASE_TAR=/usr/share/lunar-install/moonbase.tar.bz2
 MOTD_FILE=/usr/share/lunar-install/motd
+TZ=UTC
 
 pkg_avail()
 {
@@ -438,6 +439,49 @@ keymap_menu()
   DEFAULT=D
 }
 
+show_timezones()
+{
+    for ITEM in `LANG=C ls --hide=[a-z]* $LOCALTIME/$1`; do
+        echo "$ITEM"
+        if [ -d $LOCALTIME/$1/$ITEM ]; then
+            echo "Directory"
+        else
+            echo "Timezone"
+        fi
+    done
+}
+
+timezone_menu()
+{
+    LOCALTIME=/usr/share/zoneinfo
+    TITLE="Time Zone Selection Menu"
+    HELP="Select timezone or directory"
+    ZONE=""
+
+    while
+      TIMEZONES=`show_timezones ${ZDIR:-$ZONE}`  &&
+      if [ -n "$ZDIR" ]; then
+        T="$TITLE - $ZDIR"
+      fi
+      ZONE=`$DIALOG  --title  "${T:-$TITLE}"  \
+                     --menu             \
+                     "$HELP"            \
+                     0 0 0              \
+                     $TIMEZONES`        &&
+      [[ -d $LOCALTIME/$ZDIR/$ZONE || -d $LOCALTIME/$ZONE ]] &&
+      ZDIR+="$ZONE/"
+      do
+        true
+    done
+
+    if [ -n "$ZDIR" ]; then
+      ZONE="$ZDIR$ZONE"
+    fi
+
+    if [ -f "$LOCALTIME/$ZONE" ]; then
+		TZ=$ZONE
+    fi
+}
 
 partition_discs()
 {
@@ -1128,6 +1172,11 @@ transfer()
       chmod 0700 root
       chmod 1777 tmp var/tmp
 
+      if [[ $TZ != UTC ]]
+      then
+        ln -s /usr/share/zoneinfo/$TZ etc/localtime
+      fi
+
       if [ -f /var/cache/lunar/aaa_base.tar.xz ]; then
         percent_msg "Installing aaa_base: base directories and files"
         tar xJf /var/cache/lunar/aaa_base.tar.xz 2> /dev/null
@@ -1764,7 +1813,7 @@ cd-rom tray and reboot. See you at the login prompt!"
   else
     case $STEP in
     1)  DEFAULT=I ; CHOICES="X I F" ;;
-    2)              CHOICES="B C D E J F" ;;
+    2)              CHOICES="B C D E A J F" ;;
     3)  DEFAULT=P ; CHOICES="B P W M F" ;;
     4)  DEFAULT=M ; CHOICES="B P W M F" ;;
     5)  DEFAULT=S ; CHOICES="B P W M S F" ;;
@@ -1775,7 +1824,7 @@ cd-rom tray and reboot. See you at the login prompt!"
     10) DEFAULT=U ; CHOICES="B R U F" ;;
     11) DEFAULT=H ; CHOICES="B H F" ;;
     12) DEFAULT=V ; CHOICES="B H V F" ;;
-    13) DEFAULT=A ; CHOICES="B H V A F" ;;
+    13) DEFAULT=A ; CHOICES="B H V F" ;;
     14) DEFAULT=Z ; CHOICES="B Z"
     esac
   fi
@@ -1829,6 +1878,7 @@ cd-rom tray and reboot. See you at the login prompt!"
     C)  keymap_menu            ;;
     D)  font_menu              ;;
     E)  lang_menu              ;;
+    A)  timezone_menu          ;;
     J)  editor_menu            ;;
 
     P)  partition_discs        ;;
@@ -1845,7 +1895,6 @@ cd-rom tray and reboot. See you at the login prompt!"
     U)  chroot_run luser     ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; U_OK=\\Z2 ;;
     H)  chroot_run lnet      ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
     V)  chroot_run lservices ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
-    A)  chroot_run ltime     ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
 
     Z)  goodbye                ;;
   esac
