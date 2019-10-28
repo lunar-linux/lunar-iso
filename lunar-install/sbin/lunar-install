@@ -1823,8 +1823,7 @@ cd-rom tray and reboot. See you at the login prompt!"
     10) DEFAULT=U ; CHOICES="B R U F" ;;
     11) DEFAULT=H ; CHOICES="B H F" ;;
     12) DEFAULT=V ; CHOICES="B H V F" ;;
-    13) DEFAULT=A ; CHOICES="B H V F" ;;
-    14) DEFAULT=Z ; CHOICES="B Z"
+    13) DEFAULT=Z ; CHOICES="B Z"
     esac
   fi
   COMMAND=`$DIALOG --title "Lunar-Linux install menu" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)`
