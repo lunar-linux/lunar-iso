@@ -1687,7 +1687,7 @@ install_menu()
 {
   if [ -z "$STEPS" ]; then
     # the total number of steps in the installer:
-    STEPS=14
+    STEPS=13
 
     SH[1]="Please read the introduction if you are new to lunar-linux.
 If you want to know more about the installation procedure
@@ -1724,10 +1724,7 @@ and configure it's networking connections."
     SH[12]="By default there are no services installed and
 running. With this tool you can add or remove them to
 the list of startup services and enable or disable them."
-    SH[13]="Select the local timezone of your computer
-to make sure that applications running are using the correct
-time zone information and adjust daylight savings."
-    SH[14]="You are done! you should remove the ISO from the
+    SH[13]="You are done! you should remove the ISO from the
 cd-rom tray and reboot. See you at the login prompt!"
 
     B_LABEL="One step back"
