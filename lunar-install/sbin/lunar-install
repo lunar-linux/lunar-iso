@@ -419,7 +419,7 @@ show_keymaps()
   MAP_FILES=$(echo -e "$azerty\n$colemak\n$dvorak\n$fgGIod\n$olpc\n$qwerty\n$qwertz" | sort | sed "s/\.kmap\.gz//")
 
   for MAP in $MAP_FILES; do
-    echo $MAP
+    echo ${MAP%.map.gz}
     echo keymap
   done
 }
