@@ -941,12 +941,15 @@ install_grub2()
     return
   fi
 
-  DISC=$(echo $ROOT | sed 's/[0-9]*$//')
-   MBR=$($DIALOG --title "grub2 MBR install" --menu "" 0 0 0 \
-    "$DISC" "Install grub2 MBR on this device" \
-    "C"     "Change grub2 MBR install device")
-  if [ "$MBR" = "C" ]; then
-    MBR=$(inputbox "Please enter a device where to install the grub2 MBR" "")
+  if [[ ! -v MBR ]]
+  then
+    DISC=$(echo $ROOT | sed 's/[0-9]*$//')
+    MBR=$($DIALOG --title "grub2 MBR install" --menu "" 0 0 0 \
+      "$DISC" "Install grub2 MBR on this device" \
+      "C"     "Change grub2 MBR install device")
+    if [ "$MBR" = "C" ]; then
+      MBR=$(inputbox "Please enter a device where to install the grub2 MBR" "")
+    fi
   fi
 
   if [[ -d /sys/firmware/efi ]]
@@ -1303,14 +1306,13 @@ EOF
 
     cd /
 
-    install_bootloader
-
     if (( STEP == 6 )); then
       (( STEP++ ))
     fi
     T_OK=\\Z2
     O_OK=
-    L_OK=
+
+    install_bootloader
   fi
 }
 
@@ -1638,7 +1640,8 @@ select_bootloader() {
     BCOMMAND=`$DIALOG --title "Boot loader menu" \
                       --default-item "G" \
                       --item-help \
-                      --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
+                      --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." \
+                      0 0 0 \
                       $(if pkg_avail systemd && [ -d /sys/firmware/efi ]; then echo "S" ; echo "systemd (UEFI only))" ; echo "Install systemd-boot as boot loader (UEFI)"; fi) \
                       $(if pkg_avail grub2 ; then echo "G" ; echo "grub2" ; echo "Install grub2 as boot loader (BIOS)"; fi) \
                       $(if pkg_avail grub ; then echo "B" ; echo "grub" ; echo "Install grub as boot loader (BIOS)"; fi) \
@@ -1657,7 +1660,7 @@ select_bootloader() {
         N) BOOTLOADER=none    ;;
     esac
 
-    case BOOTLOADER in
+    case $BOOTLOADER in
         grub2) 
           DISC=$(echo $ROOT | sed 's/[0-9]*$//')
           MBR=$($DIALOG --title "grub2 MBR install" --menu "" 0 0 0 \
@@ -1670,17 +1673,15 @@ select_bootloader() {
     esac
     return
     L_OK=\\Z2
-    K_OK=
+    T_OK=
   done
 }
 
 install_bootloader() {
-  # XXX temporary redundant code XXX
-  if [[ ! -v $BOOTLOADER ]]
+  if [[ ! -v BOOTLOADER ]]
   then
     select_bootloader
   fi
-  # XXX end of temporary redundant code XXX
 
   case ${BOOTLOADER:-none} in
     systemd)
@@ -1711,6 +1712,7 @@ install_bootloader() {
   esac
 
   return
+  K_OK=
 }
 
 
