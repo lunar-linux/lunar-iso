@@ -482,8 +482,10 @@ timezone_menu()
     fi
 
     if [ -f "$LOCALTIME/$ZONE" ]; then
-		TZ=$ZONE
+      TZ=$ZONE
     fi
+
+    A_OK=\\Z2
 }
 
 partition_discs()
@@ -888,7 +890,7 @@ means that your root or boot filesystem should be ext2."
       fi
     fi
     T_OK=
-    M_OK=\\Z2
+    L_OK=
   fi
 }
 
@@ -1306,7 +1308,7 @@ EOF
 
     cd /
 
-    if (( STEP == 6 )); then
+    if (( STEP == 7 )); then
       (( STEP++ ))
     fi
     T_OK=\\Z2
@@ -1671,9 +1673,12 @@ select_bootloader() {
           fi
         ;;
     esac
-    return
+    if (( STEP == 6 )); then
+      (( STEP++ ))
+    fi
     L_OK=\\Z2
     T_OK=
+    return
   done
 }
 
@@ -1711,8 +1716,8 @@ install_bootloader() {
       ;;
   esac
 
-  return
   K_OK=
+  return
 }
 
 
@@ -1739,11 +1744,11 @@ them the lunar packages can be transferred to them."
     SH[5]="Swap is like temporary memory. It improves your
 systems performance. You can create a swapfile or
 even whole swap partitions."
-    SH[6]="During the transfer all programs and files that you
-need to run lunar-linux will be copied to your system."
-    SH[7]="To be able to boot linux on reboot, you need to have
+    SH[6]="To be able to boot linux on reboot, you need to have
 a boot loader that loads the kernel when you power on
 your computer. Without it linux does not run."
+    SH[7]="During the transfer all programs and files that you
+need to run lunar-linux will be copied to your system."
     SH[8]="You cannot boot linux without the kernel. You will
 need to install at least one. You can choose between
 several factory kernels or compile one yourself."
@@ -1845,9 +1850,9 @@ cd-rom tray and reboot. See you at the login prompt!"
     2)              CHOICES="B C D E A J F" ;;
     3)  DEFAULT=P ; CHOICES="B P W M F" ;;
     4)  DEFAULT=M ; CHOICES="B P W M F" ;;
-    5)  DEFAULT=S ; CHOICES="B P W M S T F" ;;
-    6)  DEFAULT=T ; CHOICES="B P W M S L T F" ;;
-    7)  DEFAULT=L ; CHOICES="B O L F" ;;
+    5)  DEFAULT=S ; CHOICES="B P W M S L T F" ;;
+    6)  DEFAULT=L ; CHOICES="B P W M S L T F" ;;
+    7)  DEFAULT=T ; CHOICES="B P W M S L T F" ;;
     8)  DEFAULT=K ; CHOICES="B O L K F" ;;
     9)  DEFAULT=R ; CHOICES="B R U F" ;;
     10) DEFAULT=U ; CHOICES="B R U F" ;;
