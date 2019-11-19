@@ -1314,7 +1314,8 @@ EOF
     T_OK=\\Z2
     O_OK=
 
-    install_bootloader
+    install_bootloader &&
+    install_kernels
   fi
 }
 
@@ -1618,8 +1619,7 @@ install_kernels()
           chroot_run depmod
           chroot_run lsh update_bootloader $KVER_FULL $KVER
 
-          msgbox "The precompiled kernel \"$CCOMMAND\" has been installed to your system."
-          if (( STEP == 8 )); then
+          if (( STEP == 7 )); then
             (( STEP++ ))
           fi
           K_OK=\\Z2
@@ -1692,24 +1692,20 @@ install_bootloader() {
     systemd)
       chroot_run lsh update_plugin $BOOTLOADER "install"
       chroot_run bootctl install
-      msgbox "The systemd boot loader package was installed. From now on, when you add a kernel, it will be available through UEFI on boot."
       ;;
     lilo)
       transfer_package $BOOTLOADER
       chroot_run lsh update_plugin $BOOTLOADER "install"
-      msgbox "The lilo boot loader package was installed. From now on, when you add a kernel, lilo will be run after the /etc/lilo.conf configuration file has been updated. "
       ;;
     grub2)
       transfer_package $BOOTLOADER
       chroot_run lsh update_plugin $BOOTLOADER "install"
-      install_grub2 &&
-      msgbox "The grub2 boot loader package was installed. From now on, when you add a kernel, it will be available through grub2 on boot."
+      install_grub2
       ;;
     grub)
       transfer_package $BOOTLOADER
       chroot_run lsh update_plugin $BOOTLOADER "install"
       install_grub
-      msgbox "The grub boot loader package was installed. From now on, when you add a kernel, it will be available through grub on boot."
       ;;
     none)
       msgbox "Not installing a boot loader might require you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also did not install lilo or grub on the hard disc."
@@ -1725,7 +1721,7 @@ install_menu()
 {
   if [ -z "$STEPS" ]; then
     # the total number of steps in the installer:
-    STEPS=13
+    STEPS=8
 
     SH[1]="Please read the introduction if you are new to lunar-linux.
 If you want to know more about the installation procedure
@@ -1749,21 +1745,10 @@ a boot loader that loads the kernel when you power on
 your computer. Without it linux does not run."
     SH[7]="During the transfer all programs and files that you
 need to run lunar-linux will be copied to your system."
-    SH[8]="You cannot boot linux without the kernel. You will
-need to install at least one. You can choose between
-several factory kernels or compile one yourself."
-    SH[9]="Make sure you set good passwords, especially for
-the root user. Everyone who knows this password can
-destroy your system. By default the root password is
-epmty so you should really change it"
-    SH[10]="Add normal user accounts to this system. Normal users do not have special privileges and you should not work as root all the time if not needed."
-    SH[11]="You can now set the name and domain of the machine
-and configure it's networking connections."
-    SH[12]="By default there are no services installed and
-running. With this tool you can add or remove them to
-the list of startup services and enable or disable them."
-    SH[13]="You are done! you should remove the ISO from the
-cd-rom tray and reboot. See you at the login prompt!"
+    SH[8]="You can make some final preparations here before you begin
+using your new Lunar-Linux system. Setting a root password is strongly
+recommended now, but the rest of these operations can also be done after
+you've rebooted into your new system."
 
     B_LABEL="One step back"
     B_HELP="Go back one step in the installation procedure"
@@ -1842,7 +1827,7 @@ cd-rom tray and reboot. See you at the login prompt!"
   }
 
   if [ "$GUIDE" == "off" ]; then
-    CHOICES="X I C D E J P W M S T O L K R U H V A Z"
+    CHOICES="X I C D E J P W M S T O L R U H V A Z"
     STEPHELP="Step $STEP of $STEPS:"
   else
     case $STEP in
@@ -1853,12 +1838,7 @@ cd-rom tray and reboot. See you at the login prompt!"
     5)  DEFAULT=S ; CHOICES="B P W M S L T F" ;;
     6)  DEFAULT=L ; CHOICES="B P W M S L T F" ;;
     7)  DEFAULT=T ; CHOICES="B P W M S L T F" ;;
-    8)  DEFAULT=K ; CHOICES="B O L K F" ;;
-    9)  DEFAULT=R ; CHOICES="B R U F" ;;
-    10) DEFAULT=U ; CHOICES="B R U F" ;;
-    11) DEFAULT=H ; CHOICES="B H F" ;;
-    12) DEFAULT=V ; CHOICES="B H V F" ;;
-    13) DEFAULT=Z ; CHOICES="B Z"
+    8)              CHOICES="B R O U H V Z" ;;
     esac
   fi
   COMMAND=`$DIALOG --title "Lunar-Linux install menu" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)`
@@ -1921,13 +1901,11 @@ cd-rom tray and reboot. See you at the login prompt!"
     S)  select_swap_file       ;;
     T)  transfer               ;;
 
-    O)  chroot_run lunar optimize ;;
-    K)  install_kernels        ;;
-
-    R)  USE_CLEAR=1 chroot_run passwd    ; if (( STEP ==  9 )) ; then (( STEP++ )); fi ; R_OK=\\Z2 ;;
-    U)  chroot_run luser     ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; U_OK=\\Z2 ;;
-    H)  chroot_run lnet      ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
-    V)  chroot_run lservices ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
+    R)  USE_CLEAR=1 chroot_run passwd    ; R_OK=\\Z2; DEFAULT=O ;;
+    O)  chroot_run lunar optimize        ; O_OK=\\Z2; DEFAULT=U ;;
+    U)  chroot_run luser                 ; U_OK=\\Z2; DEFAULT=H ;;
+    H)  chroot_run lnet                  ; H_OK=\\Z2; DEFAULT=V ;;
+    V)  chroot_run lservices             ; V_OK=\\Z2; DEFAULT=Z ;;
 
     Z)  goodbye                ;;
   esac
