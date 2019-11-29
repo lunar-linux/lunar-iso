@@ -1506,7 +1506,7 @@ not expect any changes till you finish and reboot."
     export LANG
     E_OK=\\Z2
   fi
-  DEFAULT=J
+  DEFAULT=A
 }
 
 
