@@ -486,6 +486,7 @@ timezone_menu()
     fi
 
     A_OK=\\Z2
+    DEFAULT=J
 }
 
 partition_discs()
