@@ -21,6 +21,10 @@ KMOD_LIST=/var/spool/lunar/kmodules
 MOONBASE_TAR=/usr/share/lunar-install/moonbase.tar.bz2
 MOTD_FILE=/usr/share/lunar-install/motd
 
+# answers to questions asked at the beginning of installing
+BOOTLOADER=none
+TZ=UTC
+
 pkg_avail()
 {
   grep -q "^$1:" $PACKAGES_LIST
@@ -420,7 +424,7 @@ show_keymaps()
   MAP_FILES=$(echo -e "$azerty\n$colemak\n$dvorak\n$fgGIod\n$olpc\n$qwerty\n$qwertz" | sort | sed "s/\.kmap\.gz//")
 
   for MAP in $MAP_FILES; do
-    echo $MAP
+    echo ${MAP%.map.gz}
     echo keymap
   done
 }
@@ -440,6 +444,51 @@ keymap_menu()
   DEFAULT=D
 }
 
+show_timezones()
+{
+    for ITEM in `LANG=C ls --hide=[a-z]* $LOCALTIME/$1`; do
+        echo "$ITEM"
+        if [ -d $LOCALTIME/$1/$ITEM ]; then
+            echo "Directory"
+        else
+            echo "Timezone"
+        fi
+    done
+}
+
+timezone_menu()
+{
+    LOCALTIME=/usr/share/zoneinfo
+    TITLE="Time Zone Selection Menu"
+    HELP="Select timezone or directory"
+    ZONE=""
+
+    while
+      TIMEZONES=`show_timezones ${ZDIR:-$ZONE}`  &&
+      if [ -n "$ZDIR" ]; then
+        T="$TITLE - $ZDIR"
+      fi
+      ZONE=`$DIALOG  --title  "${T:-$TITLE}"  \
+                     --menu             \
+                     "$HELP"            \
+                     0 0 0              \
+                     $TIMEZONES`        &&
+      [[ -d $LOCALTIME/$ZDIR/$ZONE || -d $LOCALTIME/$ZONE ]] &&
+      ZDIR+="$ZONE/"
+      do
+        true
+    done
+
+    if [ -n "$ZDIR" ]; then
+      ZONE="$ZDIR$ZONE"
+    fi
+
+    if [ -f "$LOCALTIME/$ZONE" ]; then
+      TZ=$ZONE
+    fi
+
+    A_OK=\\Z2
+}
 
 partition_discs()
 {
@@ -844,7 +893,7 @@ means that your root or boot filesystem should be ext2."
       fi
     fi
     T_OK=
-    M_OK=\\Z2
+    L_OK=
   fi
 }
 
@@ -891,18 +940,21 @@ make_lilo_conf()
 
 install_grub2()
 {
-  local DISC MBR
+  local DISC
 
   if ! pkg_avail grub2 ; then
     return
   fi
 
-  DISC=$(echo $ROOT | sed 's/[0-9]*$//')
-   MBR=$($DIALOG --title "grub2 MBR install" --menu "" 0 0 0 \
-    "$DISC" "Install grub2 MBR on this device" \
-    "C"     "Change grub2 MBR install device")
-  if [ "$MBR" = "C" ]; then
-    MBR=$(inputbox "Please enter a device where to install the grub2 MBR" "")
+  if [[ ! -v MBR ]]
+  then
+    DISC=$(echo $ROOT | sed 's/[0-9]*$//')
+    MBR=$($DIALOG --title "grub2 MBR install" --menu "" 0 0 0 \
+      "$DISC" "Install grub2 MBR on this device" \
+      "C"     "Change grub2 MBR install device")
+    if [ "$MBR" = "C" ]; then
+      MBR=$(inputbox "Please enter a device where to install the grub2 MBR" "")
+    fi
   fi
 
   if [[ -d /sys/firmware/efi ]]
@@ -1198,6 +1250,11 @@ transfer()
       echo -e "LANG=${LANG:-en_US.utf8}\nLC_ALL=${LANG:-en_US.utf8}" > $TARGET/etc/locale.conf
       [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
 
+      if [[ $TZ != UTC ]]
+      then
+        ln -fs /usr/share/zoneinfo/$TZ etc/localtime
+      fi
+
       # post-first-boot message:
       cp /README $TARGET/root/README
       cp $MOTD_FILE $TARGET/etc/motd
@@ -1282,12 +1339,14 @@ EOF
 
     cd /
 
-    if (( STEP == 6 )); then
+    if (( STEP == 7 )); then
       (( STEP++ ))
     fi
     T_OK=\\Z2
     O_OK=
-    L_OK=
+
+    install_bootloader &&
+    install_kernels
   fi
 }
 
@@ -1591,8 +1650,7 @@ install_kernels()
           chroot_run depmod
           chroot_run lsh update_bootloader $KVER_FULL $KVER
 
-          msgbox "The precompiled kernel \"$CCOMMAND\" has been installed to your system."
-          if (( STEP == 8 )); then
+          if (( STEP == 7 )); then
             (( STEP++ ))
           fi
           K_OK=\\Z2
@@ -1609,59 +1667,84 @@ install_kernels()
   done
 }
 
-
-install_bootloader() {
-  while true ; do
-    BCOMMAND=`$DIALOG --title "Boot loader menu" --default-item "G" --item-help --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." 0 0 0 \
-    $(if pkg_avail systemd && [ -d /sys/firmware/efi ]; then echo "S" ; echo "systemd (UEFI only))" ; echo "Install systemd-boot as boot loader (UEFI)"; fi) \
-    $(if pkg_avail grub2 ; then echo "G" ; echo "grub2" ; echo "Install grub2 as boot loader (BIOS)"; fi) \
-    $(if pkg_avail grub ; then echo "B" ; echo "grub" ; echo "Install grub as boot loader (BIOS)"; fi) \
-    $(if pkg_avail lilo ; then echo "L" ; echo "lilo" ; echo "Install lilo as boot loader (BIOS)"; fi) \
-    "N" "none" "Do not install a boot loader"`
+select_bootloader() {
+  while true
+  do
+    BCOMMAND=`$DIALOG --title "Boot loader menu" \
+                      --default-item "G" \
+                      --item-help \
+                      --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." \
+                      0 0 0 \
+                      $(if pkg_avail systemd && [ -d /sys/firmware/efi ]; then echo "S" ; echo "systemd (UEFI only))" ; echo "Install systemd-boot as boot loader (UEFI)"; fi) \
+                      $(if pkg_avail grub2 ; then echo "G" ; echo "grub2" ; echo "Install grub2 as boot loader (BIOS)"; fi) \
+                      $(if pkg_avail grub ; then echo "B" ; echo "grub" ; echo "Install grub as boot loader (BIOS)"; fi) \
+                      $(if pkg_avail lilo ; then echo "L" ; echo "lilo" ; echo "Install lilo as boot loader (BIOS)"; fi) \
+                      "N" "none" "Do not install a boot loader"`
 
     if [ $? != 0 ] ; then
       continue
     fi
 
     case $BCOMMAND in
-      S)
-        BOOTLOADER=systemd
-        chroot_run lsh update_plugin $BOOTLOADER "install"
-        chroot_run bootctl install
-        msgbox "The systemd boot loader package was installed. From now on, when you add a kernel, it will be available through UEFI on boot."
-        ;;
-      L)
-        BOOTLOADER=lilo
-        transfer_package $BOOTLOADER
-        chroot_run lsh update_plugin $BOOTLOADER "install"
-        msgbox "The lilo boot loader package was installed. From now on, when you add a kernel, lilo will be run after the /etc/lilo.conf configuration file has been updated. "
-        ;;
-      G)
-        BOOTLOADER=grub2
-        transfer_package $BOOTLOADER
-        chroot_run lsh update_plugin $BOOTLOADER "install"
-        install_grub2 &&
-        msgbox "The grub2 boot loader package was installed. From now on, when you add a kernel, it will be available through grub2 on boot."
-        ;;
-      B)
-        BOOTLOADER=grub
-        transfer_package $BOOTLOADER
-        chroot_run lsh update_plugin $BOOTLOADER "install"
-        install_grub
-        msgbox "The grub boot loader package was installed. From now on, when you add a kernel, it will be available through grub on boot."
-        ;;
-      N)
-        msgbox "Not installing a boot loader requires you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also does not install lilo or grub on the hard disc."
-        ;;
+        S) BOOTLOADER=systemd ;;
+        L) BOOTLOADER=lilo    ;;
+        G) BOOTLOADER=grub2   ;;
+        B) BOOTLOADER=grub    ;;
+        N) BOOTLOADER=none    ;;
     esac
 
-    if (( STEP == 7 )); then
+    case $BOOTLOADER in
+        grub2) 
+          DISC=$(echo $ROOT | sed 's/[0-9]*$//')
+          MBR=$($DIALOG --title "grub2 MBR install" --menu "" 0 0 0 \
+            "$DISC" "Install grub2 MBR on this device" \
+            "C"     "Change grub2 MBR install device")
+          if [ "$MBR" = "C" ]; then
+            MBR=$(inputbox "Please enter a device where to install the grub2 MBR" "")
+          fi
+        ;;
+    esac
+    if (( STEP == 6 )); then
       (( STEP++ ))
     fi
     L_OK=\\Z2
-    K_OK=
+    T_OK=
     return
   done
+}
+
+install_bootloader() {
+  if [[ ! -v BOOTLOADER ]]
+  then
+    select_bootloader
+  fi
+
+  case ${BOOTLOADER:-none} in
+    systemd)
+      chroot_run lsh update_plugin $BOOTLOADER "install"
+      chroot_run bootctl install
+      ;;
+    lilo)
+      transfer_package $BOOTLOADER
+      chroot_run lsh update_plugin $BOOTLOADER "install"
+      ;;
+    grub2)
+      transfer_package $BOOTLOADER
+      chroot_run lsh update_plugin $BOOTLOADER "install"
+      install_grub2
+      ;;
+    grub)
+      transfer_package $BOOTLOADER
+      chroot_run lsh update_plugin $BOOTLOADER "install"
+      install_grub
+      ;;
+    none)
+      msgbox "Not installing a boot loader might require you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also did not install lilo or grub on the hard disc."
+      ;;
+  esac
+
+  K_OK=
+  return
 }
 
 
@@ -1669,7 +1752,7 @@ install_menu()
 {
   if [ -z "$STEPS" ]; then
     # the total number of steps in the installer:
-    STEPS=14
+    STEPS=8
 
     SH[1]="Please read the introduction if you are new to lunar-linux.
 If you want to know more about the installation procedure
@@ -1688,29 +1771,15 @@ them the lunar packages can be transferred to them."
     SH[5]="Swap is like temporary memory. It improves your
 systems performance. You can create a swapfile or
 even whole swap partitions."
-    SH[6]="During the transfer all programs and files that you
-need to run lunar-linux will be copied to your system."
-    SH[7]="To be able to boot linux on reboot, you need to have
+    SH[6]="To be able to boot linux on reboot, you need to have
 a boot loader that loads the kernel when you power on
 your computer. Without it linux does not run."
-    SH[8]="You cannot boot linux without the kernel. You will
-need to install at least one. You can choose between
-several factory kernels or compile one yourself."
-    SH[9]="Make sure you set good passwords, especially for
-the root user. Everyone who knows this password can
-destroy your system. By default the root password is
-epmty so you should really change it"
-    SH[10]="Add normal user accounts to this system. Normal users do not have special privileges and you should not work as root all the time if not needed."
-    SH[11]="You can now set the name and domain of the machine
-and configure it's networking connections."
-    SH[12]="By default there are no services installed and
-running. With this tool you can add or remove them to
-the list of startup services and enable or disable them."
-    SH[13]="Select the local timezone of your computer
-to make sure that applications running are using the correct
-time zone information and adjust daylight savings."
-    SH[14]="You are done! you should remove the ISO from the
-cd-rom tray and reboot. See you at the login prompt!"
+    SH[7]="During the transfer all programs and files that you
+need to run lunar-linux will be copied to your system."
+    SH[8]="You can make some final preparations here before you begin
+using your new Lunar-Linux system. Setting a root password is strongly
+recommended now, but the rest of these operations can also be done after
+you've rebooted into your new system."
 
     B_LABEL="One step back"
     B_HELP="Go back one step in the installation procedure"
@@ -1726,6 +1795,8 @@ cd-rom tray and reboot. See you at the login prompt!"
     D_HELP="Select a console font"
     E_LABEL="Set global language"
     E_HELP="Set global language"
+    A_LABEL="Select a timezone"
+    A_HELP="Select a timezone"
     J_LABEL="Select a default editor"
     J_HELP="Select a default editor"
 
@@ -1734,6 +1805,9 @@ cd-rom tray and reboot. See you at the login prompt!"
     W_LABEL="Setup Linux Software RAID"
     W_HELP="Linux software RAID can increase redundancy or speed of hard discs"
     M_LABEL="Select target partitions"
+    L_LABEL="Select boot loader"
+    L_HELP="Select a boot loader to boot into Lunar"
+    L_OK="\\Z1"
     M_HELP="Select target partitions for installation"
     S_LABEL="Select a swapfile"
     S_HELP="You don't need to setup a separate swap partition but can use a swapfile"
@@ -1744,9 +1818,6 @@ cd-rom tray and reboot. See you at the login prompt!"
     O_LABEL="Configure compiler optimizations"
     O_HELP="Select architecture and optimizations"
     O_OK="\\Z1"
-    L_LABEL="Install boot loader"
-    L_HELP="Install a boot loader to boot into Lunar"
-    L_OK="\\Z1"
     K_LABEL="Install kernel(s)"
     K_HELP="Install kernel(s) on the new installation"
     K_OK="\\Z1"
@@ -1763,9 +1834,6 @@ cd-rom tray and reboot. See you at the login prompt!"
     V_LABEL="Administrate services"
     V_HELP="Configure services to start automatically at boot time"
     V_OK="\\Z1"
-    A_LABEL="Select a timezone"
-    A_HELP="Select a timezone"
-    A_OK="\\Z1"
 
     X_LABEL="Exit into rescue shell or reboot"
     X_HELP="This launches a a rescue shell or reboots your system"
@@ -1790,24 +1858,18 @@ cd-rom tray and reboot. See you at the login prompt!"
   }
 
   if [ "$GUIDE" == "off" ]; then
-    CHOICES="X I C D E J P W M S T O L K R U H V A Z"
+    CHOICES="X I C D E J P W M S T O L R U H V A Z"
     STEPHELP="Step $STEP of $STEPS:"
   else
     case $STEP in
     1)  DEFAULT=I ; CHOICES="X I F" ;;
-    2)              CHOICES="B C D E J F" ;;
+    2)              CHOICES="B C D E A J F" ;;
     3)  DEFAULT=P ; CHOICES="B P W M F" ;;
     4)  DEFAULT=M ; CHOICES="B P W M F" ;;
-    5)  DEFAULT=S ; CHOICES="B P W M S F" ;;
-    6)  DEFAULT=T ; CHOICES="B P W M S T F" ;;
-    7)  DEFAULT=L ; CHOICES="B O L F" ;;
-    8)  DEFAULT=K ; CHOICES="B O L K F" ;;
-    9)  DEFAULT=R ; CHOICES="B R U F" ;;
-    10) DEFAULT=U ; CHOICES="B R U F" ;;
-    11) DEFAULT=H ; CHOICES="B H F" ;;
-    12) DEFAULT=V ; CHOICES="B H V F" ;;
-    13) DEFAULT=A ; CHOICES="B H V A F" ;;
-    14) DEFAULT=Z ; CHOICES="B Z"
+    5)  DEFAULT=S ; CHOICES="B P W M S L T F" ;;
+    6)  DEFAULT=L ; CHOICES="B P W M S L T F" ;;
+    7)  DEFAULT=T ; CHOICES="B P W M S L T F" ;;
+    8)              CHOICES="B R O U H V Z" ;;
     esac
   fi
   COMMAND=`$DIALOG --title "Lunar-Linux install menu" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)`
@@ -1860,23 +1922,21 @@ cd-rom tray and reboot. See you at the login prompt!"
     C)  keymap_menu            ;;
     D)  font_menu              ;;
     E)  lang_menu              ;;
+    A)  timezone_menu          ;;
     J)  editor_menu            ;;
 
     P)  partition_discs        ;;
     W)  raid_setup             ;;
     M)  select_partitions      ;;
+    L)  select_bootloader      ;;
     S)  select_swap_file       ;;
     T)  transfer               ;;
 
-    O)  chroot_run lunar optimize ;;
-    L)  install_bootloader     ;;
-    K)  install_kernels        ;;
-
-    R)  USE_CLEAR=1 chroot_run passwd    ; if (( STEP ==  9 )) ; then (( STEP++ )); fi ; R_OK=\\Z2 ;;
-    U)  chroot_run luser     ; if (( STEP == 10 )) ; then (( STEP++ )); fi ; U_OK=\\Z2 ;;
-    H)  chroot_run lnet      ; if (( STEP == 11 )) ; then (( STEP++ )); fi ; H_OK=\\Z2 ;;
-    V)  chroot_run lservices ; if (( STEP == 12 )) ; then (( STEP++ )); fi ; V_OK=\\Z2 ;;
-    A)  chroot_run ltime     ; if (( STEP == 13 )) ; then (( STEP++ )); fi ; A_OK=\\Z2 ;;
+    R)  USE_CLEAR=1 chroot_run passwd    ; R_OK=\\Z2; DEFAULT=O ;;
+    O)  chroot_run lunar optimize        ; O_OK=\\Z2; DEFAULT=U ;;
+    U)  chroot_run luser                 ; U_OK=\\Z2; DEFAULT=H ;;
+    H)  chroot_run lnet                  ; H_OK=\\Z2; DEFAULT=V ;;
+    V)  chroot_run lservices             ; V_OK=\\Z2; DEFAULT=Z ;;
 
     Z)  goodbye                ;;
   esac

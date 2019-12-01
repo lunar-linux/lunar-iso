@@ -72,7 +72,7 @@ ISO_MODULES=acl            \
             systemd        \
             systemd-sysv   \
             tar            \
-            timezone-date  \
+            timezone-data  \
             util-linux     \
             vim            \
             wget           \
