@@ -1326,7 +1326,7 @@ EOF
 # Make sure zfs works
 # -- AUTO-GENERATED FILE DO NOT MODIFY --
 # -- UNLESS YOU KNOW WHAT YOU'RE DOING --
-install_items+=" zfs "
+add_dracutmodules+=" zfs "
 EOF
         transfer_excluded_package zfs
         transfer_excluded_package zfs-utils
