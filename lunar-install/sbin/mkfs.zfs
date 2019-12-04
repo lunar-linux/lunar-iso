@@ -30,6 +30,7 @@ then
     /usr/sbin/zfs create -o canmount=noauto -o mountpoint=/  rpool/ROOT/lunar
     /usr/sbin/zfs mount rpool/ROOT/lunar
     /usr/sbin/zpool set bootfs=rpool/ROOT/lunar              rpool
+    /usr/sbin/zfs create rpool/ROOT/lunar/boot
 
     /usr/sbin/zfs create -o setuid=off                       rpool/home
     /usr/sbin/zfs create -o mountpoint=/root                 rpool/home/root
