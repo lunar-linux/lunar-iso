@@ -829,9 +829,10 @@ menu_select_partitions()
     MNT_OPTS=$(determine_mount_opts $PART $FSYS) &&
     if [ "$MNT_PNT" != "/" ]; then
       MNT_PNT=${MNT_PNT%%/}
-    fi
-    if [ "$MNT_PNT" == "/" -a "$FSYS" == "zfs" ]; then
-        SWAP_ENABLED=1
+      else
+        if [ "$FSYS" = "zfs" ]; then
+	  SWAP_ENABLED=1
+	fi
     fi
     FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
     if [ "$FSYS" == "xfs" ]; then
