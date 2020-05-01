@@ -60,7 +60,7 @@ ISO_MODULES=acl            \
             netcat         \
             ntfsprogs      \
             openssh        \
-            openssl        \
+            libressl       \
             parted         \
             perl           \
             pcre           \
