@@ -60,7 +60,7 @@ ISO_MODULES=acl            \
             netcat         \
             ntfsprogs      \
             openssh        \
-            openssl        \
+            libressl       \
             parted         \
             perl           \
             pcre           \
@@ -79,4 +79,7 @@ ISO_MODULES=acl            \
             which          \
             xfsprogs       \
             xz             \
-            zlib
+            zlib           \
+            spl            \
+            zfs            \
+            zfs-utils

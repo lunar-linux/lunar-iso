@@ -393,6 +393,7 @@ menu_get_filesystem()
   REISER="Reiserfs file system (*)"
   XFS="XFS file system (*)"
   JFS="JFS file system (*)"
+  ZFS="ZFS file system (*)"
   VFAT="FAT32 file system"
   SWAP="Swap (Virtual memory or paging filesystem)"
 
@@ -402,6 +403,7 @@ menu_get_filesystem()
     "ext3"      "$EXT3"    \
     "ext2"      "$EXT2"    \
     "xfs"       "$XFS"     \
+    "zfs"       "$ZFS"     \
     "vfat"      "$VFAT"    \
     "swap"      "$SWAP"
 }
@@ -553,8 +555,7 @@ select_swap_file()
   if [ -n "$SWAPFILE" ]; then
 
     # strange calc. but it ends up being ~ 2xRAM rounded up to 256MB blocks
-    SWAPSIZE=$(grep MemTotal: /proc/meminfo | awk '{print $2}' | sed 's/[0-9][0-9][0-9]$//') &&
-    (( SWAPSIZE = ( ( SWAPSIZE / 128 ) + 1 ) * 256 )) &&
+    SWAPSIZE=$(awk '/MemTotal/ {print (($2/128)+1)*256}' /proc/meminfo) &&
 
     SWAPSIZE=$(inputbox "$SIZE_PROMPT" "$SWAPSIZE")
     if [ -n "$SWAPSIZE" ]; then
@@ -828,9 +829,15 @@ menu_select_partitions()
     MNT_OPTS=$(determine_mount_opts $PART $FSYS) &&
     if [ "$MNT_PNT" != "/" ]; then
       MNT_PNT=${MNT_PNT%%/}
+      else
+        if [ "$FSYS" = "zfs" ]; then
+	  SWAP_ENABLED=1
+	fi
     fi
     FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
     if [ "$FSYS" == "xfs" ]; then
+      FORCE="-f"
+    elif [ "$FSYS" == "zfs" ]; then
       FORCE="-f"
     elif [[ "$FSYS" =~ ext[234] ]]; then
       FORCE="-F"
@@ -1044,6 +1051,17 @@ transfer_package()
   cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
 }
 
+transfer_excluded_package()
+{
+  cd $TARGET &&
+  LINE=$(grep "^$1:" /var/state/lunar/packages)
+  MOD=$(echo $LINE | cut -d: -f1)
+  VER=$(echo $LINE | cut -d: -f4)
+  cp /var/cache/lunar/$MOD-$VER-*.tar.xz $TARGET/var/cache/lunar/
+  tar xJf $TARGET/var/cache/lunar/$MOD-$VER-*.tar.xz 2> /dev/null
+  echo $LINE >> $TARGET/var/state/lunar/packages
+  cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
+}
 
 percent_msg()
 {
@@ -1085,7 +1103,7 @@ transfer()
             # create the filesystems if needed for every partition
           elif [ "$FORMAT" == "yes" ]; then
             echo "Formatting $PART as $FSYS..."
-            if ! mkfs.$FSYS $FORCE $PART $CHECK ; then
+            if ! MOUNTPOINT=$MOUNTPOINT mkfs.$FSYS $FORCE $PART $CHECK ; then
               sleep 3
               msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue."
             fi
@@ -1115,16 +1133,19 @@ transfer()
             else
               MNTOPTARGS=""
             fi
-            echo "Mounting $PART as $FSYS"
-            LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
-            if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
-              FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
-              if [ "$FSYS" == "swap" ]; then
-                umount -n $PART
+            # zfs filesystems are mounted at creation time
+            if [[ $FSYS != zfs ]]; then
+              echo "Mounting $PART as $FSYS"
+              LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
+              if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
+                FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
+                if [ "$FSYS" == "swap" ]; then
+                  umount -n $PART
+                fi
+              else
+                sleep 3
+                msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue."
               fi
-            else
-              sleep 3
-              msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue."
             fi
           fi
         fi
@@ -1275,8 +1296,8 @@ transfer()
 LUNAR_ALIAS_UDEV="systemd"
 LUNAR_ALIAS_KMOD="kmod"
 LUNAR_ALIAS_KERNEL_HEADERS="kernel-headers"
-LUNAR_ALIAS_SSL="openssl"
-LUNAR_ALIAS_OSSL="openssl"
+LUNAR_ALIAS_SSL="libressl"
+LUNAR_ALIAS_OSSL="libressl"
 EOF
 
       # Disable services (user can choose to enable them using services menu)
@@ -1302,6 +1323,20 @@ kernel_cmdline+=" rd.auto=1"
 mdadmconf="yes"
 EOF
         fi
+      fi
+
+      # tell dracut to enable ZFS if root filesystem
+      if grep -q ' /mnt zfs' /proc/mounts; then
+          cat << EOF > $TARGET/etc/dracut.conf.d/03-zfs.conf
+# Make sure zfs works
+# -- AUTO-GENERATED FILE DO NOT MODIFY --
+# -- UNLESS YOU KNOW WHAT YOU'RE DOING --
+add_dracutmodules+=" zfs "
+EOF
+        transfer_excluded_package zfs
+        transfer_excluded_package zfs-utils
+        ( cd $TARGET/usr/lib/systemd/system/local-fs.target.wants &&
+          ln -s ../zfs-mount.service . )
       fi
 
     # really we are done now ;^)

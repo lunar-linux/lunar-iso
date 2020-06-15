@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# create a zpool, populate it with some popular filesystems
+
+if [[ $1 == -f ]]
+then
+    FORCE=$1
+    shift
+fi
+
+modprobe zfs
+
+PART=$1
+CHECK=$2
+
+if [[ $MOUNTPOINT == / ]]
+then
+    /usr/sbin/zpool create $FORCE        \
+                 -o ashift=12            \
+                 -O atime=off            \
+                 -O canmount=off         \
+                 -O compression=lz4      \
+                 -O normalization=formD  \
+                 -O mountpoint=/         \
+                 -R /mnt                 \
+                 rpool $PART
+
+    /usr/sbin/zfs create -o canmount=off -o mountpoint=none  rpool/ROOT
+
+    /usr/sbin/zfs create -o canmount=noauto -o mountpoint=/  rpool/ROOT/lunar
+    /usr/sbin/zfs mount rpool/ROOT/lunar
+    /usr/sbin/zpool set bootfs=rpool/ROOT/lunar              rpool
+    /usr/sbin/zfs create rpool/ROOT/lunar/boot
+
+    /usr/sbin/zfs create -o setuid=off                       rpool/home
+    /usr/sbin/zfs create -o mountpoint=/root                 rpool/home/root
+    /usr/sbin/zfs create -o canmount=off \
+                         -o setuid=off   \
+                         -o exec=off                         rpool/var
+    /usr/sbin/zfs create -o com.sun:auto-snapshot=false      rpool/var/cache
+    /usr/sbin/zfs create                                     rpool/var/log
+    /usr/sbin/zfs create                                     rpool/var/spool
+    /usr/sbin/zfs create -o com.sun:auto-snapshot=false      rpool/var/tmp
+    swapsize=$(awk '/MemTotal/ {print (($2/128)+1)*256}' /proc/meminfo)
+    /usr/sbin/zfs create -V ${swapsize}k                     rpool/swap
+    /sbin/mkswap /dev/zvol/rpool/swap
+else
+    /usr/sbin/zpool create $FORCE
+                 -o ashift=12            \
+                 -O atime=off            \
+                 -O compression=lz4      \
+                 -O normalization=formD  \
+                 ${MOUNTPOINT#/} $PART
+fi
+
+/usr/sbin/zpool list
+echo
+/usr/sbin/zpool status
