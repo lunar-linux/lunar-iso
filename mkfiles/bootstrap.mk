@@ -17,7 +17,7 @@ target: $(ISO_TARGET)/.target
 # fill the target with the base file required
 $(ISO_TARGET)/.base: target
 	@echo bootstrap-base
-	@mkdir -p $(ISO_TARGET)/{dev,proc,run,sys,tmp,usr,var} $(ISO_TARGET)/usr/src
+	@mkdir -p $(ISO_TARGET)/{dev,proc,run,sys,tmp,lib,usr/{lib,src},var}
 	@ln -sf lib $(ISO_TARGET)/lib32
 	@ln -sf lib $(ISO_TARGET)/lib64
 	@ln -sf lib $(ISO_TARGET)/usr/lib32
