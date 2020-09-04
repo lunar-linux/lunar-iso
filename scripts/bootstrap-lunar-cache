@@ -78,7 +78,7 @@ for mod in $NEED_CACHE ; do
   # check for cache file presence
   CACHE="$mod-$(lsh installed_version $mod)-$ISO_BUILD.tar.xz"
   if [ ! -f "$ISO_SOURCE/cache/$CACHE" ] ; then
-    cp "$LUNAR_CACHE/$CACHE" "$ISO_SOURCE/cache/$CACHE" || NO_CACHE="$NO_CACHE $mod"
+    cp "$LUNAR_CACHE/$CACHE" "$ISO_SOURCE/cache/$CACHE" && echo "$mod:$(date --date=@$(stat -c%Z $LUNAR_CACHE/$CACHE) +%Y%m%d):installed:$MODULE_VERSION:0KB" >> "$ISO_SOURCE/cache/packages" || NO_CACHE="$NO_CACHE $mod"
   fi
 done
 
