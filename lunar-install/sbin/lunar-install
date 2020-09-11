@@ -461,6 +461,8 @@ timezone_menu()
     HELP="Select timezone or directory"
     ZONE=""
 
+    local ZDIR
+
     while
       TIMEZONES=`show_timezones ${ZDIR:-$ZONE}`  &&
       if [ -n "$ZDIR" ]; then
