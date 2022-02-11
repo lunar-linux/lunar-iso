@@ -1232,6 +1232,7 @@ transfer()
       # pass through some of the configuration at this point:
       percent_msg "Finishing up installation"
       chroot_run systemd-machine-id-setup 2> /dev/null
+      chroot_run systemctl preset-all 2>/dev/null
       echo -e "KEYMAP=$KEYMAP\nFONT=$CONSOLEFONT" > $TARGET/etc/vconsole.conf
       echo -e "LANG=${LANG:-en_US.utf8}\nLC_ALL=${LANG:-en_US.utf8}" > $TARGET/etc/locale.conf
       [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
