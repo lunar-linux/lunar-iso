@@ -500,22 +500,10 @@ partition_discs()
   TITLE="Partitioning Menu"
 
   DISC=$(menu_get_disc) &&
-  case $ARCH in
-    "alpha")
-      PROG="fdisk"
-      msgbox "Your drive must be partitioned with a BSD-style partition.  At the first prompt in fdisk, type 'b'."
-      ;;
-    "ppc")
-      PROG="parted"
-      msgbox "Your drive must have an Apple partition scheme and have at least one HFS partition of at least 10MB for booting.  Do not mount this partition!"
-      ;;
-    *)
-      PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
-              "cfdisk"  "$CFDISK"                          \
-              "fdisk"   "$FDISK"                           \
-              "parted"  "$PARTED"`
-    ;;
-  esac &&
+  PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
+          "cfdisk"  "$CFDISK"                          \
+          "fdisk"   "$FDISK"                           \
+          "parted"  "$PARTED"` &&
   PROMPT="Are you certain that you want to run $PROG on $DISC? (This will erase any partition selection you might have already performed)" &&
   if confirm "$PROMPT"; then
     unset PARTITIONS
