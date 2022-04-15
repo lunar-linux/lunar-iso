@@ -463,6 +463,8 @@ timezone_menu()
     HELP="Select timezone or directory"
     ZONE=""
 
+    local ZDIR
+
     while
       TIMEZONES=`show_timezones ${ZDIR:-$ZONE}`  &&
       if [ -n "$ZDIR" ]; then
@@ -500,22 +502,10 @@ partition_discs()
   TITLE="Partitioning Menu"
 
   DISC=$(menu_get_disc) &&
-  case $ARCH in
-    "alpha")
-      PROG="fdisk"
-      msgbox "Your drive must be partitioned with a BSD-style partition.  At the first prompt in fdisk, type 'b'."
-      ;;
-    "ppc")
-      PROG="parted"
-      msgbox "Your drive must have an Apple partition scheme and have at least one HFS partition of at least 10MB for booting.  Do not mount this partition!"
-      ;;
-    *)
-      PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
-              "cfdisk"  "$CFDISK"                          \
-              "fdisk"   "$FDISK"                           \
-              "parted"  "$PARTED"`
-    ;;
-  esac &&
+  PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
+          "cfdisk"  "$CFDISK"                          \
+          "fdisk"   "$FDISK"                           \
+          "parted"  "$PARTED"` &&
   PROMPT="Are you certain that you want to run $PROG on $DISC? (This will erase any partition selection you might have already performed)" &&
   if confirm "$PROMPT"; then
     unset PARTITIONS
@@ -1075,7 +1065,7 @@ percent_msg()
 
 transfer()
 {
-  msgbox "You should now be ready to install lunar to your system. Lunar will now create filesystems if needed, make a swapfile if it was selected, and install all lunar packages to the newly setup system. Make sure you are done with partitioning and filesystem selection."
+  msgbox "You should now be ready to install Lunar Linux to your system. Lunar Linux will now create filesystems if needed, make a swapfile if it was selected, and install all Lunar Linux packages to the newly setup system. Make sure you are done with partitioning and filesystem selection."
   if confirm "Are you ready to install lunar?" ;  then
     clear
 
@@ -1251,6 +1241,7 @@ transfer()
       # pass through some of the configuration at this point:
       percent_msg "Finishing up installation"
       chroot_run systemd-machine-id-setup 2> /dev/null
+      chroot_run systemctl preset-all 2>/dev/null
       echo -e "KEYMAP=$KEYMAP\nFONT=$CONSOLEFONT" > $TARGET/etc/vconsole.conf
       echo -e "LANG=${LANG:-en_US.utf8}\nLC_ALL=${LANG:-en_US.utf8}" > $TARGET/etc/locale.conf
       [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
@@ -1340,7 +1331,7 @@ EOF
       fi
 
     # really we are done now ;^)
-    ) | $DIALOG --title " Installing Lunar-Linux " --gauge "" 10 70 0
+    ) | $DIALOG --title " Installing Lunar Linux " --gauge "" 10 70 0
 
     cd /
 
@@ -1401,8 +1392,8 @@ proxy_exit_message()
   msgbox \
     "Your proxy configuration has been saved.
 
-Please note that these proxy settings will only be used
-by Lunar (wget) and possibly some other command-line utilities.
+Please note that these proxy settings will only be used by Lunar Linux
+(specifically, wget) and possibly some other command-line utilities.
 
 You will still have to configure proxy settings in your favorite
 web browser, etc..."
@@ -1529,7 +1520,7 @@ show_languages()
 lang_menu()
 {
   TITLE="Language Selection Menu"
-  HELP="While lunar is entirely in English
+  HELP="While Lunar Linux is entirely in English
 it is possible to change the languages of many other programs.
 Please select your preferred langauge.
 
@@ -1553,7 +1544,7 @@ editor_menu()
       --menu "Not all of these editors are available right away. Some require that you compile them yourself (like emacs) or are only available on the target installation, and possibly emulated through another editor" 0 0 0 \
       "e3"    "fully available" \
           "an emacs, vim, pico emulator" \
-      "emacs" "emulated on the ISO by e3, not installed" \
+      "emacs" "emulated on this install media by e3, not installed" \
           "Richard Stallmans editor" \
       "joe"   "fully available" \
           "WS compatible editor" \
@@ -1744,7 +1735,7 @@ install_bootloader() {
       install_grub
       ;;
     none)
-      msgbox "Not installing a boot loader might require you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar also did not install lilo or grub on the hard disc."
+      msgbox "Not installing a boot loader might require you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar Linux also did not install lilo or grub on the hard disc."
       ;;
   esac
 
@@ -1759,7 +1750,7 @@ install_menu()
     # the total number of steps in the installer:
     STEPS=8
 
-    SH[1]="Please read the introduction if you are new to lunar-linux.
+    SH[1]="Please read the introduction if you are new to Lunar Linux.
 If you want to know more about the installation procedure
 and recent changes please visit http://lunar-linux.org/
 before proceeding."
@@ -1769,10 +1760,10 @@ to your users."
     SH[3]="You need to create partitions if you are installing on
 a new disc or in free space. If you want to delete other
 operating systems you will also need to partition your disc."
-    SH[4]="You need to mount a filesystem so that lunar can be
+    SH[4]="You need to mount a filesystem so that Lunar Linux can be
 transferred to it. Usually you make 3 to 5 separate
 partitions like /boot, /var and /usr. After mounting
-them the lunar packages can be transferred to them."
+them the Lunar Linux packages can be transferred to them."
     SH[5]="Swap is like temporary memory. It improves your
 systems performance. You can create a swapfile or
 even whole swap partitions."
@@ -1780,9 +1771,9 @@ even whole swap partitions."
 a boot loader that loads the kernel when you power on
 your computer. Without it linux does not run."
     SH[7]="During the transfer all programs and files that you
-need to run lunar-linux will be copied to your system."
+need to run Lunar Linux will be copied to your system."
     SH[8]="You can make some final preparations here before you begin
-using your new Lunar-Linux system. Setting a root password is strongly
+using your new Lunar Linux system. Setting a root password is strongly
 recommended now, but the rest of these operations can also be done after
 you've rebooted into your new system."
 
@@ -1791,7 +1782,7 @@ you've rebooted into your new system."
     F_LABEL="One step forward"
     F_HELP="Go forward one step in the installation procedure"
 
-    I_LABEL="Introduction into lunar-linux"
+    I_LABEL="Introduction into Lunar Linux"
     I_HELP="Read about the advantages of using Lunar Linux"
 
     C_LABEL="Select a keyboard map"
@@ -1831,19 +1822,19 @@ you've rebooted into your new system."
     R_HELP="Set root password needed to access this system (the default password is empty)"
     R_OK="\\Z1"
     U_LABEL="Setup user accounts"
-    U_HELP="Create, edit, delete users and group accounts on the system"
+    U_HELP="Create, edit, delete users and group accounts on the system (\"luser\" after reboot)"
     U_OK="\\Z1"
     H_LABEL="Setup hostname and networking"
-    H_HELP="Configure your network devices and hostname settings"
+    H_HELP="Configure your network devices and hostname settings (\"lnet\" after reboot)"
     H_OK="\\Z1"
     V_LABEL="Administrate services"
-    V_HELP="Configure services to start automatically at boot time"
+    V_HELP="Configure services to start automatically at boot time (\"lservices\" after reboot)"
     V_OK="\\Z1"
 
     X_LABEL="Exit into rescue shell or reboot"
     X_HELP="This launches a a rescue shell or reboots your system"
     Z_LABEL="Finished installing!"
-    Z_HELP="You're done! Now go reboot and use lunar-linux!"
+    Z_HELP="You're done! Now go reboot and use Lunar Linux!"
     Z_OK="\\Z0"
 
     STEP=1
@@ -1877,7 +1868,7 @@ you've rebooted into your new system."
     8)              CHOICES="B R O U H V Z" ;;
     esac
   fi
-  COMMAND=`$DIALOG --title "Lunar-Linux install menu" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)`
+  COMMAND=`$DIALOG --title "Lunar Linux install menu" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)`
 
   case $? in
     3)
@@ -1983,7 +1974,7 @@ ARCH=$(arch)
 
 trap ":" INT QUIT
 
-$DIALOG --infobox "Lunar-Linux Installer %VERSION% - %CODENAME% starting... " 4 60
+$DIALOG --infobox "Lunar Linux Installer %VERSION% - %CODENAME% starting... " 4 60
 
 # turn off console blanking
 /usr/bin/setterm -blank 0
@@ -2003,8 +1994,8 @@ if [ -x /run.sh ]; then
   echo ""
   echo "  /--------------------------------------------------\\"
   echo "  |                                                  |"
-  echo "  |  Executing /run.sh instead of the lunar-linux    |"
-  echo "  |  installer! If something goes wrong then you're  |"
+  echo "  |  Executing /run.sh instead of the Lunar Linux    |"
+  echo "  |  Installer! If something goes wrong then you're  |"
   echo "  |  on your own, sorry...                           |"
   echo "  |                                                  |"
   echo "  \\--------------------------------------------------/"
