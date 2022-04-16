@@ -1,1 +1,1 @@
-EXCLUDE_MODULES=grub theedge udev memtest86+ openssl zfs
+EXCLUDE_MODULES=grub theedge udev memtest86+ libressl zfs
