@@ -45,7 +45,7 @@ then
     /usr/sbin/zfs create -V ${swapsize}k                     rpool/swap
     /sbin/mkswap /dev/zvol/rpool/swap
 else
-    /usr/sbin/zpool create $FORCE
+    /usr/sbin/zpool create $FORCE        \
                  -o ashift=12            \
                  -O atime=off            \
                  -O compression=lz4      \
