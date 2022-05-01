@@ -24,6 +24,7 @@ $(ISO_TARGET)/.stage2-base: stage2-target
 	@ln -sf lib $(ISO_TARGET)/usr/lib32
 	@ln -sf lib $(ISO_TARGET)/usr/lib64
 	@cp -r $(ISO_SOURCE)/template/etc $(ISO_TARGET)
+	@cp $(ISO_SOURCE)/kernels/conf/generic.$(ISO_ARCH) $(ISO_TARGET)/etc/lunar/local/.config.current
 	@echo MAKES=$(ISO_MAKES) > $(ISO_TARGET)/etc/lunar/local/optimizations.GNU_MAKE
 	@touch $@
 
