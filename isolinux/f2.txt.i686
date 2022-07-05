@@ -20,4 +20,4 @@ The installer will attempt to load some modules automatically.
 
 type 02linux07 followed by optional kernel parameters to use this boot option
 
-                             0aF107 install  02F202 modules  0aF307 safe  0aF407 memtest
+                             0aF107 install  02F202 modules  0aF307 safe

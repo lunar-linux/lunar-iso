@@ -6,7 +6,7 @@ PROMPT 1
 F1 f1.txt
 F2 f2.txt
 F3 f3.txt
-F4 f4.txt
+F4 f1.txt
 F5 f1.txt
 F6 f1.txt
 F7 f1.txt
@@ -18,8 +18,5 @@ LABEL install
 LABEL novga
 	KERNEL linux
 	APPEND ro initrd=initrd root=live:CDLABEL=%LABEL% rd.live.image readonlyroot rootdelay=10 loglevel=3 nomodeset
-LABEL memtest
-	KERNEL memtest
-	APPEND -
 # uncomment the following line to enable serial console booting
 # SERIAL 0 38400
