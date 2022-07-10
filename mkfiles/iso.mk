@@ -74,7 +74,7 @@ iso-strip: $(ISO_TARGET)/.iso-strip
 
 
 # Copy the isolinux files to the target
-ISOLINUX_FILES=README f1.txt f2.txt f3.txt f4.txt generate-iso.sh isolinux.cfg
+ISOLINUX_FILES=README f1.txt f2.txt f3.txt generate-iso.sh isolinux.cfg
 
 .SECONDARY: $(addprefix $(ISO_TARGET)/usr/share/syslinux/, $(SYSLINUX_FILES))
 $(addprefix $(ISO_TARGET)/usr/share/syslinux/, $(SYSLINUX_FILES)): $(ISO_TARGET)/.iso-isolinux
