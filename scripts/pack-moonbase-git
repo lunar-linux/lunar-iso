@@ -24,7 +24,7 @@ for n in ${REPOS[@]}; do
     : #( cd $P; git pull )
   else
     # Clone the repo if it doesn't exists. Helping the user here.
-    git clone git://github.com/lunar-linux/moonbase-$n $P
+    git clone https://github.com/lunar-linux/moonbase-$n $P
   fi
   ( cd $P; git archive -o ../$n.tar --format=tar --prefix=$n/ HEAD )
   tar -tf $P.tar \
