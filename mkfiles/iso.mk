@@ -41,7 +41,7 @@ iso-modules: $(ISO_TARGET)/.iso-modules
 ISO_ETC_FILES=lsb-release os-release fstab motd issue issue.net
 
 $(ISO_TARGET)/etc/%: $(ISO_SOURCE)/livecd/template/etc/% iso-modules
-	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
+	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:LUNAR_$(ISO_MAJOR):' $< > $@
 
 # Symlinks need special care
 $(ISO_TARGET)/.iso-files: iso-target
@@ -111,10 +111,10 @@ $(ISO_TARGET)/isolinux/initrd: $(ISO_TARGET)/boot/initrd
 	@cp $< $@
 
 $(ISO_TARGET)/isolinux/%: $(ISO_SOURCE)/isolinux/% $(ISO_TARGET)/.iso-isolinux
-	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
+	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:LUNAR_$(ISO_MAJOR):' $< > $@
 
 $(ISO_TARGET)/isolinux/%: $(ISO_SOURCE)/isolinux/%.$(ISO_ARCH) $(ISO_TARGET)/.iso-isolinux
-	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
+	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:LUNAR_$(ISO_MAJOR):' $< > $@
 
 $(ISO_TARGET)/.iso-isolinux: iso-target
 	@echo iso-isolinux
@@ -142,7 +142,7 @@ $(ISO_TARGET)/loader/loader.conf: $(ISO_SOURCE)/efiboot/loader/loader.conf
 	@cp $< $@
 
 $(ISO_TARGET)/loader/entries/lunariso-x86_64.conf: $(ISO_SOURCE)/efiboot/loader/entries/lunariso-x86_64-cd.conf $(ISO_TARGET)/.iso-efi
-	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%LABEL%:$(ISO_LABEL):' $< > $@
+	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%LABEL%:LUNAR_$(ISO_MAJOR):' $< > $@
 
 $(ISO_TARGET)/EFI/lunariso/efiboot.img: $(ISO_TARGET)/.iso-efi
 	@echo "Creating EFI boot image"
@@ -205,6 +205,6 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-efi
 	-m '$(ISO_TARGET)/sys' \
 	-m '$(ISO_TARGET)/tmp' \
 	-publisher "Lunar Linux - http://www.lunar-linux.org/" \
-	-volid '$(ISO_LABEL)' \
+	-volid 'LUNAR_$(ISO_MAJOR)' \
 	-appid 'Lunar-$(ISO_VERSION)' $(ISO_TARGET)
 	@mv $@.tmp $@
