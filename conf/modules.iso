@@ -52,6 +52,7 @@ ISO_MODULES=acl            \
             lunar          \
             lvm2           \
             lzo            \
+            lz4            \
             mdadm          \
             mpfr           \
             nano           \
@@ -78,4 +79,5 @@ ISO_MODULES=acl            \
             which          \
             xfsprogs       \
             xz             \
-            zlib
+            zlib           \
+            zstd
