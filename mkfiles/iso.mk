@@ -149,7 +149,7 @@ $(ISO_TARGET)/EFI/lunariso/efiboot.img: $(ISO_TARGET)/.iso-efi
 	@$(ISO_SOURCE)/scripts/create-efi-image
 
 ifeq ($(ISO_ARCH),x86_64)
-XORRISO_EFI_OPTS := -eltorito-alt-boot -e EFI/lunariso/efiboot.img -no-emul-boot -isohybrid-gpt-basdat
+XORRISO_EFI_OPTS := -append_partition 2 0xef $(ISO_TARGET)/EFI/lunariso/efiboot.img -eltorito-alt-boot -e --interval:appended_partition_2:all:: -no-emul-boot -isohybrid-gpt-basdat
 iso-efi: $(ISO_TARGET)/.iso-efi $(ISO_TARGET)/EFI/boot/bootx64.efi $(ISO_TARGET)/EFI/boot/HashTool.efi $(ISO_TARGET)/EFI/boot/loader.efi $(ISO_TARGET)/loader/loader.conf $(ISO_TARGET)/loader/entries/lunariso-x86_64.conf $(ISO_TARGET)/EFI/lunariso/efiboot.img
 else
 iso-efi:
@@ -174,11 +174,16 @@ $(ISO_SOURCE)/lunar-$(ISO_VERSION).iso: iso-tools iso-files iso-isolinux iso-efi
 	@xorriso -as mkisofs \
 	-iso-level 3 \
 	-full-iso9660-filenames \
+	-joliet \
+	-joliet-long \
+	-rational-rock \
 	-o $@.tmp -l \
+	-partition_offset 16 \
 	-eltorito-boot isolinux/isolinux.bin \
 	-eltorito-catalog isolinux/boot.cat \
 	-no-emul-boot -boot-load-size 4 -boot-info-table \
 	-isohybrid-mbr $(ISO_TARGET)/isolinux/isohdpfx.bin \
+	--mbr-force-bootable \
 	$(XORRISO_EFI_OPTS) \
 	-m '$(ISO_TARGET)/.*' \
 	-m '$(ISO_TARGET)/boot' \
