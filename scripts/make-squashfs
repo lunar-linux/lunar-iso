@@ -28,6 +28,7 @@ mkfs.ext4 -O ^has_journal,^resize_inode -E lazy_itable_init=0 -m 0 -F "$ROOTFSIM
 tune2fs -i 0 -c 0 $ROOTFSIMG &> /dev/null
 mount $ROOTFSIMG $ROOTFSMNTDIR
 rsync -av $ISO_TARGET/ $ROOTFSMNTDIR --exclude ".*" \
+                                     --exclude LiveOS \
                                      --exclude boot/* \
                                      --exclude isolinux/ \
                                      --exclude EFI/ \
