@@ -1,5 +1,5 @@
 
-installer_PROGS = sbin/lunar-install
+installer_PROGS = sbin/lunar-install sbin/lish
 installer_LIBS = $(shell ls -1 lib/*)
 installer_CONFIG = etc/config
 
@@ -9,7 +9,7 @@ SBINDIR=$(PREFIX)/sbin
 LIBDIR=$(PREFIX)/var/lib/lunar/functions/installer
 ETCDIR=$(PREFIX)/etc/lunar/installer
 
-install: sbin/lunar-install etc/config $(installer_LIBS)
+install: $(installer_PROGS) $(installer_CONFIG) $(installer_LIBS)
 	install -d $(DESTDIR)$(SBINDIR)
 	install -d $(DESTDIR)$(ETCDIR)
 	install -d $(DESTDIR)$(LIBDIR)
