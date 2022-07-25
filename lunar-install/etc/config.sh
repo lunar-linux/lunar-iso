@@ -26,7 +26,7 @@ BOOTLOADER=none
 TZ=UTC
 
 . /etc/lunar/config
-for FUNCTION in $FUNCTIONS/lunar-install/*.lunar
+for FUNCTION in $FUNCTIONS/installer/*.lunar
 do
   . $FUNCTION
 done

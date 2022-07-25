@@ -9,7 +9,7 @@ SBINDIR=$(PREFIX)/sbin
 LIBDIR=$(PREFIX)/var/lib/lunar/functions/installer
 ETCDIR=$(PREFIX)/etc/lunar/installer
 
-install: sbin/lunar-install etc/config
+install: sbin/lunar-install etc/config $(installer_LIBS)
 	install -d $(DESTDIR)$(SBINDIR)
 	install -d $(DESTDIR)$(ETCDIR)
 	install -d $(DESTDIR)$(LIBDIR)
@@ -19,7 +19,7 @@ install: sbin/lunar-install etc/config
 	for script in $(installer_PROGS); do \
 	  install -m0755 $$script $(DESTDIR)$(SBINDIR); \
 	done
-	for config in $(installer_PROGS); do \
+	for config in $(installer_CONFIG); do \
 	  install -m0644 $$config $(DESTDIR)$(ETCDIR); \
 	done
 
