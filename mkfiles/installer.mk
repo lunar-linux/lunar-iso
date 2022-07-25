@@ -1,28 +1,11 @@
-.INTERMEDIATE: installer lunar-install
+.INTERMEDIATE: lunar-install
 
 installer: lunar-install
-lib: lunar-install-functions.sh
 
 # Install the Lunar installer
-$(ISO_TARGET)/sbin/lunar-install: $(ISO_SOURCE)/lunar-install/sbin/lunar-install iso-target
+$(ISO_TARGET)/sbin/lunar-install:
 	@echo lunar-install
-	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:LUNAR_$(ISO_MAJOR):' $< > $@.tmp
-	@chmod --reference $< $@.tmp
-	@mv $@.tmp $@
-
-$(ISO_TARGET)/var/lib/lunar/functions/lunar-install/functions.sh: $(ISO_SOURCE)/lunar-install/lib/functions.sh
-	@echo lunar-install-functions
-	@mkdir -p $(ISO_TARGET)/var/lib/lunar/functions/lunar-install
-	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:LUNAR_$(ISO_MAJOR):' $< > $@.tmp
-	@chmod --reference $< $@.tmp
-	@mv $@.tmp $@
-
-$(ISO_TARGET)/etc/lunar/installer/config: $(ISO_SOURCE)/lunar-install/etc/config.sh
-	@echo lunar-install-config
-	@mkdir -p $(ISO_TARGET)/etc/lunar/installer
-	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:LUNAR_$(ISO_MAJOR):' $< > $@.tmp
-	@chmod --reference $< $@.tmp
-	@mv $@.tmp $@
+	@make -C lunar-install install DESTDIR=$(ISO_TARGET)
 
 # Generate locale list
 $(ISO_TARGET)/usr/share/lunar-install/locale.list: iso-target
@@ -48,6 +31,4 @@ lunar-install: $(ISO_TARGET)/sbin/lunar-install \
 	$(ISO_TARGET)/usr/share/lunar-install/locale.list \
 	$(ISO_TARGET)/usr/share/lunar-install/moonbase.tar.bz2 \
 	$(ISO_TARGET)/README \
-	$(ISO_TARGET)/usr/share/lunar-install/motd \
-	$(ISO_TARGET)/var/lib/lunar/functions/lunar-install/functions.sh \
-	$(ISO_TARGET)/etc/lunar/installer/config
+	$(ISO_TARGET)/usr/share/lunar-install/motd
