@@ -1,0 +1,78 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+make_grub_conf()
+{
+  if ! pkg_avail grub ; then
+    return
+  fi
+  if [ -e $TARGET/boot/grub/menu.lst ] ; then
+    return
+  fi
+
+  mkdir -p $TARGET/boot/grub
+  (
+    echo "# uncomment the following 2 lines to enable serial console booting"
+    echo "#serial --unit=0 --speed=38400 --word=8 --parity=no --stop=1"
+    echo "#terminal serial"
+    echo ""
+    echo "timeout 30"
+    echo "default 0"
+    echo "fallback 1"
+    echo "color light-gray/blue black/light-gray"
+    echo ""
+  ) > $TARGET/boot/grub/menu.lst
+}
+
+
+install_grub()
+{
+  if ! pkg_avail grub ; then
+    return
+  fi
+  # grub lives on the "/" partition unless we have a separate
+  # "/boot" partition. Hence we use $BOOT to determine the grub location.
+  GRUB_PART=$(lsh map_device_to_grub $BOOT)
+  # and we go straight to the MBR
+  GRUB_MBR=$(echo $GRUB_PART | cut -d, -f1)
+
+  (
+    echo "root ($GRUB_PART)"
+    echo "setup ($GRUB_MBR)"
+    echo "quit"
+  ) | grub --no-curses
+  sleep 2
+
+  # setup details needed for frub later:
+  if [ "$BOOT" == "$ROOT" ]; then
+    GRUB_BOOT=/boot
+  else
+    GRUB_BOOT=""
+  fi
+  GRUB_ROOT="($(lsh map_device_to_grub $ROOT))"
+  export GRUB_ROOT GRUB_BOOT
+
+  echo ""
+  echo "grub should use the following parameters from now on:"
+  echo "  root   $GRUB_ROOT"
+  echo "  kernel $GRUB_BOOT/\${ image name }"
+  echo ""
+
+  echo "grub was installed on the MBR of $GRUB_MBR"
+  sleep 4
+}
+
+

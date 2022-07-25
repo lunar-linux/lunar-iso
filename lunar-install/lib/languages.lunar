@@ -10,31 +10,35 @@
 #                                                           #
 #############################################################
 #                                                           #
-# This file in released under the GPLv2                     #
+# This file is released under the GPLv2                     #
 #                                                           #
 #############################################################
 
-LOCALE_LIST=/usr/share/lunar-install/locale.list
-PACKAGES_LIST=/var/cache/lunar/packages
-KERNEL_LIST=/var/cache/lunar/kernels
-KMOD_LIST=/var/spool/lunar/kmodules
-MOONBASE_TAR=/usr/share/lunar-install/moonbase.tar.bz2
-MOTD_FILE=/usr/share/lunar-install/motd
+show_languages()
+{
+  while read locale language; do
+    echo "$locale"
+    echo "$language"
+  done < $LOCALE_LIST
+}
 
-# answers to questions asked at the beginning of installing
-BOOTLOADER=none
-TZ=UTC
 
-. /etc/lunar/config
-for FUNCTION in $FUNCTIONS/lunar-install/*.lunar
-do
-  . $FUNCTION
-done
+lang_menu()
+{
+  TITLE="Language Selection Menu"
+  HELP="While Lunar Linux is entirely in English
+it is possible to change the languages of many other programs.
+Please select your preferred langauge.
 
-DIALOG="dialog
---backtitle
-Lunar Linux Installer %VERSION% - %CODENAME% (%DATE%)
---stdout"
+This process will ONLY set the LANG environment variable. Do
+not expect any changes till you finish and reboot."
 
-export IFS=$'\t\n'
-ARCH=$(arch)
+  LANG=${LANG:-en_US.utf8}
+  LANG=$($DIALOG --title "Language Selection Menu" --default-item "$LANG" --menu "$HELP" 0 0 0 `show_languages`)
+  if [ $? == 0 ]; then
+    export LANG
+    E_OK=\\Z2
+  fi
+  DEFAULT=A
+}
+

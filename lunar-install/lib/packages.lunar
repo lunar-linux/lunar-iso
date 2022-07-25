@@ -10,31 +10,24 @@
 #                                                           #
 #############################################################
 #                                                           #
-# This file in released under the GPLv2                     #
+# This file is released under the GPLv2                     #
 #                                                           #
 #############################################################
 
-LOCALE_LIST=/usr/share/lunar-install/locale.list
-PACKAGES_LIST=/var/cache/lunar/packages
-KERNEL_LIST=/var/cache/lunar/kernels
-KMOD_LIST=/var/spool/lunar/kmodules
-MOONBASE_TAR=/usr/share/lunar-install/moonbase.tar.bz2
-MOTD_FILE=/usr/share/lunar-install/motd
+pkg_avail()
+{
+  grep -q "^$1:" $PACKAGES_LIST
+}
 
-# answers to questions asked at the beginning of installing
-BOOTLOADER=none
-TZ=UTC
+transfer_package()
+{
+  cd $TARGET &&
+  LINE=$(grep "^$1:" $PACKAGES_LIST)
+  MOD=$(echo $LINE | cut -d: -f1)
+  VER=$(echo $LINE | cut -d: -f4)
+  cp /var/cache/lunar/$MOD-$VER-*.tar.xz $TARGET/var/cache/lunar/
+  tar xJf $TARGET/var/cache/lunar/$MOD-$VER-*.tar.xz 2> /dev/null
+  echo $LINE >> $TARGET/var/state/lunar/packages
+  cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
+}
 
-. /etc/lunar/config
-for FUNCTION in $FUNCTIONS/lunar-install/*.lunar
-do
-  . $FUNCTION
-done
-
-DIALOG="dialog
---backtitle
-Lunar Linux Installer %VERSION% - %CODENAME% (%DATE%)
---stdout"
-
-export IFS=$'\t\n'
-ARCH=$(arch)

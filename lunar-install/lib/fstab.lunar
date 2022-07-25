@@ -1,0 +1,86 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+fstab_style_menu()
+{
+    local TITLE HELP DEFAULT STYLE FSTAB_OPTIONS
+
+    TITLE="Fstab Style Menu"
+    HELP="Please select preferred fstab mount style"
+    FSTAB_STYLE=`$DIALOG --title "$TITLE" --default-item "$FSTAB_STYLE" --cr-wrap --menu "$HELP" 0 0 0 \
+                 "DEV" "Device name style" \
+                 "LABEL" "LABEL style" \
+                 "UUID" "UUID style"`
+    FSTAB_STYLE=${FSTAB_STYLE:-UUID}
+}
+
+##
+# fstab_style partition fstype mountpoint
+#
+fstab_style()
+{
+  local PART PTYPE MNTPT UUID
+
+  PART=$1
+  PTYPE=$2
+  MNTPT=$3
+
+  case "$FSTAB_STYLE" in
+    DEV)
+      # Do nothing
+      echo $PART
+      ;;
+    LABEL)
+      set_fs_label $PART $PTYPE $MNTPT
+      if [ "$PTYPE" == "swap" ]; then
+        echo "LABEL=swap${PART##*/}"
+      else
+        echo "LABEL=$MNTPT"
+      fi
+      ;;
+    UUID)
+      UUID=$(blkid -s UUID -o value $PART)
+      echo "UUID=$UUID"
+      ;;
+  esac
+}
+
+##
+# set_fs_label partition fstype label
+#
+set_fs_label() {
+  local PART PTYPE LABEL
+
+  PART=$1
+  PTYPE=$2
+  LABEL=$3
+
+  case "$PTYPE" in
+    ext*)
+      tune2fs -L $LABEL $PART &> /dev/null
+      ;;
+    btrfs)
+      btrfs filesystem label $PART $LABEL &> /dev/null
+      ;;
+    xfs)
+      xfs_admin -L $LABEL $PART &> /dev/null
+      ;;
+    swap)
+      mkswap -L swap${PART##*/} $PART &> /dev/null
+      ;;
+  esac
+}
+

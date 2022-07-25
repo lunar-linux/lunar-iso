@@ -10,31 +10,35 @@
 #                                                           #
 #############################################################
 #                                                           #
-# This file in released under the GPLv2                     #
+# This file is released under the GPLv2                     #
 #                                                           #
 #############################################################
 
-LOCALE_LIST=/usr/share/lunar-install/locale.list
-PACKAGES_LIST=/var/cache/lunar/packages
-KERNEL_LIST=/var/cache/lunar/kernels
-KMOD_LIST=/var/spool/lunar/kmodules
-MOONBASE_TAR=/usr/share/lunar-install/moonbase.tar.bz2
-MOTD_FILE=/usr/share/lunar-install/motd
+show_consolefonts()
+{
+  FONTDIR="/usr/share/kbd/consolefonts"
+  cd $FONTDIR
+  FONTS=`ls *.{psf,psfu}.gz | sed -r "s/\.psfu?\.gz//"`
 
-# answers to questions asked at the beginning of installing
-BOOTLOADER=none
-TZ=UTC
+  for FONT in $FONTS; do
+    echo $FONT
+    echo font
+  done
+}
 
-. /etc/lunar/config
-for FUNCTION in $FUNCTIONS/lunar-install/*.lunar
-do
-  . $FUNCTION
-done
 
-DIALOG="dialog
---backtitle
-Lunar Linux Installer %VERSION% - %CODENAME% (%DATE%)
---stdout"
+font_menu()
+{
+  TITLE="Console Font Selection Menu"
+  HELP="Please select your preferred console fonts."
+  FONTS=`show_consolefonts`
+  CONSOLEFONT=${CONSOLEFONT:-default8x16}
+  CONSOLEFONT=`$DIALOG --title "$TITLE" --default-item "$CONSOLEFONT" --menu "$HELP" 0 0 0 $FONTS`
+  if [ $? == 0 ]; then
+    setfont $CONSOLEFONT
+    D_OK=\\Z2
+  fi
+  DEFAULT=E
+}
 
-export IFS=$'\t\n'
-ARCH=$(arch)
+

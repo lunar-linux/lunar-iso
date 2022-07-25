@@ -1,0 +1,232 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+install_menu()
+{
+  if [ -z "$STEPS" ]; then
+    # the total number of steps in the installer:
+    STEPS=8
+
+    SH[1]="Please read the introduction if you are new to Lunar Linux.
+If you want to know more about the installation procedure
+and recent changes please visit http://lunar-linux.org/
+before proceeding."
+    SH[2]="You can now set various system defaults that
+are not vital but make your linux system more friendly
+to your users."
+    SH[3]="You need to create partitions if you are installing on
+a new disc or in free space. If you want to delete other
+operating systems you will also need to partition your disc."
+    SH[4]="You need to mount a filesystem so that Lunar Linux can be
+transferred to it. Usually you make 3 to 5 separate
+partitions like /boot, /var and /usr. After mounting
+them the Lunar Linux packages can be transferred to them."
+    SH[5]="Swap is like temporary memory. It improves your
+systems performance. You can create a swapfile or
+even whole swap partitions."
+    SH[6]="To be able to boot linux on reboot, you need to have
+a boot loader that loads the kernel when you power on
+your computer. Without it linux does not run."
+    SH[7]="During the transfer all programs and files that you
+need to run Lunar Linux will be copied to your system."
+    SH[8]="You can make some final preparations here before you begin
+using your new Lunar Linux system. Setting a root password is strongly
+recommended now, but the rest of these operations can also be done after
+you've rebooted into your new system."
+
+    B_LABEL="One step back"
+    B_HELP="Go back one step in the installation procedure"
+    F_LABEL="One step forward"
+    F_HELP="Go forward one step in the installation procedure"
+
+    I_LABEL="Introduction into Lunar Linux"
+    I_HELP="Read about the advantages of using Lunar Linux"
+
+    C_LABEL="Select a keyboard map"
+    C_HELP="Select keyboard map"
+    D_LABEL="Select a console font"
+    D_HELP="Select a console font"
+    E_LABEL="Set global language"
+    E_HELP="Set global language"
+    A_LABEL="Select a timezone"
+    A_HELP="Select a timezone"
+    J_LABEL="Select a default editor"
+    J_HELP="Select a default editor"
+
+    P_LABEL="Partition discs"
+    P_HELP="Use fdisk or cfdisk to prepare hard drive partitions"
+    W_LABEL="Setup Linux Software RAID"
+    W_HELP="Linux software RAID can increase redundancy or speed of hard discs"
+    M_LABEL="Select target partitions"
+    L_LABEL="Select boot loader"
+    L_HELP="Select a boot loader to boot into Lunar"
+    L_OK="\\Z1"
+    M_HELP="Select target partitions for installation"
+    S_LABEL="Select a swapfile"
+    S_HELP="You don't need to setup a separate swap partition but can use a swapfile"
+    S_OK="\\Z1"
+    T_LABEL="Install lunar"
+    T_HELP="Create filesystems, swapfile and install all packages onto the target system NOW"
+    T_OK="\\Z1"
+    O_LABEL="Configure compiler optimizations"
+    O_HELP="Select architecture and optimizations"
+    O_OK="\\Z1"
+    K_LABEL="Install kernel(s)"
+    K_HELP="Install kernel(s) on the new installation"
+    K_OK="\\Z1"
+
+    R_LABEL="Set root password"
+    R_HELP="Set root password needed to access this system (the default password is empty)"
+    R_OK="\\Z1"
+    U_LABEL="Setup user accounts"
+    U_HELP="Create, edit, delete users and group accounts on the system (\"luser\" after reboot)"
+    U_OK="\\Z1"
+    H_LABEL="Setup hostname and networking"
+    H_HELP="Configure your network devices and hostname settings (\"lnet\" after reboot)"
+    H_OK="\\Z1"
+    V_LABEL="Administrate services"
+    V_HELP="Configure services to start automatically at boot time (\"lservices\" after reboot)"
+    V_OK="\\Z1"
+
+    X_LABEL="Exit into rescue shell or reboot"
+    X_HELP="This launches a a rescue shell or reboots your system"
+    Z_LABEL="Finished installing!"
+    Z_HELP="You're done! Now go reboot and use Lunar Linux!"
+    Z_OK="\\Z0"
+
+    STEP=1
+  fi
+
+  choices()
+  {
+    (
+    export IFS=$' \t\n'
+    for CHOICE in $@; do
+      echo $CHOICE
+      eval echo \$${CHOICE}_OK\$${CHOICE}_LABEL\\\\Z0
+      eval echo \$${CHOICE}_HELP
+    done
+    export IFS=$'\t\n'
+    )
+  }
+
+  if [ "$GUIDE" == "off" ]; then
+    CHOICES="X I C D E J P W M S T O L R U H V A Z"
+    STEPHELP="Step $STEP of $STEPS:"
+  else
+    case $STEP in
+    1)  DEFAULT=I ; CHOICES="X I F" ;;
+    2)              CHOICES="B C D E A J F" ;;
+    3)  DEFAULT=P ; CHOICES="B P W M F" ;;
+    4)  DEFAULT=M ; CHOICES="B P W M F" ;;
+    5)  DEFAULT=S ; CHOICES="B P W M S L T F" ;;
+    6)  DEFAULT=L ; CHOICES="B P W M S L T F" ;;
+    7)  DEFAULT=T ; CHOICES="B P W M S L T F" ;;
+    8)              CHOICES="B R O U H V Z" ;;
+    esac
+  fi
+  COMMAND=`$DIALOG --title "Lunar Linux install menu" --nocancel --default-item "$DEFAULT" --item-help --extra-button --extra-label "Settings" --colors --menu "Step $STEP of $STEPS - \n\n${SH[$STEP]}" 0 0 0 $(choices $CHOICES)`
+
+  case $? in
+    3)
+      COMMAND=S
+      while true; do
+        DEFAULT=$COMMAND
+        COMMAND=`$DIALOG --title "Settings / Special actions" \
+          --default-item "$DEFAULT" \
+          --cancel-label "Exit" \
+          --menu "Installer settings and misc. options" 0 0 0 \
+          "G" "Toggle guided menus on/off                     [$GUIDE]" \
+          "C" "Toggle asking of confirmations on/off          [$CONFIRM]" \
+          "D" "Toggle disabling the ability to perform steps  [$DISABLE]" \
+                                        "F" "Configure fstab mount style                    [$FSTAB_STYLE]" \
+          "M" "Load more kernel modules" \
+          "S" "Temporarily run a shell" \
+          "Q" "Quit the installer"`
+        if [ $? != 0 ]; then
+          return
+        fi
+        case $COMMAND in
+          G) toggle GUIDE ;;
+          C) toggle CONFIRM ;;
+          D) toggle DISABLE ;;
+          F) fstab_style_menu ;;
+          S) shell ;;
+          M) load_module ;;
+          Q) goodbye ;;
+        esac
+      done
+    ;;
+  esac
+
+  eval "TEST=\$${COMMAND}_OK"
+  if [ "$DISABLE" == "on" -a "$TEST" == "\\Z1" ]; then
+    $DIALOG --title "Cannot perform this step yet" --colors --msgbox "This action cannot be performed yet. You need to complete one of the earlier steps succesfully first before you can try this action. Please go a step back and perform all the necessary actions before trying this item again. As a guide, the actions that you have performed are \Z2colored green\Z0. The ones that you cannot perform yet are \Z1colored red\Z0." 15 65
+    return
+  fi
+
+  case $COMMAND in
+    F)  if (( STEP < $STEPS )); then (( STEP++ )) ; fi ;;
+    B)  if (( STEP > 0 )); then (( STEP-- )) ; fi ;;
+
+    X)  goodbye                ;;
+    I)  introduction           ;;
+
+    C)  keymap_menu            ;;
+    D)  font_menu              ;;
+    E)  lang_menu              ;;
+    A)  timezone_menu          ;;
+    J)  editor_menu            ;;
+
+    P)  partition_discs        ;;
+    W)  raid_setup             ;;
+    M)  select_partitions      ;;
+    L)  select_bootloader      ;;
+    S)  select_swap_file       ;;
+    T)  transfer               ;;
+
+    R)  USE_CLEAR=1 chroot_run passwd    ; R_OK=\\Z2; DEFAULT=O ;;
+    O)  chroot_run lunar optimize        ; O_OK=\\Z2; DEFAULT=U ;;
+    U)  chroot_run luser                 ; U_OK=\\Z2; DEFAULT=H ;;
+    H)  chroot_run lnet                  ; H_OK=\\Z2; DEFAULT=V ;;
+    V)  chroot_run lservices             ; V_OK=\\Z2; DEFAULT=Z ;;
+
+    Z)  goodbye                ;;
+  esac
+}
+
+
+main()
+{
+  export PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin"
+  # setting this var is supposed to prevent the enviro_check code now!
+  export LUNAR_INSTALL=1
+
+  unset EDITOR
+
+  TARGET="/mnt"
+  CONFIRM=on
+  GUIDE=on
+  DISABLE=on
+  FSTAB_STYLE="UUID"
+
+  block_devices init
+
+  while true; do
+    install_menu
+  done
+}
+

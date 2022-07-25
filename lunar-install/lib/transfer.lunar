@@ -1,0 +1,282 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+transfer()
+{
+  msgbox "You should now be ready to install Lunar Linux to your system. Lunar Linux will now create filesystems if needed, make a swapfile if it was selected, and install all Lunar Linux packages to the newly setup system. Make sure you are done with partitioning and filesystem selection."
+  if confirm "Are you ready to install lunar?" ;  then
+    clear
+
+    ORDER=$(for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do echo ${PARTITIONS[$N]} | cut -d: -f2 ; done | sort)
+
+    for MOUNTPOINT in $ORDER; do
+      for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do
+        M=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
+        if [ "$M" == "$MOUNTPOINT" ]; then
+          PART=$(echo ${PARTITIONS[$N]} | cut -d: -f1)
+          FSYS=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
+          MNT_OPTS=$(echo ${PARTITIONS[$N]} | cut -d: -f4)
+          FSCK_PASS=$(echo ${PARTITIONS[$N]} | cut -d: -f5)
+          CHECK=$(echo ${PARTITIONS[$N]} | cut -d: -f6)
+          FORCE=$(echo ${PARTITIONS[$N]} | cut -d: -f7)
+          FORMAT=$(echo ${PARTITIONS[$N]} | cut -d: -f8)
+
+          # handle swap
+          if [ "$FSYS" == "swap" ]; then
+            echo "Setting up swap on $PART..."
+            if ! mkswap $PART ; then
+              sleep 3
+              msgbox "Problem creating swap on $PART. Installation will continue."
+            fi
+            # create the filesystems if needed for every partition
+          elif [ "$FORMAT" == "yes" ]; then
+            echo "Formatting $PART as $FSYS..."
+            if ! mkfs.$FSYS $FORCE $PART $CHECK ; then
+              sleep 3
+              msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue."
+            fi
+          fi
+          # again, weed out swap first
+          if [ "$FSYS" == "swap" ]; then
+            # We need to check that the swap device wasn't added already
+            # or we end up with double entries in fstab if more than one
+            # swap device was added
+            if ! echo $FSTAB | grep -q $PART; then
+              LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
+              if swapon $PART; then
+                FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
+                swapoff $PART
+              else
+                sleep 3
+                msgbox "Problem mounting swap on $PART. Installation will continue."
+              fi
+            fi
+            # then try to mount normal FS's
+          else
+            if [ ! -d $TARGET$MOUNTPOINT ] ; then
+              mkdir -p $TARGET$MOUNTPOINT
+            fi
+            if [ "$MNT_OPTS" != "defaults" ]; then
+              MNTOPTARGS="-e $MNT_OPTS"
+            else
+              MNTOPTARGS=""
+            fi
+            echo "Mounting $PART as $FSYS"
+            LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
+            if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
+              FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
+              if [ "$FSYS" == "swap" ]; then
+                umount -n $PART
+              fi
+            else
+              sleep 3
+              msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue."
+            fi
+          fi
+        fi
+      done
+    done
+
+    # last we create the swapfile on the target
+    if [ -n "$SWAPFILE" ]; then
+      mkdir -p $TARGET$(dirname $SWAPFILE) &&
+      echo "Creating a swapfile of $SWAPSIZE MB at \"$SWAPFILE\"..." &&
+      if dd if=/dev/zero of=$TARGET$SWAPFILE bs=1M count=$SWAPSIZE &&
+        mkswap $TARGET$SWAPFILE &&
+        chmod 000 $TARGET$SWAPFILE
+      then
+        FSTAB="$FSTAB\n$SWAPFILE\tswap\tswap\tdefaults\t\t0 0"
+      else
+        sleep 3
+        msgbox "Problem creating swapfile. Installation will continue."
+      fi
+    fi
+
+    # calculate the total so we can display progress
+    NUM=$(wc -l $PACKAGES_LIST | awk '{print $1}')
+    # add the number of times we call percent_msg, subtract 2 for lilo/grub
+    (( NUM = NUM + 10 - 2 ))
+
+    cd $TARGET
+
+    (
+      percent_msg "Creating base LSB directories"
+      mkdir -p bin boot dev etc home lib mnt media
+      mkdir -p proc root sbin srv tmp usr var opt
+      mkdir -p sys
+      if [ `arch` == "x86_64" ]; then
+        ln -sf lib lib64
+        ln -sf lib usr/lib64
+      fi
+      mkdir -p usr/{bin,games,include,lib,libexec,local,sbin,share,src}
+      mkdir -p usr/share/{dict,doc,info,locale,man,misc,terminfo,zoneinfo}
+      mkdir -p usr/share/man/man{1,2,3,4,5,6,7,8}
+      ln -sf share/doc usr/doc
+      ln -sf share/man usr/man
+      ln -sf share/info usr/info
+      mkdir -p etc/lunar/local/depends
+      mkdir -p run/lock
+      ln -sf ../run var/run
+      ln -sf ../run/lock var/lock
+      mkdir -p var/log/lunar/{install,md5sum,compile,queue}
+      mkdir -p var/{cache,empty,lib,log,spool,state,tmp}
+      mkdir -p var/{cache,lib,log,spool,state}/lunar
+      mkdir -p var/state/discover
+      mkdir -p var/spool/mail
+      mkdir -p media/{cdrom0,cdrom1,floppy0,floppy1,mem0,mem1}
+      chmod 0700 root
+      chmod 1777 tmp var/tmp
+
+      if [ -f /var/cache/lunar/aaa_base.tar.xz ]; then
+        percent_msg "Installing aaa_base: base directories and files"
+        tar xJf /var/cache/lunar/aaa_base.tar.xz 2> /dev/null
+      fi
+      if [ -f /var/cache/lunar/aaa_dev.tar.xz ]; then
+        percent_msg "Installing aaa_dev: device nodes"
+        tar xJf /var/cache/lunar/aaa_dev.tar.xz 2> /dev/null
+      fi
+
+      for LINE in $(cat $PACKAGES_LIST | grep -v -e '^lilo:' -e '^grub:' -e '^grub2:') ; do
+        MOD=$(echo $LINE | cut -d: -f1)
+        VER=$(echo $LINE | cut -d: -f4)
+        SIZ=$(echo $LINE | cut -d: -f5)
+        percent_msg "Installing $MOD-$VER ($SIZ)\n\n($(basename /var/cache/lunar/$MOD-$VER-*.tar.xz))"
+        transfer_package $MOD
+      done
+
+      percent_msg "Installing moonbase"
+      (
+        cd $TARGET/var/lib/lunar
+        tar xjf $MOONBASE_TAR 2> /dev/null
+        tar j --list -f $MOONBASE_TAR | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
+        mkdir -p moonbase/zlocal
+      )
+
+      # transfer sources
+      #percent_msg "Copying sources"
+      #cp /var/spool/lunar/* $TARGET/var/spool/lunar/
+
+      # setup list of installed packages etc.
+      percent_msg "Updating administrative files"
+      echo "moonbase:%DATE%:installed:%DATE%:37000KB" >> $TARGET/var/state/lunar/packages
+      cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
+      cp /var/state/lunar/depends        $TARGET/var/state/lunar/
+      cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
+      chroot_run lsh create_module_index
+      chroot_run lsh create_depends_cache
+
+      # more moonbase related stuff
+      percent_msg "Updating moonbase plugins"
+      chroot_run lsh update_plugins
+
+      # just to make sure
+      percent_msg "Running ldconfig"
+      chroot_run ldconfig
+
+      # pass through some of the configuration at this point:
+      percent_msg "Finishing up installation"
+      chroot_run systemd-machine-id-setup 2> /dev/null
+      chroot_run systemctl preset-all 2>/dev/null
+      echo -e "KEYMAP=$KEYMAP\nFONT=$CONSOLEFONT" > $TARGET/etc/vconsole.conf
+      echo -e "LANG=${LANG:-en_US.utf8}\nLC_ALL=${LANG:-en_US.utf8}" > $TARGET/etc/locale.conf
+      [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
+
+      if [[ $TZ != UTC ]]
+      then
+        ln -fs /usr/share/zoneinfo/$TZ etc/localtime
+      fi
+
+      # post-first-boot message:
+      cp /README $TARGET/root/README
+      cp $MOTD_FILE $TARGET/etc/motd
+
+      # save proxies
+      if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
+      (
+        echo "# these proxy settings apply to wget only"
+        [ -z "$HPROXY" ] || echo "export http_proxy=\"$HPROXY\""
+        [ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\""
+        [ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\""
+      ) > $TARGET/etc/profile.d/proxy.rc
+      fi
+
+      if [ -e etc/fstab ]; then
+        cp etc/fstab etc/fstab-
+      fi
+
+      echo -e "$FSTAB" >> etc/fstab
+      make_lilo_conf
+      make_grub_conf
+
+      # some more missing files:
+      cp /etc/lsb-release $TARGET/etc/
+      cp /etc/os-release $TARGET/etc/
+      cp /etc/issue{,.net} $TARGET/etc/
+
+      # Some sane defaults
+      GCCVER=$(chroot_run lvu installed gcc | awk -F\. '{ print $1"_"$2 }')
+
+      cat <<EOF> $TARGET/etc/lunar/local/config
+  LUNAR_COMPILER="GCC_$GCCVER"
+    LUNAR_MODULE="lunar"
+LUNAR_ALIAS_UDEV="systemd"
+LUNAR_ALIAS_KMOD="kmod"
+LUNAR_ALIAS_KERNEL_HEADERS="kernel-headers"
+LUNAR_ALIAS_SSL="openssl"
+LUNAR_ALIAS_OSSL="openssl"
+EOF
+
+      # Disable services (user can choose to enable them using services menu)
+      rm -f $TARGET/etc/systemd/system/network.target.wants/wpa_supplicant.service
+      rm -f $TARGET/etc/systemd/system/sockets.target.wants/sshd.socket
+
+      # root user skel files
+      find $TARGET/etc/skel ! -type d | xargs -i cp '{}' $TARGET/root
+
+      # initialize the new machine:
+      touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
+      chmod 0644 $TARGET/var/log/{utmp,wtmp,lastlog}
+      chmod 0600 $TARGET/var/log/btmp
+
+      # Tell dracut to auto enable md devices if used during install
+      if [ -e /proc/mdstat ]; then
+        if egrep -q ^md[0-9]+ /proc/mdstat; then
+          mdadm --examine --scan > $TARGET/etc/mdadm.conf
+          cat <<EOF> $TARGET/etc/dracut.conf.d/02-raid.conf
+# Enable software raid automatically using dracut.
+# --  AUTO-GENERATED FILE DO NOT MODIFY --
+kernel_cmdline+=" rd.auto=1"
+mdadmconf="yes"
+EOF
+        fi
+      fi
+
+    # really we are done now ;^)
+    ) | $DIALOG --title " Installing Lunar Linux " --gauge "" 10 70 0
+
+    cd /
+
+    if (( STEP == 7 )); then
+      (( STEP++ ))
+    fi
+    T_OK=\\Z2
+    O_OK=
+
+    install_bootloader &&
+    install_kernels
+  fi
+}
+
