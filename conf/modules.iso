@@ -41,11 +41,13 @@ ISO_MODULES=acl            \
             libffi         \
             libidn         \
             libidn2        \
+            libinih        \
             libgcrypt      \
             libgpg-error   \
             libidn         \
             libmpc         \
             libmnl         \
+            libnftnl       \
             libtool        \
             libunistring   \
             Linux-PAM      \
