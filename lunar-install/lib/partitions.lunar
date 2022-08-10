@@ -1,0 +1,205 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+menu_get_partition()
+{
+  local TITLE HELP PART
+  TITLE="Partition Selection Menu"
+  HELP="Please select a partition"
+  PART=$($DIALOG --title "$TITLE" --ok-label "Edit" --cancel-label "Done" --menu "$HELP" 0 0 0 `menu_list_targets` "New" "Add an unlisted device to this list...")
+  if [ $? != 0 ]; then
+    return 1
+  fi
+  if [ "$PART" == "New" ]; then
+    PART=$(inputbox "Enter special device node" "/dev/")
+    if [ ! -b $(readlink -f $PART) ]; then
+      msgbox "Device $PART does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?"
+      unset PART
+    elif echo ${SPECIAL_DEVICES[@]} | grep -qw $PART ; then
+      msgbox "Device $PART was already added!"
+      unset PART
+    else
+      block_devices add "$PART:other"
+    fi
+  fi
+  echo $PART
+}
+
+
+partition_discs()
+{
+  CFDISK="Curses based disk partition table manipulator"
+  FDISK="Partition table manipulator"
+  PARTED="Create, destroy, resize, and copy partitions"
+  HELP="Please create a boot and root partition."
+  TITLE="Partitioning Menu"
+
+  DISC=$(menu_get_disc) &&
+  PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
+          "cfdisk"  "$CFDISK"                          \
+          "fdisk"   "$FDISK"                           \
+          "parted"  "$PARTED"` &&
+  PROMPT="Are you certain that you want to run $PROG on $DISC? (This will erase any partition selection you might have already performed)" &&
+  if confirm "$PROMPT"; then
+    unset PARTITIONS
+    $PROG $DISC
+    # regenerate list of block devices
+    block_devices init
+    if (( STEP == 3 )); then
+      (( STEP++ ))
+    fi
+    P_OK=\\Z2
+  fi
+}
+
+
+check_partition()
+{
+  PROMPT="Check for errors?"
+  case $1 in
+    ext2|ext3|ext4|swap)
+      if confirm "$PROMPT" "--defaultno"; then
+        echo "-c";
+      fi
+      ;;
+    *)
+      true
+      ;;
+  esac
+}
+
+
+
+menu_select_partitions()
+{
+  local PART N MNTPNT FSYS MNT_OPTS FSCK_PASS CHECK FORCE FORMAT
+  while true; do
+    PART=$(menu_get_partition)
+    # Exit pressed - leave the menu and go back up a level
+    if [ $? != 0 ]; then
+      break
+    elif [ "$PART" == "" ]; then
+      continue
+    fi
+    # scan if we are re-assigning a partition
+    for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do
+      if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$PART" ]; then
+        msgbox "Unassigned partition $PART. You can now change the parameters for this partition if you wish."
+        block_devices free $PART
+        unset PARTITIONS[$N]
+        continue 2
+      fi
+    done
+    FSYS=$(menu_get_filesystem)
+    if [ -z "$FSYS" ]; then
+      continue
+    fi &&
+
+    case "$FSYS" in
+      btrfs)
+        msgbox "Selecting btrfs as /boot is only supported with grub2, you will need to create a /boot partition and format it as ext2, ext3 or ext4 in order to use different bootloaders."
+        ;;
+      swap)
+        SWAP_ENABLED=1
+        ;;
+    esac
+
+    MNTPNT=$(get_mount_point $FSYS) &&
+
+    PROMPT="$PART might already be formatted with the $FSYS filesystem and may contain data. Formatting it will destroy all the information on this partition. Are you sure you want to format it?"
+    if confirm "$PROMPT" "--defaultno"; then
+      FORMAT=yes
+      CHECK=$(check_partition $FSYS)
+    else
+      FORMAT=no
+    fi
+    MNT_OPTS=$(determine_mount_opts $PART $FSYS) &&
+    if [ "$MNT_PNT" != "/" ]; then
+      MNT_PNT=${MNT_PNT%%/}
+    fi
+    FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
+    if [ "$FSYS" == "xfs" ]; then
+      FORCE="-f"
+    elif [[ "$FSYS" =~ ext[234] ]]; then
+      FORCE="-F"
+    elif [[ "$FSYS" == "btrfs" ]]; then
+      FORCE="-f"
+    elif [[ "$FSYS" == "vfat" ]]; then  # Enforce creation of 32-bit filesystem
+      FORCE="-F 32"
+    else
+      unset FORCE
+    fi
+
+    PARTITIONS[${#PARTITIONS[@]}]="$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT"
+
+    if [ "$MNTPNT" == "/" ]; then
+      ROOT=$PART
+      # make sure BOOT is set to ROOT ... ->
+      if [ -z "$BOOT" ]; then
+        BOOT=$ROOT
+      fi
+    fi
+    if [ "$MNTPNT" == "/boot" ]; then
+      # ... -> except when this is a /boot partition
+      BOOT=$PART
+    fi
+    block_devices use $PART
+  done
+}
+
+
+select_partitions()
+{
+  if [ -z "$DONE_PARTITIONING" ]; then
+    if confirm "Are you done making partitions?"; then
+      DONE_PARTITIONING=1
+      case $ARCH in
+        "alpha")
+          msgbox \
+            "The partition on which the kernel is located must
+be formatted with the ext2 filesystem. Normally this
+means that your root or boot filesystem should be ext2."
+          ;;
+      esac
+      menu_select_partitions
+    fi
+  else
+    menu_select_partitions
+  fi
+
+  if [ -n "$ROOT" ]; then
+    if (( STEP <= 4 )) ; then
+      # Skip swapfile step if swap partition was set
+      if [ -n "$SWAP_ENABLED" ]; then
+        S_OK=\\Z2
+        STEP=6
+      else
+        S_OK=
+        STEP=5
+      fi
+    fi
+    T_OK=
+    L_OK=
+  fi
+}
+
+menu_get_disc()
+{
+  TITLE="Disk Selection Menu"
+  HELP="Please select a disk"
+  $DIALOG --title "$TITLE" --menu "$HELP" 0 0 0 $(menu_list_discs)
+}
+

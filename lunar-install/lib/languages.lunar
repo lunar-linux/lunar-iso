@@ -1,0 +1,44 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+show_languages()
+{
+  while read locale language; do
+    echo "$locale"
+    echo "$language"
+  done < $LOCALE_LIST
+}
+
+
+lang_menu()
+{
+  TITLE="Language Selection Menu"
+  HELP="While Lunar Linux is entirely in English
+it is possible to change the languages of many other programs.
+Please select your preferred langauge.
+
+This process will ONLY set the LANG environment variable. Do
+not expect any changes till you finish and reboot."
+
+  LANG=${LANG:-en_US.utf8}
+  LANG=$($DIALOG --title "Language Selection Menu" --default-item "$LANG" --menu "$HELP" 0 0 0 `show_languages`)
+  if [ $? == 0 ]; then
+    export LANG
+    E_OK=\\Z2
+  fi
+  DEFAULT=A
+}
+

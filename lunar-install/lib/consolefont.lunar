@@ -1,0 +1,44 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+show_consolefonts()
+{
+  FONTDIR="/usr/share/kbd/consolefonts"
+  cd $FONTDIR
+  FONTS=`ls *.{psf,psfu}.gz | sed -r "s/\.psfu?\.gz//"`
+
+  for FONT in $FONTS; do
+    echo $FONT
+    echo font
+  done
+}
+
+
+font_menu()
+{
+  TITLE="Console Font Selection Menu"
+  HELP="Please select your preferred console fonts."
+  FONTS=`show_consolefonts`
+  CONSOLEFONT=${CONSOLEFONT:-default8x16}
+  CONSOLEFONT=`$DIALOG --title "$TITLE" --default-item "$CONSOLEFONT" --menu "$HELP" 0 0 0 $FONTS`
+  if [ $? == 0 ]; then
+    setfont $CONSOLEFONT
+    D_OK=\\Z2
+  fi
+  DEFAULT=E
+}
+
+

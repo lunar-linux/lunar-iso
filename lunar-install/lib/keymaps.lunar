@@ -1,0 +1,51 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+show_keymaps()
+{
+  KEYDIR="/usr/share/kbd/keymaps/i386"
+
+  azerty="$(ls $KEYDIR/azerty)"
+  colemak="$(ls $KEYDIR/colemak)"
+  dvorak="$(ls $KEYDIR/dvorak)"
+  fgGIod="$(ls $KEYDIR/fgGIod)"
+  olpc="$(ls $KEYDIR/olpc)"
+  qwerty="$(ls $KEYDIR/qwerty)"
+  qwertz="$(ls $KEYDIR/qwertz)"
+
+  MAP_FILES=$(echo -e "$azerty\n$colemak\n$dvorak\n$fgGIod\n$olpc\n$qwerty\n$qwertz" | sort | sed "s/\.kmap\.gz//")
+
+  for MAP in $MAP_FILES; do
+    echo ${MAP%.map.gz}
+    echo keymap
+  done
+}
+
+
+keymap_menu()
+{
+  TITLE="Keymap Selection Menu"
+  HELP="Please select your preferred keymapping."
+  KEYMAPS=$(show_keymaps)
+  DEFAULT=${KEYMAP:-defkeymap}
+  KEYMAP=`$DIALOG --title "$TITLE" --default-item "$DEFAULT" --menu "$HELP" 0 0 0 $KEYMAPS`
+  if [ -n "$KEYMAP" ]; then
+    loadkeys $KEYMAP
+  fi
+  C_OK=\\Z2
+  DEFAULT=D
+}
+

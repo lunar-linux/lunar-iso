@@ -1,0 +1,118 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+list_precompiled_kernels()
+{
+  local LINE
+  while read LINE; do
+    echo $LINE | cut -d: -f1
+    echo $LINE | cut -d: -f3-
+    # same text below - more space for longer description
+    echo $LINE | cut -d: -f3-
+  done < $KERNEL_LIST
+}
+
+list_kernel_modules()
+{
+  local LINE
+  while read LINE; do
+    (
+      unset MISSING
+      MODULE=$(echo $LINE | cut -d: -f2)
+      for SOURCE in $(chroot_run lvu sources $MODULE) ; do
+        if [ ! -e $TARGET/var/spool/lunar/$SOURCE ]; then
+          MISSING=yes
+        fi
+      done
+      if [ -z "$MISSING" ]; then
+        echo $LINE | cut -d: -f1
+        echo $MODULE
+        echo $LINE | cut -d: -f3-
+      fi
+    )
+  done < $KMOD_LIST
+}
+
+install_kernels()
+{
+  while true ; do
+    # Lets shortcut here, if we only have one kernel we just install it without a dialog
+    KERNELS_AVAIL=$(wc -l $KERNEL_LIST | cut -d' ' -f1)
+    if [[ $KERNELS_AVAIL == 1 ]]; then
+      KCOMMAND="P"
+    else
+      KCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --default-item "P" --item-help --menu "In order to succesfully run linux you need to install the linux kernel, the heart of the operating system. You can choose between compiling one yourself or select a precompiled modular kernel." 0 0 0 \
+      "P" "Install a precompiled kernel" "Fast and safe: these kernels should work on almost all machines" \
+      "C" "Compile a kernel" "Custom configure and compile one of the linux kernels"`
+    fi
+
+    if [ $? != 0 ]; then
+      return
+    fi
+
+    case $KCOMMAND in
+      C)
+        msgbox "This option is not available from the installer."
+      ;;
+      P)
+        # Lets shortcut here, if we only have one kernel we just install it without a dialog
+        if [[ $KERNELS_AVAIL == 1 ]]; then
+          CCOMMAND=$(cut -d: -f1 $KERNEL_LIST)
+        else
+          CCOMMAND=`$DIALOG --title "Kernel selection menu" --cancel-label "Exit" --item-help --menu "" 0 0 0 \
+            $(list_precompiled_kernels)`
+        fi
+        if [ -f "/var/cache/lunar/$CCOMMAND.tar.xz" ]; then
+          $DIALOG --infobox "\nInstalling kernel $CCOMMAND, please wait..." 5 70
+          cd $TARGET && tar xf /var/cache/lunar/$CCOMMAND.tar.xz &> /dev/null
+          chroot_run cp /usr/src/linux/.config /etc/lunar/local/.config.current
+
+          KVER=$(grep "^$CCOMMAND:" $KERNEL_LIST | cut -d: -f2)
+          KVER_PATCH=$(echo $KVER | cut -d . -f 3)
+          KVER_FULL=$(echo $KVER | cut -d . -f 1,2).${KVER_PATCH:-0}
+
+          # Register the kernel module as installed
+          if ! grep -q "^linux:" $TARGET/var/state/lunar/packages; then
+            echo "linux:%DATE%:installed:$KVER:101500KB" >> $TARGET/var/state/lunar/packages
+          fi
+
+          # Generate kernel install log
+          #tar -tf /var/cache/lunar/$CCOMMAND.tar.xz | sed '/^usr\/src/d;s:^:/:g' >> $TARGET/var/log/lunar/install/linux-${CCOMMAND} 2> /dev/null
+
+          # Generate kernel md5sum log
+          #cat $TARGET/var/log/lunar/install/linux-${CCOMMAND} | xargs -i md5sum {} >> $TARGET/var/log/lunar/md5sum/linux-${CCOMMAND} 2> /dev/null
+
+          # let the plugin code handle the hard work
+          chroot_run depmod
+          chroot_run lsh update_bootloader $KVER_FULL $KVER
+
+          if (( STEP == 7 )); then
+            (( STEP++ ))
+          fi
+          K_OK=\\Z2
+          R_OK=
+          U_OK=
+          H_OK=
+          V_OK=
+          G_OK=
+          A_OK=
+          break
+        fi
+      ;;
+    esac
+  done
+}
+

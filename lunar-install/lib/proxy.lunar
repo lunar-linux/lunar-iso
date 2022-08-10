@@ -1,0 +1,59 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+configure_proxy()
+{
+  HTTP_PROMPT="Please enter the HTTP proxy server\nExample: http://192.168.1.1:8080/"
+  FTP_PROMPT="Please enter the FTP proxy server\nExample: http://192.168.1.1:8080/"
+  NO_PROMPT="Please enter all domains/ip addresses (comma-seperated) proxy should NOT be used for:\nExample: .mit.edu,mysite.com"
+  HPROXY=`inputbox "$HTTP_PROMPT"`           &&
+  FPROXY=`inputbox "$FTP_PROMPT" "$HPROXY"`  &&
+  NPROXY=`inputbox "$NO_PROMPT"`
+}
+
+
+confirm_proxy_settings()
+{
+  FINISHED=NO
+  while [ "$FINISHED" != "YES" ]; do
+    PROMPT="Are these settings correct?"
+    PROMPT="$PROMPT\nHTTP Proxy:  $HPROXY"
+    PROMPT="$PROMPT\n FTP Proxy:  $FPROXY"
+    PROMPT="$PROMPT\n  No Proxy:  $NPROXY"
+
+    if confirm "$PROMPT" "--cr-wrap"; then
+      FINISHED=YES
+    else
+      configure_proxy
+      FINISHED=NO
+    fi
+  done
+}
+
+
+proxy_exit_message()
+{
+  msgbox \
+    "Your proxy configuration has been saved.
+
+Please note that these proxy settings will only be used by Lunar Linux
+(specifically, wget) and possibly some other command-line utilities.
+
+You will still have to configure proxy settings in your favorite
+web browser, etc..."
+
+}
+

@@ -1,0 +1,33 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+pkg_avail()
+{
+  grep -q "^$1:" $PACKAGES_LIST
+}
+
+transfer_package()
+{
+  cd $TARGET &&
+  LINE=$(grep "^$1:" $PACKAGES_LIST)
+  MOD=$(echo $LINE | cut -d: -f1)
+  VER=$(echo $LINE | cut -d: -f4)
+  cp /var/cache/lunar/$MOD-$VER-*.tar.xz $TARGET/var/cache/lunar/
+  tar xJf $TARGET/var/cache/lunar/$MOD-$VER-*.tar.xz 2> /dev/null
+  echo $LINE >> $TARGET/var/state/lunar/packages
+  cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
+}
+

@@ -1,14 +1,11 @@
-.INTERMEDIATE: installer lunar-install
+.INTERMEDIATE: lunar-install
 
 installer: lunar-install
 
-
 # Install the Lunar installer
-$(ISO_TARGET)/sbin/lunar-install: $(ISO_SOURCE)/lunar-install/sbin/lunar-install iso-target
+$(ISO_TARGET)/sbin/lunar-install:
 	@echo lunar-install
-	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:LUNAR_$(ISO_MAJOR):' $< > $@.tmp
-	@chmod --reference $< $@.tmp
-	@mv $@.tmp $@
+	@make -C lunar-install install DESTDIR=$(ISO_TARGET)
 
 # Generate locale list
 $(ISO_TARGET)/usr/share/lunar-install/locale.list: iso-target
@@ -30,4 +27,8 @@ $(ISO_TARGET)/README: $(ISO_SOURCE)/template/README iso-target
 $(ISO_TARGET)/usr/share/lunar-install/motd: $(ISO_SOURCE)/template/motd iso-target
 	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%KERNEL%:$(ISO_KERNEL):g' -e 's:%CNAME%:$(ISO_CNAME):g' -e 's:%COPYRIGHTYEAR%:$(ISO_COPYRIGHTYEAR):g' -e 's:%LABEL%:LUNAR_$(ISO_MAJOR):' $< > $@
 
-lunar-install: $(ISO_TARGET)/sbin/lunar-install $(ISO_TARGET)/usr/share/lunar-install/locale.list $(ISO_TARGET)/usr/share/lunar-install/moonbase.tar.bz2 $(ISO_TARGET)/README $(ISO_TARGET)/usr/share/lunar-install/motd
+lunar-install: $(ISO_TARGET)/sbin/lunar-install \
+	$(ISO_TARGET)/usr/share/lunar-install/locale.list \
+	$(ISO_TARGET)/usr/share/lunar-install/moonbase.tar.bz2 \
+	$(ISO_TARGET)/README \
+	$(ISO_TARGET)/usr/share/lunar-install/motd
