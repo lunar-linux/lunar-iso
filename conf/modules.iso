@@ -27,6 +27,7 @@ ISO_MODULES=acl            \
             gmp            \
             grep           \
             gzip           \
+            inih           \
             iproute2       \
             iputils        \
             iptables       \
@@ -41,7 +42,6 @@ ISO_MODULES=acl            \
             libffi         \
             libidn         \
             libidn2        \
-            libinih        \
             libgcrypt      \
             libgpg-error   \
             libidn         \
