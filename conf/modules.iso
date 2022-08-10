@@ -25,6 +25,7 @@ ISO_MODULES=acl            \
             glib-2         \
             glibc          \
             gmp            \
+            gptfdisk       \
             grep           \
             gzip           \
             inih           \
