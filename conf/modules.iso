@@ -51,6 +51,7 @@ ISO_MODULES=acl            \
             libtool        \
             libunistring   \
             Linux-PAM      \
+            linux-firmware \
             lunar          \
             lvm2           \
             lzo            \
