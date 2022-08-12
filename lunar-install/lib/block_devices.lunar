@@ -95,7 +95,7 @@ list_block_device_partitions()
 {
   local DEVICE TYPE FSTYPE FSTYPE_FILTER
 
-  FSTYPE_FILTER="(LVM2_member|crypto_luks|linux_raid_member|iso9660)"
+  FSTYPE_FILTER="(LVM2_member|crypto_LUKS|linux_raid_member|iso9660)"
 
   $_lsblk NAME,TYPE,FSTYPE $1 | grep "part" | while IFS=$' \t\n' read DEVICE TYPE FSTYPE; do
     if [[ ! "$FSTYPE" =~ $FSTYPE_FILTER ]]; then
