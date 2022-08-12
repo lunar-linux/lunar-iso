@@ -6,13 +6,16 @@
 # portions Copyright 2002 by rodzilla                       #
 # portions Copyright 2003-2004 by tchan, kc8apf             #
 # portions Copyright 2004-2007 by Auke Kok                  #
-# portions Copyright 2008-2017 by Stefan Wold               #
+# portions Copyright 2008-2022 by Stefan Wold               #
 #                                                           #
 #############################################################
 #                                                           #
 # This file is released under the GPLv2                     #
 #                                                           #
 #############################################################
+
+_lsblk="lsblk
+-rpno"
 
 block_devices()
 {
@@ -74,20 +77,32 @@ block_devices()
 
 
 list_block_devices()
-{(
-  local DEVICE TYPE
-  export IFS=$' \t\n'
+{
+  local DEVICE TYPE FSTYPE TYPE_FILTER FSTYPE_FILTER
 
-  lsblk -o NAME,TYPE -p -n --raw -I 3,8,9 | while read DEVICE TYPE; do
-    if [[ "$TYPE" == "disk" || "$TYPE" == "part" ]]; then
-      echo $DEVICE:$TYPE
-    else
-      echo $DEVICE:other
+  TYPE_FILTER="dmraid"
+  FSTYPE_FILTER="(iso9660|isw_raid_member|ddf_raid_member)"
+
+  $_lsblk NAME,TYPE,FSTYPE | grep "disk" | while IFS=$' \t\n' read DEVICE TYPE FSTYPE; do
+    if [[ ! "$TYPE" =~ $TYPE_FILTER ]] && [[ ! "$FSTYPE" =~ $FSTYPE_FILTER ]]; then
+      echo "$DEVICE:$TYPE"
+      list_block_device_partitions $DEVICE
     fi
   done
-  export IFS=$'\t\n'
-)}
+}
 
+list_block_device_partitions()
+{
+  local DEVICE TYPE FSTYPE FSTYPE_FILTER
+
+  FSTYPE_FILTER="(LVM2_member|crypto_luks|linux_raid_member|iso9660)"
+
+  $_lsblk NAME,TYPE,FSTYPE $1 | grep "part" | while IFS=$' \t\n' read DEVICE TYPE FSTYPE; do
+    if [[ ! "$FSTYPE" =~ $FSTYPE_FILTER ]]; then
+      echo "$DEVICE:$TYPE"
+    fi
+  done
+}
 
 menu_list_devices()
 {
