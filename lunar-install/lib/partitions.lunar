@@ -138,7 +138,7 @@ menu_select_partitions()
     elif [[ "$FSYS" == "btrfs" ]]; then
       FORCE="-f"
     elif [[ "$FSYS" == "vfat" ]]; then  # Enforce creation of 32-bit filesystem
-      FORCE="-F 32"
+      FORCE="-F32"
     else
       unset FORCE
     fi
