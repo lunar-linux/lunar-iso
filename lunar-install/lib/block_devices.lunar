@@ -83,8 +83,8 @@ list_block_devices()
   TYPE_FILTER="dmraid"
   FSTYPE_FILTER="(iso9660|isw_raid_member|ddf_raid_member)"
 
-  $_lsblk NAME,TYPE,FSTYPE | grep "disk" | while IFS=$' \t\n' read DEVICE TYPE FSTYPE; do
-    if [[ ! "$TYPE" =~ $TYPE_FILTER ]] && [[ ! "$FSTYPE" =~ $FSTYPE_FILTER ]]; then
+  $_lsblk NAME,TYPE | grep "disk$" | while IFS=$' \t\n' read DEVICE TYPE; do
+    if [[ ! "$TYPE" =~ $TYPE_FILTER ]] && [[ ! "$($_lsblk FSTYPE $DEVICE)" =~ $FSTYPE_FILTER ]]; then
       echo "$DEVICE:$TYPE"
       list_block_device_partitions $DEVICE
     fi
@@ -97,8 +97,8 @@ list_block_device_partitions()
 
   FSTYPE_FILTER="(LVM2_member|crypto_LUKS|linux_raid_member|iso9660)"
 
-  $_lsblk NAME,TYPE,FSTYPE $1 | grep "part" | while IFS=$' \t\n' read DEVICE TYPE FSTYPE; do
-    if [[ ! "$FSTYPE" =~ $FSTYPE_FILTER ]]; then
+  $_lsblk NAME,TYPE $1 | grep "part$" | while IFS=$' \t\n' read DEVICE TYPE; do
+    if [[ ! "$($_lsblk FSTYPE $DEVICE)" =~ $FSTYPE_FILTER ]]; then
       echo "$DEVICE:$TYPE"
     fi
   done
