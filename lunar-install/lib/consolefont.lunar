@@ -16,11 +16,9 @@
 
 show_consolefonts()
 {
-  FONTDIR="/usr/share/kbd/consolefonts"
-  cd $FONTDIR
-  FONTS=`ls *.{psf,psfu}.gz | sed -r "s/\.psfu?\.gz//"`
+  local FONT
 
-  for FONT in $FONTS; do
+  for FONT in $(find /usr/share/kbd/consolefonts -maxdepth 1 -name "*.gz" ! -name "*cp.gz" | sed -r 's;^.*/;;g;s;(\.psfu?)?\.gz;;g' | sort); do
     echo $FONT
     echo font
   done
@@ -29,12 +27,13 @@ show_consolefonts()
 
 font_menu()
 {
+  locale TITLE HELP
   TITLE="Console Font Selection Menu"
   HELP="Please select your preferred console fonts."
-  FONTS=`show_consolefonts`
-  CONSOLEFONT=${CONSOLEFONT:-default8x16}
-  CONSOLEFONT=`$DIALOG --title "$TITLE" --default-item "$CONSOLEFONT" --menu "$HELP" 0 0 0 $FONTS`
+
+  CONSOLEFONT=$($DIALOG --title "$TITLE" --default-item "${CONSOLEFONT:-default8x16}" --menu "$HELP" 22 60 16 $(show_consolefonts))
   if [ $? == 0 ]; then
+    $DIALOG --aspect 30 --infobox "Setting console font '$CONSOLEFONT'..." 0 0
     setfont $CONSOLEFONT
     D_OK=\\Z2
   fi
