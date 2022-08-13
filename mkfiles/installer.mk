@@ -7,17 +7,6 @@ $(ISO_TARGET)/sbin/lunar-install:
 	@echo lunar-install
 	@make -C lunar-install install DESTDIR=$(ISO_TARGET)
 
-# Generate locale list
-$(ISO_TARGET)/usr/share/lunar-install/locale.list: iso-target
-	@echo locale.list
-	@mkdir -p $(ISO_TARGET)/usr/share/lunar-install
-	@$(ISO_SOURCE)/scripts/chroot-build locale -a -v | \
-	sed -rn 's;archive.*|locale:|language \||territory \|;;gp' | \
-	awk '{printf $$0 ; printf " "} NR % 3 == 0 {print " "}' | \
-	while read locale language territory ; do \
-	  echo -e "$$locale\t$$language ($$territory)" ; \
-	done > $@
-
 $(ISO_TARGET)/usr/share/lunar-install/moonbase.tar.bz2: $(ISO_SOURCE)/spool/moonbase.tar.bz2 iso-target
 	@cp $< $@
 

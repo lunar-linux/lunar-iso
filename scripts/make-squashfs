@@ -39,8 +39,6 @@ rsync -av $ISO_TARGET/ $ROOTFSMNTDIR --exclude .iso* \
                                      --exclude var/spool/* \
                                      --exclude var/log/* \
                                      --exclude usr/include \
-                                     --exclude usr/lib/locale \
-                                     --exclude usr/share/locale \
                                      --exclude usr/share/man \
                                      --exclude usr/share/info \
                                      --exclude usr/share/doc \
