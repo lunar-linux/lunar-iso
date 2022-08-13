@@ -43,7 +43,6 @@ rsync -av $ISO_TARGET/ $ROOTFSMNTDIR --exclude .iso* \
                                      --exclude usr/share/info \
                                      --exclude usr/share/doc \
                                      --exclude usr/share/gtk-doc \
-                                     --exclude usr/share/vim \
                                      --exclude usr/src \
                                      --exclude var/state/lunar/module_history
 umount $ROOTFSMNTDIR
