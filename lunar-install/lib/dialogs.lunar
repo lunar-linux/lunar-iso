@@ -20,6 +20,9 @@ msgbox()
   $DIALOG --cr-wrap --msgbox "$1" $LINES 60
 }
 
+infobox() {
+  $DIALOG --aspect ${2:-9} --infobox "$1" 0 0
+}
 
 inputbox()
 {
