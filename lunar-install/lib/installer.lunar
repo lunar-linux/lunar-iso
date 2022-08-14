@@ -198,7 +198,7 @@ you've rebooted into your new system."
     S)  select_swap_file       ;;
     T)  transfer               ;;
 
-    R)  USE_CLEAR=1 chroot_run passwd    ; R_OK=\\Z2; DEFAULT=O ;;
+    R)  set_user_password root ;;
     O)  chroot_run lunar optimize        ; O_OK=\\Z2; DEFAULT=U ;;
     U)  chroot_run luser                 ; U_OK=\\Z2; DEFAULT=H ;;
     H)  chroot_run lnet                  ; H_OK=\\Z2; DEFAULT=V ;;
