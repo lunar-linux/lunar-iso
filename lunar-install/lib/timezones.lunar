@@ -16,7 +16,7 @@
 
 show_timezones()
 {
-    for ITEM in `LANG=C ls --hide=[a-z]* $LOCALTIME/$1`; do
+    for ITEM in $(LANG=C ls --hide=[a-z]* $LOCALTIME/$1); do
         echo "$ITEM"
         if [ -d $LOCALTIME/$1/$ITEM ]; then
             echo "Directory"
@@ -43,7 +43,7 @@ timezone_menu()
       ZONE=`$DIALOG  --title  "${T:-$TITLE}"  \
                      --menu             \
                      "$HELP"            \
-                     0 0 0              \
+                     22 60 16              \
                      $TIMEZONES`        &&
       [[ -d $LOCALTIME/$ZDIR/$ZONE || -d $LOCALTIME/$ZONE ]] &&
       ZDIR+="$ZONE/"
