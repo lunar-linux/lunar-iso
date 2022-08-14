@@ -27,7 +27,7 @@ show_consolefonts()
 
 font_menu()
 {
-  locale TITLE HELP
+  local TITLE HELP
   TITLE="Console Font Selection Menu"
   HELP="Please select your preferred console fonts."
 
