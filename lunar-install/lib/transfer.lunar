@@ -161,9 +161,9 @@ transfer()
       (
         cd $TARGET/var/lib/lunar
         tar xjf $MOONBASE_TAR 2> /dev/null
-        tar j --list -f $MOONBASE_TAR | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-%DATE%
+        tar j --list -f $MOONBASE_TAR | sed 's:^:/var/lib/lunar/:g' > $TARGET/var/log/lunar/install/moonbase-${ISO_DATE}
         mkdir -p moonbase/zlocal
-      )
+      ) &> $LOG
 
       # transfer sources
       #percent_msg "Copying sources"
@@ -171,13 +171,14 @@ transfer()
 
       # setup list of installed packages etc.
       percent_msg "Updating administrative files"
-      echo "moonbase:%DATE%:installed:%DATE%:37000KB" >> $TARGET/var/state/lunar/packages
-      cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
-      cp /var/state/lunar/depends        $TARGET/var/state/lunar/
-      cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
-      chroot_run lsh create_module_index
-      chroot_run lsh create_depends_cache
-
+      (
+        echo "moonbase:${ISO_DATE}:installed:${ISO_DATE}:37000KB" >> $TARGET/var/state/lunar/packages
+        cp $TARGET/var/state/lunar/packages $TARGET/var/state/lunar/packages.backup
+        cp /var/state/lunar/depends        $TARGET/var/state/lunar/
+        cp /var/state/lunar/depends.backup $TARGET/var/state/lunar/
+        chroot_run lsh create_module_index
+        chroot_run lsh create_depends_cache
+      ) &> $LOG
       # more moonbase related stuff
       percent_msg "Updating moonbase plugins"
       chroot_run lsh update_plugins

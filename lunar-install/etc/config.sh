@@ -14,16 +14,18 @@
 #                                                           #
 #############################################################
 
-LOCALE_LIST=/usr/share/lunar-install/locale.list
-PACKAGES_LIST=/var/cache/lunar/packages
-KERNEL_LIST=/var/cache/lunar/kernels
-KMOD_LIST=/var/spool/lunar/kmodules
-MOONBASE_TAR=/usr/share/lunar-install/moonbase.tar.bz2
-MOTD_FILE=/usr/share/lunar-install/motd
+LOCALE_LIST="/usr/share/lunar-install/locale.list"
+PACKAGES_LIST="/var/cache/lunar/packages"
+KERNEL_LIST="/var/cache/lunar/kernels"
+KMOD_LIST="/var/spool/lunar/kmodules"
+MOONBASE_TAR="/usr/share/lunar-install/moonbase.tar.bz2"
+MOTD_FILE="/usr/share/lunar-install/motd"
+
+ISO_DATE="%DATE%"
 
 # answers to questions asked at the beginning of installing
-BOOTLOADER=none
-TZ=UTC
+BOOTLOADER="none"
+TZ="UTC"
 
 . /etc/lunar/config
 for FUNCTION in $FUNCTIONS/installer/*.lunar
@@ -36,5 +38,7 @@ DIALOG="dialog
 Lunar Linux Installer %VERSION% - %CODENAME% (%DATE%)
 --stdout"
 
+LOG="/dev/tty7"
+
 export IFS=$'\t\n'
-ARCH=$(arch)
+ARCH="$(arch)"

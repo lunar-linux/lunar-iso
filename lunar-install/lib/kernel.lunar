@@ -86,7 +86,7 @@ install_kernels()
 
           # Register the kernel module as installed
           if ! grep -q "^linux:" $TARGET/var/state/lunar/packages; then
-            echo "linux:%DATE%:installed:$KVER:101500KB" >> $TARGET/var/state/lunar/packages
+            echo "linux:${ISO_DATE}:installed:$KVER:101500KB" >> $TARGET/var/state/lunar/packages
           fi
 
           # Generate kernel install log
