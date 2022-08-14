@@ -36,16 +36,14 @@ transfer()
 
           # handle swap
           if [ "$FSYS" == "swap" ]; then
-            echo "Setting up swap on $PART..."
-            if ! mkswap $PART ; then
-              sleep 3
+            infobox "Setting up swap on $PART..." 30
+            if ! mkswap $PART &> $LOG; then
               msgbox "Problem creating swap on $PART. Installation will continue."
             fi
             # create the filesystems if needed for every partition
           elif [ "$FORMAT" == "yes" ]; then
-            echo "Formatting $PART as $FSYS..."
-            if ! mkfs.$FSYS $FORCE $PART $CHECK ; then
-              sleep 3
+            infobox "Formatting $PART as $FSYS..." 30
+            if ! mkfs.$FSYS $FORCE $PART $CHECK &> $LOG; then
               msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue."
             fi
           fi
@@ -56,33 +54,32 @@ transfer()
             # swap device was added
             if ! echo $FSTAB | grep -q $PART; then
               LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
-              if swapon $PART; then
+              infobox "Activating swap space" 30
+              if swapon $PART &> $LOG; then
                 FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t\t0 $FSCK_PASS"
-                swapoff $PART
+                swapoff $PART &> $LOG
               else
-                sleep 3
                 msgbox "Problem mounting swap on $PART. Installation will continue."
               fi
             fi
             # then try to mount normal FS's
           else
             if [ ! -d $TARGET$MOUNTPOINT ] ; then
-              mkdir -p $TARGET$MOUNTPOINT
+              mkdir -p $TARGET$MOUNTPOINT &> $LOG
             fi
             if [ "$MNT_OPTS" != "defaults" ]; then
               MNTOPTARGS="-e $MNT_OPTS"
             else
               MNTOPTARGS=""
             fi
-            echo "Mounting $PART as $FSYS"
+            infobox "Mounting $PART as $FSYS" 30
             LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
-            if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS ; then
+            if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS &> $LOG; then
               FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
               if [ "$FSYS" == "swap" ]; then
-                umount -n $PART
+                umount -n $PART &> $LOG
               fi
             else
-              sleep 3
               msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue."
             fi
           fi
@@ -92,15 +89,14 @@ transfer()
 
     # last we create the swapfile on the target
     if [ -n "$SWAPFILE" ]; then
-      mkdir -p $TARGET$(dirname $SWAPFILE) &&
-      echo "Creating a swapfile of $SWAPSIZE MB at \"$SWAPFILE\"..." &&
-      if dd if=/dev/zero of=$TARGET$SWAPFILE bs=1M count=$SWAPSIZE &&
-        mkswap $TARGET$SWAPFILE &&
-        chmod 000 $TARGET$SWAPFILE
+      mkdir -p $TARGET$(dirname $SWAPFILE) &> $LOG
+      infobox "Creating a swapfile of $SWAPSIZE MB at \"$SWAPFILE\"..." 30
+      if dd if=/dev/zero of=$TARGET$SWAPFILE bs=1M count=$SWAPSIZE &> $LOG &&
+        mkswap $TARGET$SWAPFILE &> $LOG &&
+        chmod 000 $TARGET$SWAPFILE &> $LOG
       then
         FSTAB="$FSTAB\n$SWAPFILE\tswap\tswap\tdefaults\t\t0 0"
       else
-        sleep 3
         msgbox "Problem creating swapfile. Installation will continue."
       fi
     fi
@@ -181,56 +177,58 @@ transfer()
       ) &> $LOG
       # more moonbase related stuff
       percent_msg "Updating moonbase plugins"
-      chroot_run lsh update_plugins
+      chroot_run lsh update_plugins &> $LOG
 
       # just to make sure
       percent_msg "Running ldconfig"
-      chroot_run ldconfig
+      chroot_run ldconfig &> $LOG
 
       # pass through some of the configuration at this point:
       percent_msg "Finishing up installation"
-      chroot_run systemd-machine-id-setup 2> /dev/null
-      chroot_run systemctl preset-all 2>/dev/null
-      echo -e "KEYMAP=$KEYMAP\nFONT=$CONSOLEFONT" > $TARGET/etc/vconsole.conf
-      echo -e "LANG=${LANG:-en_US.utf8}\nLC_ALL=${LANG:-en_US.utf8}" > $TARGET/etc/locale.conf
-      [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
-
-      if [[ $TZ != UTC ]]
-      then
-        ln -fs /usr/share/zoneinfo/$TZ etc/localtime
-      fi
-
-      # post-first-boot message:
-      cp /README $TARGET/root/README
-      cp $MOTD_FILE $TARGET/etc/motd
-
-      # save proxies
-      if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
       (
-        echo "# these proxy settings apply to wget only"
-        [ -z "$HPROXY" ] || echo "export http_proxy=\"$HPROXY\""
-        [ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\""
-        [ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\""
-      ) > $TARGET/etc/profile.d/proxy.rc
-      fi
+        chroot_run systemd-machine-id-setup &> $LOG
+        chroot_run systemctl preset-all &> $LOG
+        chroot_run systemctl set-default multi-user.target &> $LOG
+        echo -e "KEYMAP=$KEYMAP\nFONT=$CONSOLEFONT" > $TARGET/etc/vconsole.conf
+        echo -e "LANG=${ILANG:-en_US.UTF-8}\nLC_ALL=${ILANG:-en_US.UTF-8}" > $TARGET/etc/locale.conf
+        [ -z "$EDITOR" ] || echo "export EDITOR=\"$EDITOR\"" > $TARGET/etc/profile.d/editor.rc
 
-      if [ -e etc/fstab ]; then
-        cp etc/fstab etc/fstab-
-      fi
+        if [[ $TZ != UTC ]]
+        then
+          ln -fs /usr/share/zoneinfo/$TZ etc/localtime &> /dev/null
+        fi
 
-      echo -e "$FSTAB" >> etc/fstab
-      make_lilo_conf
-      make_grub_conf
+        # post-first-boot message:
+        cp /README $TARGET/root/README
+        cp $MOTD_FILE $TARGET/etc/motd
 
-      # some more missing files:
-      cp /etc/lsb-release $TARGET/etc/
-      cp /etc/os-release $TARGET/etc/
-      cp /etc/issue{,.net} $TARGET/etc/
+        # save proxies
+        if [ -n "$HPROXY" -o -n "$FPROXY" -o -n "$NPROXY" ]; then
+          (
+            echo "# these proxy settings apply to wget only"
+            [ -z "$HPROXY" ] || echo "export http_proxy=\"$HPROXY\""
+            [ -z "$FPROXY" ] || echo "export ftp_proxy=\"$FPROXY\""
+            [ -z "$NPROXY" ] || echo "export no_proxy=\"$NPROXY\""
+          ) > $TARGET/etc/profile.d/proxy.rc
+        fi
 
-      # Some sane defaults
-      GCCVER=$(chroot_run lvu installed gcc | awk -F\. '{ print $1"_"$2 }')
+        if [ -e etc/fstab ]; then
+          cp etc/fstab etc/fstab-
+        fi
 
-      cat <<EOF> $TARGET/etc/lunar/local/config
+        echo -e "$FSTAB" >> etc/fstab
+        make_lilo_conf
+        make_grub_conf
+
+        # some more missing files:
+        cp /etc/lsb-release $TARGET/etc/
+        cp /etc/os-release $TARGET/etc/
+        cp /etc/issue{,.net} $TARGET/etc/
+
+        # Some sane defaults
+        GCCVER=$(chroot_run lvu installed gcc | awk -F\. '{ print $1"_"$2 }')
+
+        cat <<EOF> $TARGET/etc/lunar/local/config
   LUNAR_COMPILER="GCC_$GCCVER"
     LUNAR_MODULE="lunar"
 LUNAR_ALIAS_UDEV="systemd"
@@ -240,31 +238,31 @@ LUNAR_ALIAS_SSL="openssl"
 LUNAR_ALIAS_OSSL="openssl"
 EOF
 
-      # Disable services (user can choose to enable them using services menu)
-      rm -f $TARGET/etc/systemd/system/network.target.wants/wpa_supplicant.service
-      rm -f $TARGET/etc/systemd/system/sockets.target.wants/sshd.socket
+        # Disable services (user can choose to enable them using services menu)
+        rm -f $TARGET/etc/systemd/system/network.target.wants/wpa_supplicant.service
+        rm -f $TARGET/etc/systemd/system/sockets.target.wants/sshd.socket
 
-      # root user skel files
-      find $TARGET/etc/skel ! -type d | xargs -i cp '{}' $TARGET/root
+        # root user skel files
+        find $TARGET/etc/skel ! -type d | xargs -i cp '{}' $TARGET/root
 
-      # initialize the new machine:
-      touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
-      chmod 0644 $TARGET/var/log/{utmp,wtmp,lastlog}
-      chmod 0600 $TARGET/var/log/btmp
+        # initialize the new machine:
+        touch $TARGET/var/log/{btmp,utmp,wtmp,lastlog}
+        chmod 0644 $TARGET/var/log/{utmp,wtmp,lastlog}
+        chmod 0600 $TARGET/var/log/btmp
 
-      # Tell dracut to auto enable md devices if used during install
-      if [ -e /proc/mdstat ]; then
-        if egrep -q ^md[0-9]+ /proc/mdstat; then
-          mdadm --examine --scan > $TARGET/etc/mdadm.conf
-          cat <<EOF> $TARGET/etc/dracut.conf.d/02-raid.conf
+        # Tell dracut to auto enable md devices if used during install
+        if [ -e /proc/mdstat ]; then
+          if egrep -q ^md[0-9]+ /proc/mdstat; then
+            mdadm --examine --scan > $TARGET/etc/mdadm.conf
+            cat <<EOF> $TARGET/etc/dracut.conf.d/02-raid.conf
 # Enable software raid automatically using dracut.
 # --  AUTO-GENERATED FILE DO NOT MODIFY --
 kernel_cmdline+=" rd.auto=1"
 mdadmconf="yes"
 EOF
+          fi
         fi
-      fi
-
+      ) &> $LOG
     # really we are done now ;^)
     ) | $DIALOG --title " Installing Lunar Linux " --gauge "" 10 70 0
 

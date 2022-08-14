@@ -78,7 +78,7 @@ install_kernels()
         if [ -f "/var/cache/lunar/$CCOMMAND.tar.xz" ]; then
           $DIALOG --infobox "\nInstalling kernel $CCOMMAND, please wait..." 5 70
           cd $TARGET && tar xf /var/cache/lunar/$CCOMMAND.tar.xz &> /dev/null
-          chroot_run cp /usr/src/linux/.config /etc/lunar/local/.config.current
+          chroot_run cp /usr/src/linux/.config /etc/lunar/local/.config.current &> $LOG
 
           KVER=$(grep "^$CCOMMAND:" $KERNEL_LIST | cut -d: -f2)
           KVER_PATCH=$(echo $KVER | cut -d . -f 3)
