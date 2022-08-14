@@ -17,16 +17,16 @@
 select_bootloader() {
   while true
   do
-    BCOMMAND=`$DIALOG --title "Boot loader menu" \
+    BCOMMAND=$($DIALOG --title "Boot loader menu" \
                       --default-item "G" \
                       --item-help \
                       --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." \
                       0 0 0 \
-                      $(if pkg_avail systemd && [ -d /sys/firmware/efi ]; then echo "S" ; echo "systemd (UEFI only))" ; echo "Install systemd-boot as boot loader (UEFI)"; fi) \
+                      $(if pkg_avail systemd && [ -d /sys/firmware/efi ]; then echo "S" ; echo "systemd" ; echo "Install systemd-boot as boot loader (UEFI)"; fi) \
                       $(if pkg_avail grub2 ; then echo "G" ; echo "grub2" ; echo "Install grub2 as boot loader (BIOS)"; fi) \
                       $(if pkg_avail grub ; then echo "B" ; echo "grub" ; echo "Install grub as boot loader (BIOS)"; fi) \
                       $(if pkg_avail lilo ; then echo "L" ; echo "lilo" ; echo "Install lilo as boot loader (BIOS)"; fi) \
-                      "N" "none" "Do not install a boot loader"`
+                      "N" "none" "Do not install a boot loader")
 
     if [ $? != 0 ] ; then
       continue
