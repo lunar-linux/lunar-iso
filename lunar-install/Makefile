@@ -1,4 +1,7 @@
 
+
+include ../conf/config
+
 installer_PROGS = sbin/lunar-install sbin/lish
 installer_LIBS = $(shell ls -1 lib/*)
 installer_CONFIG = etc/config
