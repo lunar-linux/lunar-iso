@@ -1,1 +1,1 @@
-EXCLUDE_MODULES=grub theedge udev libressl
+EXCLUDE_MODULES=grub libressl
