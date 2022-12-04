@@ -5,6 +5,7 @@ include ../conf/config
 installer_PROGS = sbin/lunar-install sbin/lish
 installer_LIBS = $(shell ls -1 lib/*)
 installer_CONFIG = etc/config
+zfs_mkfs_PROG = sbin/mkfs.zfs
 
 all: sbin/lunar-install etc/config
 
@@ -25,6 +26,7 @@ install: $(installer_PROGS) $(installer_CONFIG) $(installer_LIBS)
 	for config in $(installer_CONFIG); do \
 	  install -m0644 $$config $(DESTDIR)$(ETCDIR); \
 	done
+	install -m0755 $(zfs_mkfs_PROG) $(DESTDIR)$(SBINDIR)
 
 sbin/lunar-install: sbin/lunar-install.sh
 	@sed -e 's:%VERSION%:$(ISO_VERSION):g' \
