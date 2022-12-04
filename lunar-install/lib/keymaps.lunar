@@ -1,0 +1,47 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2022 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+show_keymaps()
+{
+  local MAP
+
+  for MAP in $(localectl list-keymaps --no-pager); do
+    echo $MAP
+    echo keymap
+  done
+}
+
+keymap_error() {
+  $DIALOG --msgbox "An error occured while loading your keymap, the keymap was not changed." 0 0
+}
+
+keymap_menu()
+{
+  local TITLE HELP
+
+  TITLE="Keymap Selection Menu"
+  HELP="Please select your preferred key mapping."
+  KEYMAP=$($DIALOG --title "$TITLE" --default-item "${KEYMAP:-defkeymap}" --menu "$HELP" 22 60 16 $(show_keymaps))
+
+  if [ -n "$KEYMAP" ]; then
+    $DIALOG --infobox "Loading keymap '$KEYMAP'..." 0 0
+    localectl set-keymap "$KEYMAP" || keymap_error
+  fi
+
+  C_OK=\\Z2
+  DEFAULT=D
+}
+

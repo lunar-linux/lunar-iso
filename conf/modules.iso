@@ -25,8 +25,10 @@ ISO_MODULES=acl            \
             glib-2         \
             glibc          \
             gmp            \
+            gptfdisk       \
             grep           \
             gzip           \
+            inih           \
             iproute2       \
             iputils        \
             iptables       \
@@ -46,14 +48,16 @@ ISO_MODULES=acl            \
             libidn         \
             libmpc         \
             libmnl         \
+            libnftnl       \
             libtool        \
             libunistring   \
             Linux-PAM      \
+            linux-firmware \
             lunar          \
             lvm2           \
             lzo            \
+            lz4            \
             mdadm          \
-            memtest86+     \
             mpfr           \
             nano           \
             ncurses        \
@@ -80,6 +84,6 @@ ISO_MODULES=acl            \
             xfsprogs       \
             xz             \
             zlib           \
-            spl            \
             zfs            \
             zfs-utils
+            zstd

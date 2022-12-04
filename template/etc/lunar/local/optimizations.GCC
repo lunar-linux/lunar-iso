@@ -1,0 +1,3 @@
+BOPT=Faster
+SPD=( Noplt Exceptions )
+CC_OPTS=( Pipe Fortify ClashProtection )

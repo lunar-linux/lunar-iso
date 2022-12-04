@@ -1,0 +1,49 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+install_grub2()
+{
+  local DISC
+
+  if ! pkg_avail grub2 ; then
+    return
+  fi
+
+  if [[ ! -v MBR ]]
+  then
+    DISC=$(echo $ROOT | sed 's/[0-9]*$//')
+    MBR=$($DIALOG --title "grub2 MBR install" --menu "" 0 0 0 \
+      "$DISC" "Install grub2 MBR on this device" \
+      "C"     "Change grub2 MBR install device")
+    if [ "$MBR" = "C" ]; then
+      MBR=$(inputbox "Please enter a device where to install the grub2 MBR" "")
+    fi
+  fi
+
+  if [[ -d /sys/firmware/efi ]]
+  then
+    if grep '/mnt/boot vfat' /proc/mounts > /dev/null 2>&1
+    then
+      chroot_run grub-install --efi-directory=/boot $MBR
+    else
+      msgbox "Grub2 installation failed.  This is an EFI system, but no VFAT boot partition has been detected.  You need to create a VFAT /boot partition large enough for the EFI data, your kernels and the initramfs."
+      return 1
+    fi
+  else
+    chroot_run grub-install $MBR
+  fi
+}
+

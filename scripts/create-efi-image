@@ -29,5 +29,5 @@ cp $ISO_SOURCE/efiboot/loader/loader.conf $MNTDIR/loader/loader.conf
 sed -e "s:%VERSION%:${ISO_VERSION}:g" \
     -e "s:%CODENAME%:${ISO_CODENAME}:g" \
     -e "s:%DATE%:${ISO_DATE}:g" \
-    -e "s:%LABEL%:${ISO_LABEL}:g" \
+    -e "s:%LABEL%:LUNAR_${ISO_MAJOR}:g" \
     $ISO_SOURCE/efiboot/loader/entries/lunariso-x86_64-usb.conf > $MNTDIR/loader/entries/lunariso-x86_64.conf

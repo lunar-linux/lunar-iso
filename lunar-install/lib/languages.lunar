@@ -1,0 +1,39 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2022 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+show_languages()
+{
+  local locale
+
+  for locale in $(localectl list-locales --no-pager); do
+    echo "$locale"
+    echo "locale"
+  done
+}
+
+lang_menu()
+{
+  local TITLE HELP
+
+  TITLE="Language Selection Menu"
+  HELP="Please select your preferred langauge. This will only set the LANG variable."
+  ILANG=${ILANG:-en_US.UTF-8}
+  ILANG=$($DIALOG --title "Language Selection Menu" --default-item "$ILANG" --menu "$HELP" 22 60 16 $(show_languages))
+  if [ $? == 0 ]; then
+    E_OK=\\Z2
+  fi
+  DEFAULT=A
+}

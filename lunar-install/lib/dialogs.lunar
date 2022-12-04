@@ -1,0 +1,93 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+msgbox()
+{
+  LINES=$(( ${#1} / 55 + 7 ))
+  $DIALOG --cr-wrap --msgbox "$1" $LINES 60
+}
+
+infobox() {
+  $DIALOG --aspect ${2:-9} --infobox "$1" 0 0
+}
+
+inputbox()
+{
+  $DIALOG --nocancel --inputbox "$1" 0 0 "$2"
+}
+
+
+confirm()
+{
+  if [ "$CONFIRM" == "off" ]; then
+    if [ -n "$2" ]; then
+      false
+    else
+      true
+    fi
+  else
+    $DIALOG $2 --yesno "$1" 9 60
+  fi
+}
+
+
+percent_msg()
+{
+  echo XXX
+  echo $(( CNT * 100 / NUM ))
+  echo "\n$((CNT+1)): $1\n"
+  echo XXX
+  (( CNT++ ))
+}
+
+
+
+toggle()
+{
+  if [ `eval echo \\$$1` == "on" ]; then
+    eval $1=off
+  else
+    eval $1=on
+  fi
+}
+
+
+
+goodbye()
+{
+  PROMPT="Reboot now?"
+  if confirm "$PROMPT" "--defaultno"; then
+    kill `jobs -p` &> /dev/null
+    shutdown -r now
+    exit 0
+  else
+    # bump the init level so we can exit safely!
+    systemctl isolate multi-user.target
+    exit 0
+  fi
+}
+
+
+introduction()
+{
+  $DIALOG --textbox /README 0 0
+  I_OK="\\Z2"
+  if (( STEP == 1 )); then
+    (( STEP++ ))
+  fi
+  DEFAULT=C
+}
+

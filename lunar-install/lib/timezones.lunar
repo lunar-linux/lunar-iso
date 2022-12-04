@@ -1,0 +1,65 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+show_timezones()
+{
+    for ITEM in $(LANG=C ls --hide=[a-z]* $LOCALTIME/$1); do
+        echo "$ITEM"
+        if [ -d $LOCALTIME/$1/$ITEM ]; then
+            echo "Directory"
+        else
+            echo "Timezone"
+        fi
+    done
+}
+
+timezone_menu()
+{
+    LOCALTIME=/usr/share/zoneinfo
+    TITLE="Time Zone Selection Menu"
+    HELP="Select timezone or directory"
+    ZONE=""
+
+    local ZDIR
+
+    while
+      TIMEZONES=`show_timezones ${ZDIR:-$ZONE}`  &&
+      if [ -n "$ZDIR" ]; then
+        T="$TITLE - $ZDIR"
+      fi
+      ZONE=`$DIALOG  --title  "${T:-$TITLE}"  \
+                     --menu             \
+                     "$HELP"            \
+                     22 60 16              \
+                     $TIMEZONES`        &&
+      [[ -d $LOCALTIME/$ZDIR/$ZONE || -d $LOCALTIME/$ZONE ]] &&
+      ZDIR+="$ZONE/"
+      do
+        true
+    done
+
+    if [ -n "$ZDIR" ]; then
+      ZONE="$ZDIR$ZONE"
+    fi
+
+    if [ -f "$LOCALTIME/$ZONE" ]; then
+      TZ=$ZONE
+    fi
+
+    A_OK=\\Z2
+    DEFAULT=J
+}
+

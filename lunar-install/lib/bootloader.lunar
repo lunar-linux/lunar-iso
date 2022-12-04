@@ -1,0 +1,96 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+select_bootloader() {
+  while true
+  do
+    BCOMMAND=$($DIALOG --title "Boot loader menu" \
+                      --default-item "G" \
+                      --item-help \
+                      --menu "You will need a boot loader to start linux automatically when your computer boots. You can chose not to install a boot loader now, or pick one of the available boot loaders and options below. You can always change to the other boot loader later." \
+                      0 0 0 \
+                      $(if pkg_avail systemd && [ -d /sys/firmware/efi ]; then echo "S" ; echo "systemd" ; echo "Install systemd-boot as boot loader (UEFI)"; fi) \
+                      $(if pkg_avail grub2 ; then echo "G" ; echo "grub2" ; echo "Install grub2 as boot loader (BIOS)"; fi) \
+                      $(if pkg_avail grub ; then echo "B" ; echo "grub" ; echo "Install grub as boot loader (BIOS)"; fi) \
+                      $(if pkg_avail lilo ; then echo "L" ; echo "lilo" ; echo "Install lilo as boot loader (BIOS)"; fi) \
+                      "N" "none" "Do not install a boot loader")
+
+    if [ $? != 0 ] ; then
+      continue
+    fi
+
+    case $BCOMMAND in
+        S) BOOTLOADER=systemd ;;
+        L) BOOTLOADER=lilo    ;;
+        G) BOOTLOADER=grub2   ;;
+        B) BOOTLOADER=grub    ;;
+        N) BOOTLOADER=none    ;;
+    esac
+
+    case $BOOTLOADER in
+        grub2) 
+          DISC=$(echo $ROOT | sed 's/[0-9]*$//')
+          MBR=$($DIALOG --title "grub2 MBR install" --menu "" 0 0 0 \
+            "$DISC" "Install grub2 MBR on this device" \
+            "C"     "Change grub2 MBR install device")
+          if [ "$MBR" = "C" ]; then
+            MBR=$(inputbox "Please enter a device where to install the grub2 MBR" "")
+          fi
+        ;;
+    esac
+    if (( STEP == 6 )); then
+      (( STEP++ ))
+    fi
+    L_OK=\\Z2
+    T_OK=
+    return
+  done
+}
+
+install_bootloader() {
+  if [[ ! -v BOOTLOADER ]]
+  then
+    select_bootloader
+  fi
+
+  case ${BOOTLOADER:-none} in
+    systemd)
+      chroot_run lsh update_plugin $BOOTLOADER "install"
+      chroot_run bootctl install
+      ;;
+    lilo)
+      transfer_package $BOOTLOADER
+      chroot_run lsh update_plugin $BOOTLOADER "install"
+      ;;
+    grub2)
+      transfer_package $BOOTLOADER
+      chroot_run lsh update_plugin $BOOTLOADER "install"
+      install_grub2
+      ;;
+    grub)
+      transfer_package $BOOTLOADER
+      chroot_run lsh update_plugin $BOOTLOADER "install"
+      install_grub
+      ;;
+    none)
+      msgbox "Not installing a boot loader might require you to create a boot floppy, or configure your bootloader manually using another installed operating system. Lunar Linux also did not install lilo or grub on the hard disc."
+      ;;
+  esac
+
+  K_OK=
+  return
+}
+

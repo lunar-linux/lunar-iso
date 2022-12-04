@@ -1,0 +1,65 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+chroot_run()
+{
+  local RESULT
+  mount --bind /proc $TARGET/proc
+  mount --bind /dev $TARGET/dev
+  mount --bind /tmp $TARGET/tmp
+  mount --bind /sys $TARGET/sys
+  mount --bind /run $TARGET/run
+  if mountpoint -q /sys/firmware/efi/efivars; then
+    mount --bind /sys/firmware/efi/efivars $TARGET/sys/firmware/efi/efivars
+  fi
+  if [ -n "$USE_SWAP" ]; then
+    chroot $TARGET swapon -a
+  fi
+  if [ -n "$USE_CLEAR" ]; then
+      clear
+  fi
+  chroot $TARGET "$@"
+  RESULT=$?
+  if [ -n "$USE_SWAP" ]; then
+    chroot $TARGET swapoff -a
+  fi
+  umount $TARGET/run
+  if mountpoint -q $TARGET/sys/firmware/efi/efivars; then
+    umount $TARGET/sys/firmware/efi/efivars
+  fi
+  umount $TARGET/sys
+  umount $TARGET/tmp
+  umount $TARGET/dev
+  umount $TARGET/proc
+
+  # debug the problem in case there is one
+  if [ $RESULT == 1 ] ; then
+    (
+    echo ""
+    echo "ERROR: An error occurred while executing a command. The command was:"
+    echo "ERROR: \"$@\""
+    echo "ERROR: "
+    echo "ERROR: You should inspect any output above and retry the command with"
+    echo "ERROR: different input or parameters. Please report the problem if"
+    echo "ERROR: you think this error is displayed by mistake."
+    echo ""
+    echo "Press ENTER to continue"
+    read JUNK
+    ) >&2
+  fi
+  return $RESULT
+}
+

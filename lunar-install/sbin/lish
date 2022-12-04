@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# quick hack to jump in and out of a lunar installer environment
+#
+
+. /etc/lunar/install/config
+
+export TARGET=/mnt
+
+set_priority
+
+if (($# > 0)); then
+  eval "$@"
+else
+  export PS1="\[\033[0;31m\][lunar-install] \u@\h \w \\$ \[\033[0m\]"
+  message "\n    ${PROBLEM_COLOR}Warning:${DEFAULT_COLOR}${MESSAGE_COLOR}" \
+		"lsh is potentially hazardous to your system.${DEFAULT_COLOR}\n"
+		bash --rcfile $BOOTSTRAP
+fi

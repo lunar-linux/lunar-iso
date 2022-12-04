@@ -27,7 +27,9 @@ truncate -s 16G $ROOTFSIMG
 mkfs.ext4 -O ^has_journal,^resize_inode -E lazy_itable_init=0 -m 0 -F "$ROOTFSIMG"
 tune2fs -i 0 -c 0 $ROOTFSIMG &> /dev/null
 mount $ROOTFSIMG $ROOTFSMNTDIR
-rsync -av $ISO_TARGET/ $ROOTFSMNTDIR --exclude ".*" \
+rsync -av $ISO_TARGET/ $ROOTFSMNTDIR --exclude .iso* \
+                                     --exclude .aaa_base* \
+                                     --exclude LiveOS \
                                      --exclude boot/* \
                                      --exclude isolinux/ \
                                      --exclude EFI/ \
@@ -37,13 +39,10 @@ rsync -av $ISO_TARGET/ $ROOTFSMNTDIR --exclude ".*" \
                                      --exclude var/spool/* \
                                      --exclude var/log/* \
                                      --exclude usr/include \
-                                     --exclude usr/lib/locale \
-                                     --exclude usr/share/locale \
                                      --exclude usr/share/man \
                                      --exclude usr/share/info \
                                      --exclude usr/share/doc \
                                      --exclude usr/share/gtk-doc \
-                                     --exclude usr/share/vim \
                                      --exclude usr/src \
                                      --exclude var/state/lunar/module_history
 umount $ROOTFSMNTDIR

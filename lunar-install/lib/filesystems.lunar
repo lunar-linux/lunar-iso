@@ -1,0 +1,184 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+nice_size()
+{
+  echo $1 | sed -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]$\)/\1.\2KB/' -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]\)\(\.[0-9]KB$\)/\1.\2MB/' -e 's/\(.*[0-9]\)\([0-9]\)\([0-9]\)\([0-9]\)\(\.[0-9]MB$\)/\1.\2GB/'
+}
+
+menu_list_targets()
+{
+  local DEVICE FBLKS FSIZE PTYPE FSTYPE MNTPNT N
+  for DEVICE in $(block_devices listall part; block_devices listall other); do
+    if [ -e $DEVICE ]; then
+      FBLKS=$(sfdisk -s $DEVICE)
+      if (( FBLKS <= 10 )) ; then
+        # this prevents listing EXTENDED partitions
+        continue
+      fi
+      FSIZE=$(nice_size `fdisk -l $DEVICE 2>&1 | grep ^Disk | grep bytes | awk '{print $5}'`)
+      echo $DEVICE
+
+      PTYPE=$(file -Ls $DEVICE 2>&1 | cat)
+      case $PTYPE in
+        *ext4*) PTYPE="(ext4)" ;;
+        *ext3*) PTYPE="(ext3)" ;;
+        *ext2*) PTYPE="(ext2)" ;;
+        *XFS*) PTYPE="(XFS)" ;;
+        *Minix*) PTYPE="(minix)" ;;
+        *BTRFS*) PTYPE="(btrfs)" ;;
+        *FAT*) PTYPE="(FAT/FAT32)" ;;
+        *) PTYPE="(unknown)" ;;
+      esac
+
+      for (( N=0 ; N<${#PARTITIONS[@]} ; N++ )); do
+        if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$DEVICE" ]; then
+          FSTYPE=$(echo ${PARTITIONS[$N]} | cut -d: -f3)
+          MNTPNT=$(echo ${PARTITIONS[$N]} | cut -d: -f2)
+          FSTYPE=${FSTYPE/none/swap}
+          echo "$MNTPNT partition, size $FSIZE, [$FSTYPE]"
+          continue 2
+        fi
+      done
+      echo "unassigned, size $FSIZE, $PTYPE"
+    fi
+  done
+}
+
+
+menu_get_filesystem()
+{
+  TITLE="Filesystem Selection Menu"
+  HELP="Please select a filesystem. A '*' means that this is a journalling filesystem, which provides better data security against system crashes etc."
+
+  EXT4="Fourth Extended file system (*)"
+  BTRFS="BTree file system (*)"
+  EXT3="Third Extended file system (*)"
+  EXT2="Second Extended file system"
+  REISER="Reiserfs file system (*)"
+  XFS="XFS file system (*)"
+  JFS="JFS file system (*)"
+  ZFS="ZFS file system (*)"
+  VFAT="FAT32 file system"
+  SWAP="Swap (Virtual memory or paging filesystem)"
+
+  $DIALOG --title "$TITLE" --default-item "ext4" --menu "$HELP" 0 0 0 \
+    "ext4"      "$EXT4"    \
+    "btrfs"     "$BTRFS"   \
+    "ext3"      "$EXT3"    \
+    "ext2"      "$EXT2"    \
+    "xfs"       "$XFS"     \
+    "zfs"       "$ZFS"     \
+    "vfat"      "$VFAT"    \
+    "swap"      "$SWAP"
+}
+
+select_swap_file()
+{
+  LOCATION_PROMPT="Please enter the location for the swapfile."
+  SIZE_PROMPT="Enter the size (in MB) of the swapfile you want to generate. It is recommended make it twice the amount of physical RAM. TMPFS users will need more swap (typically 1000MB)."
+
+  SWAPFILE=$(inputbox "$LOCATION_PROMPT" "/swapfile") &&
+  if [ -n "$SWAPFILE" ]; then
+
+    # strange calc. but it ends up being ~ 2xRAM rounded up to 256MB blocks
+    SWAPSIZE=$(grep MemTotal: /proc/meminfo | awk '{print $2}' | sed 's/[0-9][0-9][0-9]$//') &&
+    (( SWAPSIZE = ( ( SWAPSIZE / 128 ) + 1 ) * 256 )) &&
+
+    SWAPSIZE=$(inputbox "$SIZE_PROMPT" "$SWAPSIZE")
+    if [ -n "$SWAPSIZE" ]; then
+      S_OK=\\Z2
+    else
+      unset SWAPFILE SWAPSIZE
+    fi
+  fi
+  if (( STEP == 5 )); then
+    (( STEP++ ))
+  fi
+}
+
+
+determine_mount_opts()
+{
+  # Check for TRIM support
+  if hdparm -I $1 | grep -q TRIM; then
+    if [ "$2" == "swap" ]; then
+      echo "defaults,discard"
+    else
+      if [[ "$2" =~ (ext4|btrfs|xfs) ]]; then
+        echo "defaults,noatime,discard"
+      else
+        echo "defaults,noatime"
+      fi
+    fi
+  else
+    echo "defaults"
+  fi
+}
+
+determine_fsck_pass()
+{
+  if [ "$1" == "swap" ]; then
+    echo "0"
+  else
+    if [ "$2" == "/" ]; then
+      echo "1"
+    else
+      echo "2"
+    fi
+  fi
+}
+
+
+get_mount_point()
+{
+  local POINT ROOT_H BOOT_H HOME_H USR_H VAR_H SRV_H OPT_H LOCAL_H C_H
+
+  ROOT_H="The root file system"
+  BOOT_H="Kernels and static files for the boot loader"
+  HOME_H="User home directories"
+  USR_H="Static data"
+  VAR_H="Variable data (logs, tarball cache etc)"
+  SRV_H="Data for services"
+  OPT_H="Add-on application software packages (legacy)"
+  LOCAL_H="Local hierarchy"
+  C_H="Enter mount point manually"
+
+  if [ "$1" == "swap" ]; then
+    echo "swap"
+  else
+    POINT=$($DIALOG --title "Select a mount point" --menu "" 0 0 0 \
+      "/"          "$ROOT_H" \
+      "/boot"      "$BOOT_H" \
+      "/home"      "$HOME_H" \
+      "/usr"       "$USR_H" \
+      "/var"       "$VAR_H" \
+      "/srv"       "$SRV_H" \
+      "/opt"       "$OPT_H" \
+      "/usr/local" "$LOCAL_H" \
+      "C"          "$C_H")
+    if [ "$POINT" = "C" ]; then
+      POINT=$(inputbox "Please enter a mount point" "")
+    fi
+    if [ -z "$POINT" -a -z "$ROOT" ]; then
+      echo "/"
+    else
+      echo "$POINT"
+    fi
+  fi
+}
+
+

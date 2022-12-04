@@ -1,0 +1,147 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2022 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+_lsblk="lsblk
+-rpno"
+
+block_devices()
+{
+  local N DEVICE
+  # superfunction to maintain, list, edit partitions and discs
+  case $1 in
+    init)
+      # do we really need to re-do this? it's slow...
+      if [ "$(md5sum /proc/partitions)" != "$PROC_PARTITIONS_MD5" ]; then
+        # remove all old disc/part devices
+        unset DEVICES
+        # fill the list with devices
+        for DEVICE in $(list_block_devices); do
+          block_devices add $DEVICE
+        done
+        # and store the checsum for later
+        PROC_PARTITIONS_MD5="$(md5sum /proc/partitions)"
+      fi
+      ;;
+    add)
+      DEVICES=( ${DEVICES[@]} $2 )
+      # add a device to the list
+      ;;
+    use)
+      # tag a device as used
+      for (( N=0; N<${#DEVICES[@]} ; N++ )); do
+        if [ "$2" == "$(echo ${DEVICES[$N]} | cut -d: -f1)" ]; then
+          DEVICES[$N]="$(echo ${DEVICES[$N]} | cut -d: -f1,2):used"
+        fi
+      done
+      ;;
+    free)
+      # untag a previously used device as used
+      for (( N=0; N<${#DEVICES[@]} ; N++ )); do
+        if [ "$2" == "$(echo ${DEVICES[$N]} | cut -d: -f1)" ]; then
+          DEVICES[$N]="$(echo ${DEVICES[$N]} | cut -d: -f1,2)"
+        fi
+      done
+      ;;
+    list)
+      # list all unused devices of type $2
+      for (( N=0; N<${#DEVICES[@]} ; N++ )); do
+        if [ "$2" == "$(echo ${DEVICES[$N]} | cut -d: -f2)" ] &&
+            [ -z "$(echo ${DEVICES[$N]} | cut -d: -f3)" ]; then
+          echo ${DEVICES[$N]} | cut -d: -f1
+        fi
+      done
+      ;;
+    listall)
+      # list all devices of type $2
+      for (( N=0; N<${#DEVICES[@]} ; N++ )); do
+        if [ "$2" == "$(echo ${DEVICES[$N]} | cut -d: -f2)" ]; then
+          echo ${DEVICES[$N]} | cut -d: -f1
+        fi
+      done
+      ;;
+  esac
+}
+
+
+list_block_devices()
+{
+  local DEVICE TYPE FSTYPE TYPE_FILTER FSTYPE_FILTER
+
+  TYPE_FILTER="dmraid"
+  FSTYPE_FILTER="(iso9660|isw_raid_member|ddf_raid_member)"
+
+  $_lsblk NAME,TYPE | grep "disk$" | while IFS=$' \t\n' read DEVICE TYPE; do
+    if [[ ! "$TYPE" =~ $TYPE_FILTER ]] && [[ ! "$($_lsblk FSTYPE $DEVICE)" =~ $FSTYPE_FILTER ]]; then
+      echo "$DEVICE:$TYPE"
+      list_block_device_partitions $DEVICE
+    fi
+  done
+}
+
+list_block_device_partitions()
+{
+  local DEVICE TYPE FSTYPE FSTYPE_FILTER
+
+  FSTYPE_FILTER="(LVM2_member|crypto_LUKS|linux_raid_member|iso9660)"
+
+  $_lsblk NAME,TYPE $1 | grep "part$" | while IFS=$' \t\n' read DEVICE TYPE; do
+    if [[ ! "$($_lsblk FSTYPE $DEVICE)" =~ $FSTYPE_FILTER ]]; then
+      echo "$DEVICE:$TYPE"
+    fi
+  done
+}
+
+menu_list_devices()
+{
+  local DEVICE
+  for DEVICE in $(block_devices list part; block_devices list disk; block_devices list other); do
+    echo $DEVICE
+    echo "Block device"
+  done
+}
+
+
+menu_select_device()
+{
+  local TITLE HELP DEVICE
+  TITLE="Device Selection Menu"
+  HELP="Please select a block device"
+  DEVICE=$($DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 `menu_list_devices` "New" "Add an unlisted device to this list...")
+  if [ "$DEVICE" == "New" ]; then
+    DEVICE=$(inputbox "Enter special device node" "/dev/")
+    if [ ! -b $(readlink -f $DEVICE) ]; then
+      msgbox "Device $DEVICE does not exist or is not a valid device node. Perhaps you need to load a kernel module or start a subsystem first?"
+      unset DEVICE
+    elif echo ${SPECIAL_DEVICES[@]} | grep -qw $DEVICE ; then
+      msgbox "Device $DEVICE was already added!"
+      unset DEVICE
+    else
+      block_devices add "$DEVICE:other"
+    fi
+  fi
+  echo $DEVICE
+}
+
+
+menu_list_discs()
+{
+  for DISC in $(block_devices listall disk); do
+    echo $DISC
+    echo "disk"
+  done
+}
+
+

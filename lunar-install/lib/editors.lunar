@@ -1,0 +1,39 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+editor_menu()
+{
+  EDITOR=${EDITOR:-vi}
+  EDITOR=`$DIALOG --title "Editor Selection Menu" --default-item "$EDITOR" --item-help --cr-wrap \
+      --menu "Not all of these editors are available right away. Some require that you compile them yourself (like emacs) or are only available on the target installation, and possibly emulated through another editor" 0 0 0 \
+      "e3"    "fully available" \
+          "an emacs, vim, pico emulator" \
+      "emacs" "emulated on this install media by e3, not installed" \
+          "Richard Stallmans editor" \
+      "joe"   "fully available" \
+          "WS compatible editor" \
+      "nano"  "fully available" \
+          "a pico clone" \
+      "vi"    "fully available" \
+          "vim - good old vi" \
+      "zile"  "fully available" \
+          "an emacs clone"`
+
+  export EDITOR
+  J_OK=\\Z2
+  DEFAULT=F
+}
+

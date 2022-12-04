@@ -1,1 +1,1 @@
-LDF=( Strip Relro Now )
+LDF=( Strip Relro Now SortCommon )

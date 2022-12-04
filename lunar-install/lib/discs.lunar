@@ -1,0 +1,157 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+get_raid_level()
+{
+  LEVEL=`$DIALOG --menu "Select a raid level" 0 0 0 \
+      "linear" "append discs to make one large device" \
+      "0" "Striping - increase performance" \
+      "1" "Mirrorring - 100% redundancy" \
+      "5" "Large and safe - high performance and redundancy" \
+      "6" "Extends 5 - adds more overhead but more redundancy too"`
+  echo $LEVEL
+}
+
+
+enum_discs()
+{
+  for DISC in $(echo $1 | sed 's/,/\t/g') ; do
+    echo $DISC
+    echo $2
+  done
+}
+
+
+list_raid_arrays()
+{
+  for RAIDARRAY in ${RAIDARRAYS[@]}; do
+    echo $RAIDARRAY | cut -d: -f1
+    echo "level $(echo $RAIDARRAY | cut -d: -f2) raid array"
+  done
+
+}
+
+
+raid_setup()
+{
+  # raid array record looks like:
+  # device:level:device,device,device:sparedevice,sparedevice,chunksize
+  # device = { md0 md1 md2 ... }
+  # level = { lineair 0 1 4 5 }
+  # device = { hda1, hdb, loop/0 md0 ... }
+  # sparedevice = { ^^device^^ }
+  # chunksize = n (kb)
+  # attempt to setup raid arrays
+  while true; do
+    RCHOICE=`$DIALOG --cancel-label "Exit" --menu "Select an option" 0 0 0 \
+      $(list_raid_arrays) \
+      "Create" "Create a new RAID array"`
+    if [ $? != 0 ] ; then
+      break
+    fi
+    case $RCHOICE in
+      md*)
+        # don't edit started arrays anymore
+        if grep -qw $RCHOICE /proc/mdstat; then
+          msgbox "RAID Array $RCHOICE is already started. You cannot edit the array anymore after starting it."
+          continue
+        fi
+        # edit the array
+        while true ;do
+          for (( N=0 ; N<${#RAIDARRAYS[@]} ; N++ )); do
+            if [ "$RCHOICE" == "$(echo ${RAIDARRAYS[$N]} | cut -d: -f1)" ]; then
+              break
+            fi
+          done
+          RAIDARRAY=${RAIDARRAYS[$N]}
+          ARRAYNAME=$(echo $RAIDARRAY | cut -d: -f1)
+          LEVEL=$(echo $RAIDARRAY | cut -d: -f2)
+          DISCS=$(echo $RAIDARRAY | cut -d: -f3)
+          SPARE=$(echo $RAIDARRAY | cut -d: -f4)
+          RRCHOICE=`$DIALOG --cancel-label "Exit" --menu "Select an option" 0 0 0 \
+            "Add disc" "Add a disk to the array" \
+            "Add spare" "Add a spare disk to the array" \
+            $([ -n "$DISCS" ] && enum_discs $DISCS "RAID array member") \
+            $([ -n "$SPARE" ] && enum_discs $SPARE "Spare disc") \
+            "start" "Initialize and start the array" \
+            `
+          if [ $? != 0 ]; then
+            break
+          fi
+          if [ "$RRCHOICE" == "Add disc" -o "$RRCHOICE" == "Add spare" ] ; then
+            NEW=$(menu_select_device)
+            if [ -n "$NEW" ]; then
+              if [ "$RRCHOICE" == "Add disc" ] ; then
+                DISCS=$(echo "$DISCS,$NEW" | sed -e 's/^,//')
+              else # if [ "$RRCHOICE" == "Add spare" ] ; then
+                SPARE=$(echo "$SPARE,$NEW" | sed -e 's/^,//')
+              fi
+              block_devices use $NEW
+              if [ "$(fdisk -l ${NEW/[0-9]*/} | sed 's/\*/ /' | grep "^$NEW" | awk '{print $5}')" != "fd" ]; then
+                msgbox "The partition type of this device is not 0xFD (Linux RAID Autodetect). You should correct this in the partition table with a partitioning tool, otherwise linux will not automatically enable this RAID array at boot."
+              fi
+            fi
+          elif [ "$RRCHOICE" == "start" ] ; then
+            # Ask for metadata version
+            METADATA=$($DIALOG --title " Choose metadata version " --menu "" 0 0 0 \
+                       "0.90" "Use with LILO bootloader" \
+                       "1.0" "Use with SYSLINUX bootloader" \
+                       "1.2" "Use with GRUB bootloader")
+            # udev might fail to create these devices
+            if [ ! -b /dev/md/${ARRAYNAME/md/} ]; then
+              mkdir -p /dev/md
+              mknod -m 660 /dev/md/${ARRAYNAME/md/} b 9 ${ARRAYNAME/md/}
+              chgrp disc /dev/md/${ARRAYNAME/md/}
+              ln -s md/${ARRAYNAME/md/} /dev/$ARRAYNAME
+            fi
+            # create and start the array here in a single step
+            DISCS_A=( $(for DISC in $(echo $DISCS | sed 's/,/\t/g') ; do echo $DISC ; done) )
+            SPARE_A=( $(for DISC in $(echo $SPARE | sed 's/,/\t/g') ; do echo $DISC ; done) )
+            # note we do not force creation here
+            mdadm --create --metadata=$METADATA --level $LEVEL -n ${#DISCS_A[@]} -x ${#SPARE_A[@]} /dev/$ARRAYNAME ${DISCS_A[@]} ${SPARE_A[@]}
+            sleep 2
+            if ! grep -qw "^$ARRAYNAME" /proc/mdstat ; then
+              sleep 5
+              msgbox "Initialization and starting of the RAID array failed. You should inspect the output for errors and try manually to start the array before using it."
+            else
+              msgbox "Initialization of $ARRAYNAME succeeded. You can now use this device as a normal, unformatted partition."
+              block_devices free $ARRAYNAME
+              break
+            fi
+          else
+            # remove disc from the raid array
+            DISCS=$(echo $DISCS | sed -e "s:\\(^\\|,\\)$RRCHOICE\\(,\\|$\\):,:;s:^,::;s:,$::")
+            SPARE=$(echo $SPARE | sed -e "s:\\(^\\|,\\)$RRCHOICE\\(,\\|$\\):,:;s:^,::;s:,$::")
+            msgbox "Deleted $RRCHOICE from this RAID array."
+            block_devices free $RRCHOICE
+          fi
+          # recombine the array options
+          RAIDARRAYS[$N]="$ARRAYNAME:$LEVEL:$DISCS:$SPARE"
+        done
+        ;;
+      Create)
+        ARRAY="md${#RAIDARRAYS[@]}"
+        LEVEL=$(get_raid_level)
+        if [ -n "$LEVEL" ]; then
+          RAIDARRAYS[${#RAIDARRAYS[@]}]="$ARRAY:$LEVEL::"
+          block_devices add "/dev/$ARRAY:other:used"
+        fi
+        ;;
+    esac
+  done
+  DEFAULT=M
+}
+

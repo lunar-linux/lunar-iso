@@ -1,0 +1,68 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# portions Copyright 2001 by Kyle Sallee                    #
+# portions Copyright 2002 by Kagan Kongar                   #
+# portions Copyright 2002 by rodzilla                       #
+# portions Copyright 2003-2004 by tchan, kc8apf             #
+# portions Copyright 2004-2007 by Auke Kok                  #
+# portions Copyright 2008-2017 by Stefan Wold               #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+show_modules()
+{
+  if [ "$(pwd)" != "/lib/modules" ]; then
+    echo ".."
+    echo "Directory"
+  fi
+  for ITEM in *; do
+    case $ITEM in
+      modules.*) continue ;;
+    esac
+    /bin/echo "$ITEM"
+    if [ -d "$ITEM" ]; then
+      /bin/echo "Directory"
+    else
+      /bin/echo "Module"
+    fi
+  done
+}
+
+
+load_module()
+{
+  (
+  MODULES_ROOT="/lib/modules"
+  cd $MODULES_ROOT/$(uname -r)/kernel/drivers
+  TITLE="Module Menu"
+  HELP="Select a module to load or enter a subdirectory (pwd = $(pwd))"
+  CHOICE=""
+
+  while true; do
+    MODULES=$(show_modules $(pwd))
+    CHOICE=$($DIALOG --title "$TITLE" --cancel-label "Exit" --menu "$HELP" 0 0 0 $MODULES)
+    if [ $? != 0 ]; then
+      return
+    fi
+    if [ -f "$CHOICE" ]; then
+      MODULE=$(basename $CHOICE | sed "s/\.o$//;s/\.ko$//")
+      PARAMETERS=$(inputbox "Enter module parameters (optional)") &&
+      modprobe $MODULE $PARAMETERS
+      sleep 1
+      if ! grep -qw $MODULE /proc/modules ; then
+        msgbox "The module failed to load!"
+      else
+        block_devices init
+      fi
+    elif [ -d "$CHOICE" ]; then
+      cd "$CHOICE"
+    fi
+  done
+  )
+}
+

@@ -1,6 +1,0 @@
-BOPT=Faster
-SPD=(  )
-XTRA=(  )
-FPM=None
-CC_OPTS=( Pipe Fortify )
-STACK=
