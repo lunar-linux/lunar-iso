@@ -85,5 +85,5 @@ ISO_MODULES=acl            \
             xz             \
             zlib           \
             zfs            \
-            zfs-utils
+            zfs-utils      \
             zstd
