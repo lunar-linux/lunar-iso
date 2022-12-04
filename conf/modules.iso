@@ -84,6 +84,7 @@ ISO_MODULES=acl            \
             xfsprogs       \
             xz             \
             zlib           \
+            libtirpc       \
             zfs            \
             zfs-utils      \
             zstd
