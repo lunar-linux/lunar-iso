@@ -22,6 +22,17 @@ install_grub2()
     return
   fi
 
+  case `tty` in
+    /dev/ttyS*)
+      mkdir /mnt/etc/default
+      {
+        echo 'GRUB_CMDLINE_LINUX="console=tty1 console=ttyS0,38400n8"'
+        echo 'GRUB_TERMINAL="console serial"'
+        echo 'GRUB_SERIAL_COMMAND="serial --speed=38400 --unit=0 --word=8 --parity=no --stop=1"'
+      } > /mnt/etc/default/grub
+      ;;
+  esac
+
   if [[ ! -v MBR ]]
   then
     DISC=$(echo $ROOT | sed 's/[0-9]*$//')
@@ -46,4 +57,3 @@ install_grub2()
     chroot_run grub-install $MBR
   fi
 }
-
