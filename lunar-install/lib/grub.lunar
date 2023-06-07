@@ -26,8 +26,8 @@ make_grub_conf()
   mkdir -p $TARGET/boot/grub
   (
     echo "# uncomment the following 2 lines to enable serial console booting"
-    echo "#serial --unit=0 --speed=38400 --word=8 --parity=no --stop=1"
-    echo "#terminal serial"
+    echo "serial --unit=0 --speed=38400 --word=8 --parity=no --stop=1"
+    echo "terminal serial"
     echo ""
     echo "timeout 30"
     echo "default 0"
