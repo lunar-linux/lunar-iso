@@ -15,6 +15,7 @@ Before=getty.target
 ConditionPathExists=/dev/tty0
 
 Conflicts=getty@%i.service
+Conflicts=serial-getty@%i.service
 
 [Service]
 # the VT is cleared by TTYVTDisallocate
