@@ -68,6 +68,7 @@ ISO_MODULES=acl            \
             parted         \
             perl           \
             pcre           \
+            pcre2          \
             procps         \
             popt           \
             readline       \
