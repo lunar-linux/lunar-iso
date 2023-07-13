@@ -1,5 +1,5 @@
 DEFAULT install
-APPEND initrd=initrd root=live:CDLABEL=%LABEL% rd.live.image rd.live.overlay.overlayfs=1 loglevel=3
+APPEND initrd=initrd root=live:CDLABEL=%LABEL% rd.live.image rd.live.overlay.overlayfs=1 loglevel=3 console=tty0 console=ttyS0,38400n8
 DISPLAY f1.txt
 TIMEOUT 600
 PROMPT 1
@@ -14,9 +14,9 @@ F8 f1.txt
 F9 f1.txt
 LABEL install
 	KERNEL linux
-	APPEND initrd=initrd root=live:CDLABEL=%LABEL% rd.live.image rd.live.overlay.overlayfs=1 loglevel=3 vga=ask
+	APPEND initrd=initrd root=live:CDLABEL=%LABEL% rd.live.image rd.live.overlay.overlayfs=1 loglevel=3 vga=ask console=tty0 console=ttyS0,38400n8
 LABEL novga
 	KERNEL linux
-	APPEND initrd=initrd root=live:CDLABEL=%LABEL% rd.live.image rd.live.overlay.overlayfs=1 loglevel=3 nomodeset
+	APPEND initrd=initrd root=live:CDLABEL=%LABEL% rd.live.image rd.live.overlay.overlayfs=1 loglevel=3 nomodeset console=tty0 console=ttyS0,38400n8
 # uncomment the following line to enable serial console booting
-# SERIAL 0 38400
+SERIAL 0 38400
