@@ -68,7 +68,6 @@ menu_get_filesystem()
   BTRFS="BTree file system (*)"
   EXT3="Third Extended file system (*)"
   EXT2="Second Extended file system"
-  REISER="Reiserfs file system (*)"
   XFS="XFS file system (*)"
   JFS="JFS file system (*)"
   VFAT="FAT32 file system"
