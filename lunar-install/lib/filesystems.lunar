@@ -29,7 +29,7 @@ menu_list_targets()
         # this prevents listing EXTENDED partitions
         continue
       fi
-      FSIZE=$(nice_size `fdisk -l $DEVICE 2>&1 | grep ^Disk | grep bytes | awk '{print $5}'`)
+      FSIZE=$(nice_size `fdisk -l $DEVICE 2>&1 | awk '/^Disk.*bytes/ { print $5 }')
       echo $DEVICE
 
       PTYPE=$(file -Ls $DEVICE 2>&1 | cat)
