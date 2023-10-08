@@ -1,0 +1,84 @@
+#!/bin/bash
+
+#############################################################
+#                                                           #
+# Automatically create a basic partition table on a disk    #
+#                                                           #
+#############################################################
+#                                                           #
+# Copyright 2023 by Dave Brown                              #
+#                                                           #
+#############################################################
+#                                                           #
+# This file is released under the GPLv2                     #
+#                                                           #
+#############################################################
+
+##########################################################################
+# This creates a partition table with the following entries:
+#
+# 1) A boot/EFI partition at the beginning of the disk, arbitrarily
+#    sized at 200M
+# 2) A swap partition at the end of the disk, twice the size of RAM, and
+# 3) A Linux partition between them taking up the remainder of the disk
+#    space.
+##########################################################################
+
+# Partitions format:
+# $PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT
+
+express_mkpart() {
+    local DISK
+    local BOOT_FS
+    local PART
+    local START
+    local FORCE
+
+    DISK=$1
+    BOOT_FS=ext4
+
+    # Strange calculation (taken from lib/filesystems.lunar) but it ends up 
+    # being 2x[RAM rounded up to 256M blocks]
+    SWAPSIZE=$(awk '/^MemTotal:/ { print (int($2/128000)+1)*256 }' /proc/meminfo)
+
+    parted $DISK --script mklabel gpt
+    PART=0
+    START=0
+
+    if [ ! -d /sys/firmware/efi ]
+    then
+        # BIOS boot partition
+        ((PART++))
+        START=1MB
+        parted $DISK --script "mkpart primary fat32 0 $START"
+        parted $DISK --script "set ${PART} bios_grub on"
+        BOOT_FS=fat32
+    fi
+
+    # boot/EFI partition
+    # Starts at 1MB to give a little room for BIOS boot if this isn't an EFI system
+    ((PART++))
+    parted $DISK --script "mkpart primary $BOOT_FS $START 200MB"
+    parted $DISK --script "set ${PART} boot on"
+    case $BOOT_FS in
+        fat32)
+            FORCE=-F32
+        ;;
+
+        *)
+            FORCE=-f
+        ;;
+    esac
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PART}:/boot:${BOOT_FS}:$(determine_mount_opts $BOOT_FS):$(determine_fsck_pass /boot)::${FORCE}:yes"
+
+    # Root partition
+    ((PART++))
+    parted $DISK --script "mkpart primary ext4 200MB -${SWAPSIZE}M"
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PART}:/:ext4:$(determine_mount_opts ext4):$(determine_fsck_pass /)::${FORCE}:yes"
+
+    # Swap partition
+    ((PART++))
+    parted $DISK --script "mkpart primary linux-swap -${SWAPSIZE}M 100%"
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PART}:swap:swap:$(determine_mount_opts ext4):$(determine_fsck_pass /)::${FORCE}:yes"
+    SWAP_ENABLED=1
+}
