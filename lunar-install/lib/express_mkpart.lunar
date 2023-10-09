@@ -67,7 +67,7 @@ express_mkpart() {
         ;;
 
         *)
-            FORCE=-f
+            FORCE=-F
         ;;
     esac
 
@@ -78,14 +78,14 @@ express_mkpart() {
     # Root partition
     ((PARTNUM++))
     parted $DISK --script "mkpart primary ext4 200MB -${SWAPSIZE}M"
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/:ext4:$(determine_mount_opts ext4):$(determine_fsck_pass /)::${FORCE}:yes"
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/:ext4:$(determine_mount_opts ext4):$(determine_fsck_pass /)::-F:yes"
     ROOT=${DISK}${PARTNUM}
     block_devices use ${DISK}${PARTNUM}
 
     # Swap partition
     ((PARTNUM++))
     parted $DISK --script "mkpart primary linux-swap -${SWAPSIZE}M 100%"
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:swap:swap:$(determine_mount_opts ext4):$(determine_fsck_pass /)::${FORCE}:yes"
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:swap:swap:$(determine_mount_opts ext4):$(determine_fsck_pass /)::-f:yes"
     SWAP_ENABLED=1
     block_devices use ${DISK}${PARTNUM}
 
