@@ -89,5 +89,9 @@ express_mkpart() {
     SWAP_ENABLED=1
     block_devices use ${DISK}${PARTNUM}
 
+    # Make sure the rest of the installer sees the new partitions
+    sync
+    partprobe $DISK
+
     DONE_PARTITIONING=1
 }
