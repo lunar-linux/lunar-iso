@@ -24,44 +24,45 @@
 #    space.
 ##########################################################################
 
-# Partitions format:
-# $PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT
-
 express_mkpart() {
     local DISK
     local BOOT_FS
-    local PART
+    local PARTNUM
     local START
     local FORCE
 
     DISK=$1
-    BOOT_FS=ext4
+    BOOT_FS=fat32
 
     # Strange calculation (taken from lib/filesystems.lunar) but it ends up 
     # being 2x[RAM rounded up to 256M blocks]
     SWAPSIZE=$(awk '/^MemTotal:/ { print (int($2/128000)+1)*256 }' /proc/meminfo)
 
     parted $DISK --script mklabel gpt
-    PART=0
+
+    PARTNUM=0
     START=0
 
+    # If this isn't an EFI system, make a bit of room at the start of the disk
+    # for grub
     if [ ! -d /sys/firmware/efi ]
     then
         # BIOS boot partition
-        ((PART++))
+        ((PARTNUM++))
         START=1MB
         parted $DISK --script "mkpart primary fat32 0 $START"
-        parted $DISK --script "set ${PART} bios_grub on"
-        BOOT_FS=fat32
+        parted $DISK --script "set ${PARTNUM} bios_grub on"
+        BOOT_FS=ext4
     fi
 
     # boot/EFI partition
-    # Starts at 1MB to give a little room for BIOS boot if this isn't an EFI system
-    ((PART++))
+    ((PARTNUM++))
     parted $DISK --script "mkpart primary $BOOT_FS $START 200MB"
-    parted $DISK --script "set ${PART} boot on"
+    parted $DISK --script "set ${PARTNUM} boot on"
     case $BOOT_FS in
         fat32)
+            # gparted calls it "fat32", but mkfs wants "vfat", so...
+            BOOT_FS=vfat
             FORCE=-F32
         ;;
 
@@ -69,16 +70,24 @@ express_mkpart() {
             FORCE=-f
         ;;
     esac
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PART}:/boot:${BOOT_FS}:$(determine_mount_opts $BOOT_FS):$(determine_fsck_pass /boot)::${FORCE}:yes"
+
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/boot:${BOOT_FS}:$(determine_mount_opts $BOOT_FS):$(determine_fsck_pass /boot)::${FORCE}:yes"
+    BOOT=${DISK}${PARTNUM}
+    block_devices use ${DISK}${PARTNUM}
 
     # Root partition
-    ((PART++))
+    ((PARTNUM++))
     parted $DISK --script "mkpart primary ext4 200MB -${SWAPSIZE}M"
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PART}:/:ext4:$(determine_mount_opts ext4):$(determine_fsck_pass /)::${FORCE}:yes"
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/:ext4:$(determine_mount_opts ext4):$(determine_fsck_pass /)::${FORCE}:yes"
+    ROOT=${DISK}${PARTNUM}
+    block_devices use ${DISK}${PARTNUM}
 
     # Swap partition
-    ((PART++))
+    ((PARTNUM++))
     parted $DISK --script "mkpart primary linux-swap -${SWAPSIZE}M 100%"
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PART}:swap:swap:$(determine_mount_opts ext4):$(determine_fsck_pass /)::${FORCE}:yes"
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:swap:swap:$(determine_mount_opts ext4):$(determine_fsck_pass /)::${FORCE}:yes"
     SWAP_ENABLED=1
+    block_devices use ${DISK}${PARTNUM}
+
+    DONE_PARTITIONING=1
 }
