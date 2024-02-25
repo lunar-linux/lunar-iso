@@ -7,6 +7,7 @@
 # portions Copyright 2003-2004 by tchan, kc8apf             #
 # portions Copyright 2004-2007 by Auke Kok                  #
 # portions Copyright 2008-2017 by Stefan Wold               #
+# portions Copyright 2023 by Dave Brown                     #
 #                                                           #
 #############################################################
 #                                                           #
@@ -41,6 +42,7 @@ menu_get_partition()
 
 partition_discs()
 {
+  EXPRESS="Create basic partition table and select target filesystems automatically"
   CFDISK="Curses based disk partition table manipulator"
   FDISK="Partition table manipulator"
   PARTED="Create, destroy, resize, and copy partitions"
@@ -49,6 +51,7 @@ partition_discs()
 
   DISC=$(menu_get_disc) &&
   PROG=`$DIALOG --title "$TITLE" --menu "$HELP" 0 0 0  \
+          "express_mkpart" "$EXPRESS"                  \
           "cfdisk"  "$CFDISK"                          \
           "fdisk"   "$FDISK"                           \
           "parted"  "$PARTED"` &&
