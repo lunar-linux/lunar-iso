@@ -73,7 +73,6 @@ express_mkpart() {
 
     PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/boot:${BOOT_FS}:$(determine_mount_opts $BOOT_FS):$(determine_fsck_pass /boot)::${FORCE}:yes"
     BOOT=${DISK}${PARTNUM}
-    block_devices add ${DISK}${PARTNUM}
     block_devices use ${DISK}${PARTNUM}
 
     # Root partition
@@ -81,7 +80,6 @@ express_mkpart() {
     parted $DISK --script "mkpart primary ext4 200MB -${SWAPSIZE}M"
     PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/:ext4:$(determine_mount_opts ext4):$(determine_fsck_pass /)::-F:yes"
     ROOT=${DISK}${PARTNUM}
-    block_devices add ${DISK}${PARTNUM}
     block_devices use ${DISK}${PARTNUM}
 
     # Swap partition
@@ -89,12 +87,17 @@ express_mkpart() {
     parted $DISK --script "mkpart primary linux-swap -${SWAPSIZE}M 100%"
     PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:swap:swap:$(determine_mount_opts ext4):$(determine_fsck_pass /)::-f:yes"
     SWAP_ENABLED=1
-    block_devices add ${DISK}${PARTNUM}
+    S_OK=\\Z2
     block_devices use ${DISK}${PARTNUM}
 
     # Make sure the rest of the installer sees the new partitions
     sync
     partprobe $DISK
 
+    # Now we can skip selecting a swap file (or partition), and we don't
+    # have to select partitions either if we don't want to
     DONE_PARTITIONING=1
+    L_OK=
+    T_OK=
+    STEP=6
 }
