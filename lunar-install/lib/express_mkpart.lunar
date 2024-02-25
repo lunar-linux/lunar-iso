@@ -34,9 +34,23 @@ express_mkpart() {
     DISK=$1
     BOOT_FS=fat32
 
-    # Strange calculation (taken from lib/filesystems.lunar) but it ends up 
-    # being 2x[RAM rounded up to 256M blocks]
-    SWAPSIZE=$(awk '/^MemTotal:/ { print (int($2/128000)+1)*256 }' /proc/meminfo)
+    SWAPSIZE=$(awk '
+        /^MemTotal:/ {
+            memsize=$2
+
+            # Round swap size up a little bit
+            base_swapsize = (int(memsize/128000)+1)*128
+
+            # If there is more than 8G of RAM, let swap
+            # be memory plus an extra couple of gigabytes
+            #
+            # Otherwise just let it be twice RAM
+            if(memsize > 8388608) {
+                print base_swapsize + 2048
+            } else {
+                print base_swapsize * 2
+            }
+        }' /proc/meminfo)
 
     parted $DISK --script mklabel gpt
 
