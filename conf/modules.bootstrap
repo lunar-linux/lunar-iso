@@ -1,1 +1,1 @@
-BOOTSTRAP_MODULES="bash binutils bzip2 coreutils dialog diffutils file findutils flex gawk gcc glib-2 glibc grep gzip installwatch less libcap lunar m4 make net-tools openssl patch pbzip2 pcre2 perl pkgconf procps readline sed tar texinfo util-linux xz zlib zstd"
+BOOTSTRAP_MODULES="bash binutils bzip2 coreutils dialog diffutils file findutils flex gawk gcc glib-2 glibc grep gzip installwatch less libcap lunar m4 make openssl patch pbzip2 pcre2 perl pkgconf procps readline sed tar texinfo util-linux xz zlib zstd"
