@@ -28,6 +28,7 @@ ISO_MODULES=acl            \
             gptfdisk       \
             grep           \
             gzip           \
+            hdparm         \
             inih           \
             iproute2       \
             iputils        \
