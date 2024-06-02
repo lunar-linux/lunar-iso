@@ -51,6 +51,7 @@ ISO_MODULES=acl            \
             libnftnl       \
             libtool        \
             libunistring   \
+            libxcrypt      \
             Linux-PAM      \
             linux-firmware \
             lunar          \
