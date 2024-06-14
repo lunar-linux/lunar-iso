@@ -1,1 +1,1 @@
-STAGE2_MODULES=fhs kernel-headers glibc gmp mpfr libmpc gcc binutils Linux-PAM pcre2
+STAGE2_MODULES=fhs kernel-headers glibc gmp mpfr libmpc libxcrypt gcc binutils Linux-PAM pcre2
