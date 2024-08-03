@@ -52,6 +52,16 @@ express_mkpart() {
             }
         }' /proc/meminfo)
 
+    DISKSIZE=$(parted $DISK 'unit mib print devices' |
+               sed 's/.*(\(.*\)mib)/\1/i')
+
+    # If swap would be more than 10% disk size, then just use 10% of the
+    # disk for swap
+    if (( SWAPSIZE > ( DISKSIZE/10) ))
+    then
+        SWAPSIZE=$((DISKSIZE/10))
+    fi
+
     parted $DISK --script mklabel gpt
 
     PARTNUM=0
