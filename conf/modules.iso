@@ -4,6 +4,7 @@ ISO_MODULES=acl            \
             btrfs-progs    \
             bzip2          \
             coreutils      \
+            cpio           \
             cracklib       \
             cryptsetup     \
             dbus           \
@@ -11,6 +12,7 @@ ISO_MODULES=acl            \
             dialog         \
             diffutils      \
             dosfstools     \
+            dracut         \
             e2fsprogs      \
             e3             \
             ed             \
