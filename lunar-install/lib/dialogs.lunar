@@ -71,6 +71,10 @@ goodbye()
   PROMPT="Reboot now?"
   if confirm "$PROMPT" "--defaultno"; then
     kill `jobs -p` &> /dev/null
+    touch /run/initramfs/.need_shutdown
+    touch /lib/modules/$(uname -r)/initrd
+    mount --bind /run/initramfs/live/isolinux/initrd /lib/modules/$(uname -r)/initrd
+    /usr/lib/dracut/dracut-initramfs-restore
     shutdown -r now
     exit 0
   else
