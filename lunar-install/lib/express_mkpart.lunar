@@ -95,21 +95,21 @@ express_mkpart() {
         ;;
     esac
 
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/boot:${BOOT_FS}:$(determine_mount_opts $BOOT_FS):$(determine_fsck_pass /boot)::${FORCE}:yes"
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/boot:${BOOT_FS}:$(determine_mount_opts ${DISK} ${BOOT_FS}):$(determine_fsck_pass /boot)::${FORCE}:yes"
     BOOT=${DISK}${PARTNUM}
     block_devices use ${DISK}${PARTNUM}
 
     # Root partition
     ((PARTNUM++))
     parted $DISK --script "mkpart primary ext4 200MB -${SWAPSIZE}M"
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/:ext4:$(determine_mount_opts ext4):$(determine_fsck_pass /)::-F:yes"
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/:ext4:$(determine_mount_opts ${DISK} ext4):$(determine_fsck_pass /)::-F:yes"
     ROOT=${DISK}${PARTNUM}
     block_devices use ${DISK}${PARTNUM}
 
     # Swap partition
     ((PARTNUM++))
     parted $DISK --script "mkpart primary linux-swap -${SWAPSIZE}M 100%"
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:swap:swap:$(determine_mount_opts ext4):$(determine_fsck_pass /)::-f:yes"
+    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:swap:swap:$(determine_mount_opts ${DISK} swap):$(determine_fsck_pass /)::-f:yes"
     SWAP_ENABLED=1
     S_OK=\\Z2
     block_devices use ${DISK}${PARTNUM}
