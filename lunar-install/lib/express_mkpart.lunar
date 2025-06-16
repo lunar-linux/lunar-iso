@@ -28,11 +28,22 @@ express_mkpart() {
     local DISK
     local BOOT_FS
     local PARTNUM
+    local PARTPREFIX
+    local PARTNAME
     local START
     local FORCE
 
     DISK=$1
     BOOT_FS=fat32
+
+    case "$DISK" in
+        *[0-9])    # if disk name has a number at the end, like "nvme0n1"
+            PARTPREFIX="p"
+        ;;
+        *)
+            PARTPREFIX=""
+        ;;
+    esac
 
     SWAPSIZE=$(awk '
         /^MemTotal:/ {
@@ -96,24 +107,30 @@ express_mkpart() {
         ;;
     esac
 
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/boot:${BOOT_FS}:$(determine_mount_opts ${DISK} ${BOOT_FS}):$(determine_fsck_pass /boot)::${FORCE}:yes"
-    BOOT=${DISK}${PARTNUM}
-    block_devices use ${DISK}${PARTNUM}
+    PARTNAME="${DISK}${PARTPREFIX}${PARTNUM}"
+
+    PARTITIONS[${#PARTITIONS[@]}]="${PARTNAME}:/boot:${BOOT_FS}:$(determine_mount_opts ${DISK} ${BOOT_FS}):$(determine_fsck_pass /boot)::${FORCE}:yes"
+    BOOT=$PARTNAME
+    block_devices use $BOOT
 
     # Root partition
     ((PARTNUM++))
+    PARTNAME="${DISK}${PARTPREFIX}${PARTNUM}"
+
     parted $DISK --script "mkpart primary ext4 200MB -${SWAPSIZE}M"
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:/:ext4:$(determine_mount_opts ${DISK} ext4):$(determine_fsck_pass /)::-F:yes"
-    ROOT=${DISK}${PARTNUM}
-    block_devices use ${DISK}${PARTNUM}
+    PARTITIONS[${#PARTITIONS[@]}]="${PARTNAME}:/:ext4:$(determine_mount_opts ${DISK} ext4):$(determine_fsck_pass /)::-F:yes"
+    ROOT=$PARTNAME
+    block_devices use $ROOT
 
     # Swap partition
     ((PARTNUM++))
+    PARTNAME="${DISK}${PARTPREFIX}${PARTNUM}"
+
     parted $DISK --script "mkpart primary linux-swap -${SWAPSIZE}M 100%"
-    PARTITIONS[${#PARTITIONS[@]}]="${DISK}${PARTNUM}:swap:swap:$(determine_mount_opts ${DISK} swap):$(determine_fsck_pass /)::-f:yes"
+    PARTITIONS[${#PARTITIONS[@]}]="${PARTNAME}:swap:swap:$(determine_mount_opts ${DISK} swap):$(determine_fsck_pass /)::-f:yes"
     SWAP_ENABLED=1
     S_OK=\\Z2
-    block_devices use ${DISK}${PARTNUM}
+    block_devices use $PARTNAME
 
     # Make sure the rest of the installer sees the new partitions
     sync
