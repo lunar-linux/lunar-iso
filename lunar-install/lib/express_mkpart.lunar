@@ -18,7 +18,7 @@
 # This creates a partition table with the following entries:
 #
 # 1) A boot/EFI partition at the beginning of the disk, arbitrarily
-#    sized at 200M
+#    sized at 512M
 # 2) A swap partition at the end of the disk, twice the size of RAM, and
 # 3) A Linux partition between them taking up the remainder of the disk
 #    space.
@@ -44,6 +44,8 @@ express_mkpart() {
             PARTPREFIX=""
         ;;
     esac
+
+    local BOOTPART_SIZE=512M
 
     SWAPSIZE=$(awk '
         /^MemTotal:/ {
@@ -93,7 +95,7 @@ express_mkpart() {
 
     # boot/EFI partition
     ((PARTNUM++))
-    parted $DISK --script "mkpart primary $BOOT_FS $START 200MB"
+    parted $DISK --script "mkpart primary $BOOT_FS $START $BOOTPART_SIZE"
     parted $DISK --script "set ${PARTNUM} boot on"
     case $BOOT_FS in
         fat32)
@@ -117,7 +119,7 @@ express_mkpart() {
     ((PARTNUM++))
     PARTNAME="${DISK}${PARTPREFIX}${PARTNUM}"
 
-    parted $DISK --script "mkpart primary ext4 200MB -${SWAPSIZE}M"
+    parted $DISK --script "mkpart primary ext4 $BOOTPART_SIZE -${SWAPSIZE}M"
     PARTITIONS[${#PARTITIONS[@]}]="${PARTNAME}:/:ext4:$(determine_mount_opts ${DISK} ext4):$(determine_fsck_pass /)::-F:yes"
     ROOT=$PARTNAME
     block_devices use $ROOT
