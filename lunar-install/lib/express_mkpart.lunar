@@ -84,7 +84,7 @@ express_mkpart() {
 
     # boot/EFI partition
     ((PARTNUM++))
-    parted $DISK --script "mkpart primary $BOOT_FS $START $BOOTPART_SIZE
+    parted $DISK --script "mkpart primary $BOOT_FS $START $BOOTPART_SIZE"
     parted $DISK --script "set ${PARTNUM} boot on"
     case $BOOT_FS in
         fat32)
