@@ -3,7 +3,7 @@
 set -e
 
 MNTDIR=$(mktemp -d /tmp/efiboot-XXXXXX)
-BOOTIMGSIZE="${1:-50}M"
+BOOTIMGSIZE="${1:-100}M"
 BOOTIMGFILE="${2:-$ISO_TARGET/EFI/lunariso/efiboot.img}"
 
 finishScript() {
