@@ -19,7 +19,6 @@ iso-target: $(ISO_TARGET)/.iso-target
 iso-tools:
 	@which xorriso &> /dev/null || lin libisoburn
 	@which isohybrid &> /dev/null || lin syslinux
-	@which efitool-mkusb &> /dev/null || lin efitools
 	@which mksquashfs &> /dev/null || lin squashfs
 	@which rsync &> /dev/null || lin rsync
 
@@ -126,16 +125,10 @@ iso-isolinux: $(ISO_TARGET)/.iso-isolinux $(addprefix $(ISO_TARGET)/isolinux/, $
 # Setup EFI for USB and CD
 $(ISO_TARGET)/.iso-efi: iso-target
 	@echo "Setting up iso-efi"
-	@mkdir -p $(ISO_TARGET)/EFI/boot $(ISO_TARGET)/loader/entries $(ISO_TARGET)/EFI/lunariso
+	@mkdir -p $(ISO_TARGET)/EFI/BOOT $(ISO_TARGET)/loader/entries $(ISO_TARGET)/EFI/lunariso
 	@touch $@
 
-$(ISO_TARGET)/EFI/boot/bootx64.efi: /usr/share/efitools/efi/PreLoader.efi
-	@cp $< $@
-
-$(ISO_TARGET)/EFI/boot/HashTool.efi: /usr/share/efitools/efi/HashTool.efi
-	@cp $< $@
-
-$(ISO_TARGET)/EFI/boot/loader.efi: $(ISO_TARGET)/usr/lib/systemd/boot/efi/systemd-bootx64.efi
+$(ISO_TARGET)/EFI/BOOT/BOOTx64.EFI: $(ISO_TARGET)/usr/lib/systemd/boot/efi/systemd-bootx64.efi
 	@cp $< $@
 
 $(ISO_TARGET)/loader/loader.conf: $(ISO_SOURCE)/efiboot/loader/loader.conf
@@ -144,13 +137,13 @@ $(ISO_TARGET)/loader/loader.conf: $(ISO_SOURCE)/efiboot/loader/loader.conf
 $(ISO_TARGET)/loader/entries/lunariso-x86_64.conf: $(ISO_SOURCE)/efiboot/loader/entries/lunariso-x86_64-cd.conf $(ISO_TARGET)/.iso-efi
 	@sed -e 's:%VERSION%:$(ISO_VERSION):g' -e 's:%CODENAME%:$(ISO_CODENAME):g' -e 's:%DATE%:$(ISO_DATE):g' -e 's:%LABEL%:LUNAR_$(ISO_MAJOR):' $< > $@
 
-$(ISO_TARGET)/EFI/lunariso/efiboot.img: $(ISO_TARGET)/.iso-efi
+$(ISO_SOURCE)/efiboot.img: $(ISO_TARGET)/.iso-efi
 	@echo "Creating EFI boot image"
 	@$(ISO_SOURCE)/scripts/create-efi-image
 
 ifeq ($(ISO_ARCH),x86_64)
-XORRISO_EFI_OPTS := -append_partition 2 0xef $(ISO_TARGET)/EFI/lunariso/efiboot.img -eltorito-alt-boot -e --interval:appended_partition_2:all:: -no-emul-boot -isohybrid-gpt-basdat
-iso-efi: $(ISO_TARGET)/.iso-efi $(ISO_TARGET)/EFI/boot/bootx64.efi $(ISO_TARGET)/EFI/boot/HashTool.efi $(ISO_TARGET)/EFI/boot/loader.efi $(ISO_TARGET)/loader/loader.conf $(ISO_TARGET)/loader/entries/lunariso-x86_64.conf $(ISO_TARGET)/EFI/lunariso/efiboot.img
+XORRISO_EFI_OPTS := -append_partition 2 0xef $(ISO_SOURCE)/efiboot.img -eltorito-alt-boot -e --interval:appended_partition_2:all:: -no-emul-boot -isohybrid-gpt-basdat
+iso-efi: $(ISO_TARGET)/.iso-efi $(ISO_TARGET)/EFI/BOOT/BOOTx64.EFI $(ISO_TARGET)/loader/loader.conf $(ISO_TARGET)/loader/entries/lunariso-x86_64.conf $(ISO_SOURCE)/efiboot.img
 else
 iso-efi:
 	@$(SHELL) -c true

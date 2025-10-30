@@ -3,8 +3,7 @@
 set -e
 
 MNTDIR=$(mktemp -d /tmp/efiboot-XXXXXX)
-BOOTIMGSIZE="${1:-100}M"
-BOOTIMGFILE="${2:-$ISO_TARGET/EFI/lunariso/efiboot.img}"
+BOOTIMGFILE="${2:-$ISO_SOURCE/efiboot.img}"
 
 finishScript() {
   umount -d $MNTDIR
@@ -18,13 +17,20 @@ if [ ! -d "$(dirname $BOOTIMGFILE)" ]; then
   exit 1
 fi
 
-truncate -s $BOOTIMGSIZE $BOOTIMGFILE
+efiboot_files=("$ISO_TARGET/boot/linux"
+	       "$ISO_TARGET/boot/initrd"
+	       "$ISO_TARGET/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
+	       "$ISO_SOURCE/efiboot/loader")
+
+bootimgsize="$(du -bcs -- "${efiboot_files[@]}" 2> /dev/null | awk 'END { print $1 }')"
+bootimgsize=$((bootimgsize+1000000))  # small buffer (~1MB)
+
+truncate -s $bootimgsize $BOOTIMGFILE
 mkfs.fat -n LUNAR_EFI $BOOTIMGFILE > /dev/null
 mount $BOOTIMGFILE $MNTDIR
-mkdir -p $MNTDIR/EFI/{lunariso,boot} $MNTDIR/loader/entries
-cp $ISO_TARGET/boot/{linux,initrd} $MNTDIR/EFI/lunariso/
-cp $ISO_TARGET/EFI/boot/{bootx64.efi,HashTool.efi} $MNTDIR/EFI/boot/
-cp $ISO_TARGET/usr/lib/systemd/boot/efi/systemd-bootx64.efi $MNTDIR/EFI/boot/loader.efi
+mkdir -p "$MNTDIR/EFI/BOOT" "$MNTDIR/lunar/boot" "$MNTDIR/loader/entries"
+cp $ISO_TARGET/boot/{linux,initrd} $MNTDIR/lunar/boot/
+cp $ISO_TARGET/usr/lib/systemd/boot/efi/systemd-bootx64.efi $MNTDIR/EFI/BOOT/BOOTx64.EFI
 cp $ISO_SOURCE/efiboot/loader/loader.conf $MNTDIR/loader/loader.conf
 sed -e "s:%VERSION%:${ISO_VERSION}:g" \
     -e "s:%CODENAME%:${ISO_CODENAME}:g" \

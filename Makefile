@@ -52,7 +52,7 @@ include mkfiles/installer.mk
 include mkfiles/iso.mk
 
 clean:
-	rm -rf $(ISO_TARGET) $(ISO_SOURCE)/{spool,cache}
+	rm -rf $(ISO_TARGET) $(ISO_SOURCE)/{spool,cache,efiboot.img}
 
 # Convenient target for development
 chroot:
