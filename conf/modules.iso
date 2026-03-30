@@ -42,6 +42,7 @@ ISO_MODULES=acl            \
             kmod           \
             less           \
             libaio         \
+            libbsd         \
             libcap         \
             libffi         \
             libidn         \
@@ -49,6 +50,7 @@ ISO_MODULES=acl            \
             libgcrypt      \
             libgpg-error   \
             libidn         \
+            libmd          \
             libmpc         \
             libmnl         \
             libnftnl       \
