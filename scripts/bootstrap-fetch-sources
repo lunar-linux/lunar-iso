@@ -1,0 +1,82 @@
+#!/bin/bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+# shellcheck disable=SC1091
+. "$SCRIPT_DIR/bootstrap-common.sh"
+
+mode="${1:-bootstrap}"
+declare -a modules=()
+
+resolve_source_url()
+{
+  local raw_url="$1"
+  local source_name="$2"
+
+  case "$raw_url" in
+    *.tar|*.tar.gz|*.tgz|*.tar.bz2|*.tbz|*.tbz2|*.tar.xz|*.txz|*.tar.lz|*.tar.lzma|*.zip)
+      printf '%s\n' "$raw_url"
+      ;;
+    */"$source_name"|*"$source_name"?*)
+      printf '%s\n' "$raw_url"
+      ;;
+    */)
+      printf '%s%s\n' "$raw_url" "$source_name"
+      ;;
+    *)
+      printf '%s/%s\n' "$raw_url" "$source_name"
+      ;;
+  esac
+}
+
+case "$mode" in
+  bootstrap)
+    readarray -t modules < <(
+      {
+        bootstrap_resolve_modules $BOOTSTRAP_MODULES $BOOTSTRAP_TOOLCHAIN_FETCH_MODULES
+        printf '%s\n' $BOOTSTRAP_CROSS_TEMP_TOOLS
+        printf '%s\n' $BOOTSTRAP_CHROOT_TEMP_TOOLS
+      } | awk 'NF && !seen[$0]++'
+    )
+    ;;
+  all-core)
+    while read -r path; do
+      [ -n "$path" ] || continue
+      modules+=("$(basename "$(dirname "$path")")")
+    done < <(find "$MOONBASE_ROOT" -mindepth 1 -maxdepth 3 -name DETAILS -print | sort)
+    ;;
+  *)
+    echo "Usage: $0 [bootstrap|all-core]" >&2
+    exit 1
+    ;;
+esac
+
+ensure_dir "$ISO_SOURCE/spool"
+
+bootstrap_log "Fetching sources for ${#modules[@]} modules"
+
+for module in "${modules[@]}"; do
+  readarray -t entries < <(module_source_entries "$module")
+
+  if [ "${#entries[@]}" -eq 0 ]; then
+    if module_has_payload_sources "$module"; then
+      echo "[bootstrap] ERROR: $module has source metadata but it could not be resolved" >&2
+      exit 1
+    fi
+    bootstrap_log "Skipping $module, no source payload is defined"
+    continue
+  fi
+
+  for entry in "${entries[@]}"; do
+    source_name="${entry%%$'\t'*}"
+    raw_url="${entry#*$'\t'}"
+    if [ -z "$source_name" ] || [ -z "$raw_url" ] || [ "$raw_url" = "$entry" ]; then
+      echo "[bootstrap] ERROR: $module has unresolved source metadata for ${source_name:-<unknown>}" >&2
+      exit 1
+    fi
+    url="$(resolve_source_url "$raw_url" "$source_name")"
+    bootstrap_log "Downloading $module -> $source_name"
+    download_file "$url" "$ISO_SOURCE/spool/$source_name"
+  done
+done

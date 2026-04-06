@@ -1,0 +1,739 @@
+#!/bin/bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+# shellcheck disable=SC1091
+. "$SCRIPT_DIR/bootstrap-common.sh"
+
+TARGET="${BOOTSTRAP_TARGET:-$(bootstrap_default_target)}"
+JOBS="${BOOTSTRAP_JOBS:-${ISO_MAKES:-1}}"
+
+ensure_dir \
+  "$ISO_TARGET/bin" \
+  "$BOOTSTRAP_PREFIX/bin" \
+  "$BOOTSTRAP_WORKDIR/modules" \
+  "$ISO_TARGET/sbin" \
+  "$ISO_TARGET/etc" \
+  "$ISO_TARGET/usr/bin" \
+  "$ISO_TARGET/usr/lib" \
+  "$ISO_TARGET/usr/lib/pkgconfig" \
+  "$ISO_TARGET/usr/sbin" \
+  "$ISO_TARGET/usr/share/man" \
+  "$ISO_TARGET/var/state/lunar" \
+  "$ISO_TARGET/var/lib/lunar/moonbase/zlocal" \
+  "$ISO_TARGET/usr/src"
+
+eval "$(bootstrap_env_exports)"
+export BOOTSTRAP_JOBS="$JOBS"
+"$SCRIPT_DIR/bootstrap-finalize-root"
+
+run_make()
+{
+  if [ -n "$JOBS" ]; then
+    make -j "$JOBS" "$@"
+  else
+    make "$@"
+  fi
+}
+
+link_into_target_bin()
+{
+  local source="$1"
+  local dest="$2"
+
+  [ -e "$source" ] || return 0
+  mkdir -p "$(dirname "$dest")"
+  ln -sf "$source" "$dest"
+}
+
+link_bootstrap_tool()
+{
+  local name="$1"
+  local source
+
+  if [ -x "$BOOTSTRAP_PREFIX/bin/$TARGET-$name" ]; then
+    source="../../tools/bin/$TARGET-$name"
+    link_into_target_bin "$source" "$ISO_TARGET/usr/bin/$TARGET-$name"
+    link_into_target_bin "$source" "$ISO_TARGET/usr/bin/$name"
+  elif [ -x "$BOOTSTRAP_PREFIX/bin/$name" ]; then
+    source="../../tools/bin/$name"
+    link_into_target_bin "$source" "$ISO_TARGET/usr/bin/$name"
+  fi
+}
+
+module_build_root()
+{
+  printf '%s\n' "$BOOTSTRAP_WORKDIR/modules/$1"
+}
+
+bootstrap_unpack_module()
+{
+  local module="$1"
+  local build_root
+  local source
+
+  build_root="$(module_build_root "$module")"
+  rm -rf "$build_root"
+  mkdir -p "$build_root"
+
+  while read -r source; do
+    [ -n "$source" ] || continue
+    extract_archive "$ISO_SOURCE/spool/$source" "$build_root"
+  done < <(module_sources "$module")
+
+  if [ -n "${SOURCE_DIRECTORY:-}" ] && [ -d "$build_root/$SOURCE_DIRECTORY" ]; then
+    printf '%s\n' "$build_root/$SOURCE_DIRECTORY"
+    return 0
+  fi
+
+  find "$build_root" -mindepth 1 -maxdepth 1 -type d | head -n 1
+}
+
+bootstrap_configure_flags()
+{
+  printf '%s\n' \
+    "--prefix=/usr" \
+    "--libdir=/usr/lib" \
+    "--sysconfdir=/etc" \
+    "--localstatedir=/var"
+}
+
+bootstrap_generic_recipe()
+{
+  if [ -x ./configure ]; then
+    ./configure $(bootstrap_configure_flags)
+    run_make
+    run_make DESTDIR="$ISO_TARGET" install
+    return 0
+  fi
+
+  if [ -f meson.build ]; then
+    meson setup build --prefix=/usr --libdir=lib --buildtype=release
+    ninja -C build
+    DESTDIR="$ISO_TARGET" ninja -C build install
+    return 0
+  fi
+
+  if [ -f CMakeLists.txt ]; then
+    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib
+    if [ -n "$JOBS" ]; then
+      cmake --build build -j "$JOBS"
+    else
+      cmake --build build
+    fi
+    DESTDIR="$ISO_TARGET" cmake --install build
+    return 0
+  fi
+
+  if [ -f Makefile.PL ]; then
+    perl Makefile.PL PREFIX=/usr INSTALLDIRS=vendor
+    run_make
+    run_make DESTDIR="$ISO_TARGET" install
+    return 0
+  fi
+
+  if [ -f Makefile ] || [ -f makefile ] || [ -f GNUmakefile ]; then
+    run_make
+    run_make DESTDIR="$ISO_TARGET" PREFIX=/usr install
+    return 0
+  fi
+
+  bootstrap_log "No bootstrap recipe matched for $MODULE"
+  return 1
+}
+
+bootstrap_recipe_bzip2()
+{
+  run_make -f Makefile-libbz2_so
+  ln -sf libbz2.so.1.0 libbz2.so
+  run_make PREFIX=/usr
+
+  mkdir -p "$ISO_TARGET/usr/bin" "$ISO_TARGET/usr/lib" "$ISO_TARGET/usr/include" "$ISO_TARGET/usr/share/man/man1" "$ISO_TARGET/usr/lib/pkgconfig"
+  run_make PREFIX="$ISO_TARGET/usr" install
+
+  install -m755 "libbz2.so.$VERSION" "$ISO_TARGET/usr/lib/libbz2.so.$VERSION"
+  ln -sf "libbz2.so.$VERSION" "$ISO_TARGET/usr/lib/libbz2.so.1.0"
+  ln -sf "libbz2.so.1.0" "$ISO_TARGET/usr/lib/libbz2.so.1"
+  ln -sf "libbz2.so.1" "$ISO_TARGET/usr/lib/libbz2.so"
+
+  if [ -f "$MODULE_DIR/bzip2.pc" ]; then
+    sed "s|@VERSION@|$VERSION|" "$MODULE_DIR/bzip2.pc" > "$ISO_TARGET/usr/lib/pkgconfig/bzip2.pc"
+  fi
+}
+
+bootstrap_recipe_perl()
+{
+  sh Configure -des \
+    -Dprefix=/usr \
+    -Dvendorprefix=/usr \
+    -Dman1dir=/usr/share/man/man1 \
+    -Dman3dir=/usr/share/man/man3
+  run_make
+  run_make DESTDIR="$ISO_TARGET" install
+}
+
+bootstrap_recipe_pbzip2()
+{
+  run_make
+  install -Dm755 pbzip2 "$ISO_TARGET/usr/bin/pbzip2"
+  ln -sf pbzip2 "$ISO_TARGET/usr/bin/pbunzip2"
+}
+
+bootstrap_recipe_openssl()
+{
+  ./config \
+    --prefix=/usr \
+    --openssldir=/etc/ssl \
+    shared \
+    no-ssl3 \
+    no-ssl3-method
+  run_make LIBDIR=lib
+  run_make DESTDIR="$ISO_TARGET" LIBDIR=lib MANDIR=/usr/share/man install_sw install_ssldirs
+}
+
+bootstrap_recipe_unzip()
+{
+  sh unix/configure
+  run_make -f unix/Makefile linux_noasm
+  run_make -f unix/Makefile prefix="$ISO_TARGET/usr" install
+}
+
+bootstrap_recipe_python()
+{
+  mkdir -p Modules
+  cat > Modules/Setup.local <<'EOF'
+*disabled*
+_lzma
+readline
+_curses
+_curses_panel
+_uuid
+_crypt
+_hashlib
+EOF
+  ./configure \
+    --prefix=/usr \
+    --libdir=/usr/lib \
+    --sysconfdir=/etc \
+    --localstatedir=/var \
+    --without-ensurepip \
+    ac_cv_header_lzma_h=no \
+    ac_cv_header_readline_readline_h=no \
+    py_cv_module__lzma=disabled \
+    py_cv_module_readline=disabled
+  run_make
+  make DESTDIR="$ISO_TARGET" install
+}
+
+bootstrap_recipe_elfutils()
+{
+  ./configure \
+    --prefix=/usr \
+    --libdir=/usr/lib \
+    --sysconfdir=/etc \
+    --localstatedir=/var \
+    --enable-debuginfod=no \
+    --enable-libdebuginfod=no
+  run_make
+  run_make DESTDIR="$ISO_TARGET" install
+}
+
+bootstrap_recipe_util_linux()
+{
+  ./configure \
+    --prefix=/usr \
+    --libdir=/usr/lib \
+    --sysconfdir=/etc \
+    --localstatedir=/var \
+    --disable-liblastlog2
+  run_make getopt
+  install -Dm755 getopt "$ISO_TARGET/usr/bin/getopt"
+}
+
+bootstrap_recipe_wget()
+{
+  ./configure \
+    --prefix=/usr \
+    --libdir=/usr/lib \
+    --sysconfdir=/etc \
+    --localstatedir=/var \
+    --with-ssl=openssl \
+    --disable-iri \
+    --without-libidn2
+  run_make
+  run_make DESTDIR="$ISO_TARGET" install
+}
+
+bootstrap_recipe_glib_2()
+{
+  meson setup build \
+    --prefix=/usr \
+    --libdir=lib \
+    --buildtype=release \
+    -Dlibmount=disabled \
+    -Dtests=false \
+    -Dglib_debug=disabled \
+    -Dnls=disabled
+  ninja -C build
+  DESTDIR="$ISO_TARGET" ninja -C build install
+}
+
+bootstrap_recipe_cmake()
+{
+  if [ -n "$JOBS" ]; then
+    ./bootstrap --prefix=/usr --parallel="$JOBS" -- \
+      -DCMAKE_USE_OPENSSL=OFF \
+      -DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL=TRUE \
+      -DUSE_LIBIDN2=OFF \
+      -DCMAKE_DISABLE_FIND_PACKAGE_Libidn2=TRUE
+  else
+    ./bootstrap --prefix=/usr -- \
+      -DCMAKE_USE_OPENSSL=OFF \
+      -DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL=TRUE \
+      -DUSE_LIBIDN2=OFF \
+      -DCMAKE_DISABLE_FIND_PACKAGE_Libidn2=TRUE
+  fi
+  run_make
+  run_make DESTDIR="$ISO_TARGET" install
+}
+
+bootstrap_recipe_libcap()
+{
+  run_make PAM_CAP=no GOLANG=no
+  run_make PAM_CAP=no GOLANG=no DESTDIR="$ISO_TARGET" prefix=/usr lib=lib install
+}
+
+bootstrap_recipe_lunar()
+{
+  local go_bin
+
+  go_bin="${GO:-$(command -v go || true)}"
+  if [ -z "$go_bin" ]; then
+    bootstrap_log "lunar bootstrap requires a host Go toolchain to build version ${VERSION:-unknown}"
+    return 1
+  fi
+
+  make GO="$go_bin" DESTDIR="$ISO_TARGET" install
+
+  if [ -x "$ISO_TARGET/bin/lsh" ] && [ ! -e "$ISO_TARGET/usr/sbin/lsh" ]; then
+    ln -sf ../../bin/lsh "$ISO_TARGET/usr/sbin/lsh"
+  fi
+  local tool
+  for tool in lin lrm lunar lget; do
+    if [ -x "$ISO_TARGET/sbin/$tool" ] && [ ! -e "$ISO_TARGET/usr/sbin/$tool" ]; then
+      ln -sf "../../sbin/$tool" "$ISO_TARGET/usr/sbin/$tool"
+    fi
+  done
+}
+
+bootstrap_host_only_module()
+{
+  case "$1" in
+    lunar)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+bootstrap_stage_chroot_source()
+{
+  local module="$1"
+  local source_dir="$2"
+  local chroot_dir="$ISO_TARGET/usr/src/bootstrap-$module"
+
+  rm -rf "$chroot_dir"
+  mkdir -p "$ISO_TARGET/usr/src"
+  cp -a "$source_dir" "$chroot_dir"
+  printf '%s\n' "/usr/src/bootstrap-$module"
+}
+
+bootstrap_write_chroot_driver()
+{
+  local module="$1"
+  local chroot_dir="$2"
+  local driver="$ISO_TARGET${chroot_dir}/.bootstrap-build.sh"
+
+  cat > "$driver" <<EOF
+#!/bin/bash
+set -euo pipefail
+
+JOBS="${JOBS}"
+export HOME=/root
+export LANG=C
+export LC_ALL=C
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/tools/bin
+export PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/tools/lib/pkgconfig:/tools/lib64/pkgconfig
+export PKG_CONFIG_LIBDIR=/usr/lib/pkgconfig:/usr/lib64/pkgconfig:/tools/lib/pkgconfig:/tools/lib64/pkgconfig
+export CC=/usr/bin/gcc
+export CXX=/usr/bin/g++
+export CPP="/usr/bin/gcc -E"
+export AR=/usr/bin/ar
+export AS=/usr/bin/as
+export LD=/usr/bin/ld
+export RANLIB=/usr/bin/ranlib
+export STRIP=/usr/bin/strip
+export NM=/usr/bin/nm
+export OBJCOPY=/usr/bin/objcopy
+export OBJDUMP=/usr/bin/objdump
+export READELF=/usr/bin/readelf
+export FORCE_UNSAFE_CONFIGURE=1
+unset DESTDIR INSTALL_ROOT
+
+run_make()
+{
+  make -j "\$JOBS" "\$@"
+}
+
+cd "${chroot_dir}"
+
+case "${module}" in
+  bzip2)
+    make -j "\$JOBS" -f Makefile-libbz2_so
+    ln -sf libbz2.so.1.0 libbz2.so
+    install -m755 "libbz2.so.${VERSION}" /usr/lib/libbz2.so.${VERSION}
+    ln -sf "libbz2.so.${VERSION}" /usr/lib/libbz2.so.1.0
+    ln -sf "libbz2.so.1.0" /usr/lib/libbz2.so.1
+    ln -sf "libbz2.so.1" /usr/lib/libbz2.so
+    ldconfig 2>/dev/null || true
+    make clean
+    make -j "\$JOBS" PREFIX=/usr
+    mkdir -p /usr/bin /usr/lib /usr/include /usr/share/man/man1 /usr/lib/pkgconfig
+    make PREFIX=/usr install
+    ;;
+  cmake)
+    if [ -n "\$JOBS" ]; then
+      ./bootstrap --prefix=/usr --parallel="\$JOBS" -- \
+        -DCMAKE_USE_OPENSSL=OFF \
+        -DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL=TRUE \
+        -DUSE_LIBIDN2=OFF \
+        -DCMAKE_DISABLE_FIND_PACKAGE_Libidn2=TRUE
+    else
+      ./bootstrap --prefix=/usr -- \
+        -DCMAKE_USE_OPENSSL=OFF \
+        -DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL=TRUE \
+        -DUSE_LIBIDN2=OFF \
+        -DCMAKE_DISABLE_FIND_PACKAGE_Libidn2=TRUE
+    fi
+    run_make
+    cmake --install build 2>/dev/null || make install
+    ;;
+  elfutils)
+    ./configure \
+      --prefix=/usr \
+      --libdir=/usr/lib \
+      --sysconfdir=/etc \
+      --localstatedir=/var \
+      --enable-debuginfod=no \
+      --enable-libdebuginfod=no
+    run_make
+    make install
+    ;;
+  glib-2)
+    meson setup build \
+      --prefix=/usr \
+      --libdir=lib \
+      --buildtype=release \
+      -Dlibmount=disabled \
+      -Dtests=false \
+      -Dglib_debug=disabled \
+      -Dnls=disabled
+    ninja -C build
+    ninja -C build install
+    ;;
+  libcap)
+    make -j "\$JOBS" PAM_CAP=no GOLANG=no
+    make PAM_CAP=no GOLANG=no prefix=/usr lib=lib install
+    ;;
+  openssl)
+    ./config \
+      --prefix=/usr \
+      --openssldir=/etc/ssl \
+      shared \
+      no-ssl3 \
+      no-ssl3-method
+    make -j "\$JOBS" LIBDIR=lib
+    make LIBDIR=lib MANDIR=/usr/share/man install_sw install_ssldirs
+    ;;
+  pbzip2)
+    run_make
+    install -Dm755 pbzip2 /usr/bin/pbzip2
+    ln -sf pbzip2 /usr/bin/pbunzip2
+    ;;
+  perl)
+    sh Configure -des \\
+      -Dprefix=/usr \\
+      -Dvendorprefix=/usr \\
+      -Dman1dir=/usr/share/man/man1 \\
+      -Dman3dir=/usr/share/man/man3
+    run_make
+    make install
+    ;;
+  python|python3)
+    mkdir -p Modules
+    cat > Modules/Setup.local <<'PYEOF'
+*disabled*
+_lzma
+readline
+_curses
+_curses_panel
+_uuid
+_crypt
+_hashlib
+PYEOF
+    ./configure \\
+      --prefix=/usr \\
+      --libdir=/usr/lib \\
+      --sysconfdir=/etc \\
+      --localstatedir=/var \\
+      --without-ensurepip \\
+      ac_cv_header_lzma_h=no \\
+      ac_cv_header_readline_readline_h=no \\
+      py_cv_module__lzma=disabled \\
+      py_cv_module_readline=disabled
+    run_make
+    make install
+    ;;
+  ninja)
+    python3 configure.py --bootstrap
+    install -Dm755 ninja /usr/bin/ninja
+    ;;
+  meson)
+    pyver="\$(python3 -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')"
+    site="/usr/lib/python\${pyver}/site-packages"
+    mkdir -p "\${site}" /usr/bin /usr/share/man/man1
+    cp -a mesonbuild "\${site}/"
+    cp -a meson.py "\${site}/"
+    cat > /usr/bin/meson <<'MEOF'
+#!/usr/bin/python3
+import sys
+from mesonbuild import mesonmain
+sys.exit(mesonmain.main())
+MEOF
+    chmod 755 /usr/bin/meson
+    if [ -f man/meson.1 ]; then
+      install -m644 man/meson.1 /usr/share/man/man1/
+    fi
+    ;;
+  texinfo)
+    ./configure \\
+      --prefix=/usr \\
+      --libdir=/usr/lib \\
+      --sysconfdir=/etc \\
+      --localstatedir=/var
+    run_make
+    make install
+    make -e TEXMF=/usr/share/texmf install-tex
+    rm -f /usr/lib/texinfo/*.a /usr/lib64/texinfo/*.a
+    ;;
+  unzip)
+    sh unix/configure
+    make -j "\$JOBS" -f unix/Makefile linux_noasm
+    make -f unix/Makefile prefix=/usr install
+    ;;
+  util-linux)
+    ./configure \
+      --prefix=/usr \
+      --libdir=/usr/lib \
+      --sysconfdir=/etc \
+      --localstatedir=/var \
+      --disable-liblastlog2
+    make -j "\$JOBS" getopt
+    install -Dm755 getopt /usr/bin/getopt
+    ;;
+  wget)
+    ./configure \
+      --prefix=/usr \
+      --libdir=/usr/lib \
+      --sysconfdir=/etc \
+      --localstatedir=/var \
+      --with-ssl=openssl \
+      --disable-iri \
+      --without-libidn2
+    run_make
+    make install
+    ;;
+  *)
+    if [ -x ./configure ]; then
+      ./configure \
+        --prefix=/usr \
+        --libdir=/usr/lib \
+        --sysconfdir=/etc \
+        --localstatedir=/var
+      run_make
+      make install
+    elif [ -f meson.build ]; then
+      meson setup build --prefix=/usr --libdir=lib --buildtype=release
+      ninja -C build
+      ninja -C build install
+    elif [ -f CMakeLists.txt ]; then
+      cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib
+      if [ -n "\$JOBS" ]; then
+        cmake --build build -j "\$JOBS"
+      else
+        cmake --build build
+      fi
+      cmake --install build
+    elif [ -f Makefile.PL ]; then
+      perl Makefile.PL PREFIX=/usr INSTALLDIRS=vendor
+      run_make
+      make install
+    elif [ -f Makefile ] || [ -f makefile ] || [ -f GNUmakefile ]; then
+      run_make
+      make PREFIX=/usr install
+    else
+      echo "unsupported chroot bootstrap module: ${module}" >&2
+      exit 1
+    fi
+    ;;
+esac
+EOF
+
+  chmod 755 "$driver"
+}
+
+bootstrap_build_module_in_chroot()
+{
+  local module="$1"
+  local source_dir="$2"
+  local chroot_dir
+
+  chroot_dir="$(bootstrap_stage_chroot_source "$module" "$source_dir")"
+  bootstrap_write_chroot_driver "$module" "$chroot_dir"
+  "$SCRIPT_DIR/bootstrap-finalize-root"
+  "$SCRIPT_DIR/chroot-build" /bin/sh "${chroot_dir}/.bootstrap-build.sh"
+}
+
+bootstrap_apply_recipe()
+{
+  case "$MODULE" in
+    bzip2)
+      bootstrap_recipe_bzip2
+      ;;
+    cmake)
+      bootstrap_recipe_cmake
+      ;;
+    elfutils)
+      bootstrap_recipe_elfutils
+      ;;
+    glib-2)
+      bootstrap_recipe_glib_2
+      ;;
+    libcap)
+      bootstrap_recipe_libcap
+      ;;
+    lunar)
+      bootstrap_recipe_lunar
+      ;;
+    openssl)
+      bootstrap_recipe_openssl
+      ;;
+    pbzip2)
+      bootstrap_recipe_pbzip2
+      ;;
+    perl)
+      bootstrap_recipe_perl
+      ;;
+    python|python3)
+      bootstrap_recipe_python
+      ;;
+    unzip)
+      bootstrap_recipe_unzip
+      ;;
+    util-linux)
+      bootstrap_recipe_util_linux
+      ;;
+    wget)
+      bootstrap_recipe_wget
+      ;;
+    *)
+      bootstrap_generic_recipe
+      ;;
+  esac
+}
+
+bootstrap_register_existing_module()
+{
+  local module="$1"
+  local version
+
+  version="$(module_versions "$module" 2>/dev/null || printf '%s\n' unknown)"
+  bootstrap_write_package_entry "$module" "$version"
+}
+
+build_single_module()
+{
+  local module="$1"
+  local build_root
+  local source_dir
+  local version
+
+  if grep -q "^$module:" "$ISO_TARGET/var/state/lunar/packages" 2>/dev/null; then
+    bootstrap_log "Skipping already-registered module $module"
+    return 0
+  fi
+
+  MODULE="$module"
+  MODULE_DIR="$(module_dir "$module")"
+  load_module_metadata "$module"
+  build_root="$(module_build_root "$module")"
+  source_dir="$(bootstrap_unpack_module "$module")"
+  version="${VERSION:-unknown}"
+
+  bootstrap_log "Building module $module"
+  (
+    export MODULE
+    export MODULE_DIR
+    export VERSION="$version"
+    export SOURCE_DIRECTORY="$source_dir"
+    export BUILD_DIRECTORY="${BUILD_DIRECTORY:-$source_dir}"
+    export SCRIPT_DIRECTORY="$MODULE_DIR"
+    export INSTALL_ROOT="$ISO_TARGET"
+    export DESTDIR="$ISO_TARGET"
+    export FORCE_UNSAFE_CONFIGURE=1
+    export BOOTSTRAP_PREFIX="$BOOTSTRAP_PREFIX"
+    export BOOTSTRAP_TARGET="$TARGET"
+    export PATH="$BOOTSTRAP_PREFIX/bin:$PATH"
+    export PKG_CONFIG_PATH="$ISO_TARGET/usr/lib/pkgconfig:$BOOTSTRAP_PREFIX/lib/pkgconfig:$BOOTSTRAP_PREFIX/lib64/pkgconfig:${PKG_CONFIG_PATH:-}"
+    export PKG_CONFIG_LIBDIR="$ISO_TARGET/usr/lib/pkgconfig:$BOOTSTRAP_PREFIX/lib/pkgconfig:$BOOTSTRAP_PREFIX/lib64/pkgconfig"
+    export BOOTSTRAP_BUILD_ROOT="$build_root"
+    cd "$source_dir"
+    if bootstrap_host_only_module "$module"; then
+      bootstrap_apply_recipe
+    else
+      bootstrap_build_module_in_chroot "$module" "$source_dir"
+    fi
+  )
+
+  bootstrap_write_package_entry "$module" "$version"
+}
+
+readarray -t resolved_modules < <(bootstrap_resolve_modules $BOOTSTRAP_MODULES)
+
+for module in $BOOTSTRAP_CHROOT_TEMP_TOOLS; do
+  if ! module_exists "$module"; then
+    continue
+  fi
+  case "$module" in
+    binutils|gcc|glibc|kernel-headers|gmp|mpfr|libmpc)
+      continue
+      ;;
+  esac
+  build_single_module "$module"
+done
+
+for module in "${resolved_modules[@]}"; do
+  case "$module" in
+    binutils|gcc|glibc)
+      bootstrap_register_existing_module "$module"
+      continue
+      ;;
+    kernel-headers|gmp|mpfr|libmpc)
+      continue
+      ;;
+  esac
+  build_single_module "$module"
+done
+
+"$SCRIPT_DIR/bootstrap-finalize-root"

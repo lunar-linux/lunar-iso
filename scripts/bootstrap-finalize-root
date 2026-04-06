@@ -1,0 +1,200 @@
+#!/bin/bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+ISO_SOURCE="${ISO_SOURCE:-$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)}"
+ISO_TARGET="${ISO_TARGET:-$ISO_SOURCE/BUILD}"
+# shellcheck disable=SC1091
+. "$SCRIPT_DIR/bootstrap-common.sh"
+
+detect_bootstrap_target()
+{
+  local candidate
+
+  if [ -n "${BOOTSTRAP_TARGET:-}" ]; then
+    printf '%s\n' "$BOOTSTRAP_TARGET"
+    return 0
+  fi
+
+  for candidate in "$BOOTSTRAP_PREFIX"/bin/*-gcc; do
+    [ -x "$candidate" ] || continue
+    basename "$candidate" | sed 's/-gcc$//'
+    return 0
+  done
+
+  bootstrap_default_target
+}
+
+TARGET="$(detect_bootstrap_target)"
+GCC_VERSION="$(module_versions gcc)"
+
+ensure_dir "$ISO_TARGET/usr/bin" "$ISO_TARGET/usr/lib" "$ISO_TARGET/usr/sbin"
+
+ensure_merged_usr_link()
+{
+  local link_path="$1"
+  local target="$2"
+
+  if [ -L "$link_path" ] && [ "$(readlink "$link_path")" = "$target" ]; then
+    return 0
+  fi
+
+  rm -rf "$link_path"
+  ln -snf "$target" "$link_path"
+}
+
+ensure_merged_usr_link "$ISO_TARGET/bin" "usr/bin"
+ensure_merged_usr_link "$ISO_TARGET/sbin" "usr/sbin"
+ensure_merged_usr_link "$ISO_TARGET/lib" "usr/lib"
+
+case "${TARGET%%-*}" in
+  x86_64)
+    ensure_merged_usr_link "$ISO_TARGET/lib64" "usr/lib"
+    ensure_merged_usr_link "$ISO_TARGET/usr/lib64" "lib"
+    ;;
+  i?86)
+    ensure_merged_usr_link "$ISO_TARGET/lib32" "usr/lib"
+    ensure_merged_usr_link "$ISO_TARGET/usr/lib32" "lib"
+    ;;
+esac
+
+bin_is_usr_bin_symlink=0
+lib_is_usr_lib_symlink=0
+lib64_is_usr_lib_symlink=0
+if [ -L "$ISO_TARGET/bin" ] && [ "$(readlink "$ISO_TARGET/bin")" = "usr/bin" ]; then
+  bin_is_usr_bin_symlink=1
+fi
+if [ -L "$ISO_TARGET/lib" ] && [ "$(readlink "$ISO_TARGET/lib")" = "usr/lib" ]; then
+  lib_is_usr_lib_symlink=1
+fi
+if [ -L "$ISO_TARGET/lib64" ] && [ "$(readlink "$ISO_TARGET/lib64")" = "usr/lib" ]; then
+  lib64_is_usr_lib_symlink=1
+fi
+
+link_into_target()
+{
+  local source="$1"
+  local dest="$2"
+
+  mkdir -p "$(dirname "$dest")"
+  ln -sf "$source" "$dest"
+}
+
+link_bootstrap_tool()
+{
+  local name="$1"
+  local source
+
+  if [ -x "$BOOTSTRAP_PREFIX/bin/$TARGET-$name" ]; then
+    source="../../tools/bin/$TARGET-$name"
+    if [ ! -e "$ISO_TARGET/usr/bin/$TARGET-$name" ]; then
+      link_into_target "$source" "$ISO_TARGET/usr/bin/$TARGET-$name"
+    fi
+    if [ ! -e "$ISO_TARGET/usr/bin/$name" ]; then
+      link_into_target "$source" "$ISO_TARGET/usr/bin/$name"
+    fi
+  elif [ -x "$BOOTSTRAP_PREFIX/bin/$name" ]; then
+    source="../../tools/bin/$name"
+    if [ ! -e "$ISO_TARGET/usr/bin/$name" ]; then
+      link_into_target "$source" "$ISO_TARGET/usr/bin/$name"
+    fi
+  fi
+}
+
+link_usr_compiler_frontends()
+{
+  local driver="$ISO_TARGET/usr/bin/$TARGET-gcc-$GCC_VERSION"
+  local tool target_name
+
+  [ -x "$driver" ] || return 0
+
+  for target_name in "$TARGET-gcc" "$TARGET-g++" "$TARGET-c++"; do
+    if [ ! -e "$ISO_TARGET/usr/bin/$target_name" ] || [ -L "$ISO_TARGET/usr/bin/$target_name" ]; then
+      ln -sf "$TARGET-gcc-$GCC_VERSION" "$ISO_TARGET/usr/bin/$target_name"
+    fi
+  done
+
+  for tool in gcc g++ c++; do
+    if [ ! -e "$ISO_TARGET/usr/bin/$tool" ] || [ -L "$ISO_TARGET/usr/bin/$tool" ]; then
+      ln -sf "$TARGET-gcc-$GCC_VERSION" "$ISO_TARGET/usr/bin/$tool"
+    fi
+  done
+
+  if [ ! -e "$ISO_TARGET/usr/bin/cc" ] || [ -L "$ISO_TARGET/usr/bin/cc" ]; then
+    ln -sf gcc "$ISO_TARGET/usr/bin/cc"
+  fi
+}
+
+link_bootstrap_runtime_lib()
+{
+  local name="$1"
+  local source
+
+  if [ -e "$BOOTSTRAP_PREFIX/lib64/$name" ]; then
+    source="../../tools/lib64/$name"
+    link_into_target "$source" "$ISO_TARGET/usr/lib64/$name"
+    if [ "$lib64_is_usr_lib_symlink" -eq 0 ]; then
+      link_into_target "../usr/lib64/$name" "$ISO_TARGET/lib64/$name"
+    fi
+  fi
+}
+
+if [ -x "$ISO_TARGET/usr/bin/bash" ]; then
+  if [ "$bin_is_usr_bin_symlink" -eq 0 ]; then
+    link_into_target ../usr/bin/bash "$ISO_TARGET/bin/bash"
+  fi
+  if [ ! -e "$ISO_TARGET/usr/bin/sh" ]; then
+    ln -sf bash "$ISO_TARGET/usr/bin/sh"
+  fi
+  if [ "$bin_is_usr_bin_symlink" -eq 0 ] && [ ! -e "$ISO_TARGET/bin/sh" ]; then
+    link_into_target bash "$ISO_TARGET/bin/sh"
+  fi
+fi
+
+if [ -x "$ISO_TARGET/usr/bin/uname" ]; then
+  rm -f "$ISO_TARGET/usr/bin/arch"
+  if [ "$bin_is_usr_bin_symlink" -eq 0 ]; then
+    rm -f "$ISO_TARGET/bin/arch"
+  fi
+  cat > "$ISO_TARGET/usr/bin/arch" <<'EOF'
+#!/bin/sh
+exec uname -m
+EOF
+  chmod 755 "$ISO_TARGET/usr/bin/arch"
+  if [ "$bin_is_usr_bin_symlink" -eq 0 ]; then
+    link_into_target ../usr/bin/arch "$ISO_TARGET/bin/arch"
+  fi
+fi
+
+for tool in gcc g++ cc c++ cpp ar as ld ranlib strip nm objcopy objdump readelf; do
+  link_bootstrap_tool "$tool"
+done
+
+link_usr_compiler_frontends
+
+for lib in libstdc++.so libstdc++.so.6 libgcc_s.so libgcc_s.so.1; do
+  link_bootstrap_runtime_lib "$lib"
+done
+
+if [ -e "$ISO_TARGET/usr/lib/libcrypt.so.1" ] && [ ! -e "$ISO_TARGET/usr/lib/libcrypt.so.2" ]; then
+  ln -sf libcrypt.so.1 "$ISO_TARGET/usr/lib/libcrypt.so.2"
+fi
+
+if [ -e "$ISO_TARGET/usr/lib/libcrypt.so.2" ]; then
+  if [ "$lib_is_usr_lib_symlink" -eq 0 ]; then
+    link_into_target ../usr/lib/libcrypt.so.2 "$ISO_TARGET/lib/libcrypt.so.2"
+  fi
+fi
+
+if [ -e "$ISO_TARGET/usr/lib/ld-linux-x86-64.so.2" ]; then
+  if [ "$lib_is_usr_lib_symlink" -eq 0 ]; then
+    link_into_target ../usr/lib/ld-linux-x86-64.so.2 "$ISO_TARGET/lib/ld-linux-x86-64.so.2"
+  fi
+fi
+
+if [ -e "$ISO_TARGET/lib/ld-linux-x86-64.so.2" ]; then
+  if [ "$lib64_is_usr_lib_symlink" -eq 0 ]; then
+    link_into_target ../lib/ld-linux-x86-64.so.2 "$ISO_TARGET/lib64/ld-linux-x86-64.so.2"
+  fi
+fi

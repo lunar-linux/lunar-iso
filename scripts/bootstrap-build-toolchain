@@ -1,0 +1,572 @@
+#!/bin/bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+# shellcheck disable=SC1091
+. "$SCRIPT_DIR/bootstrap-common.sh"
+
+ensure_dir "$BOOTSTRAP_PREFIX" "$BOOTSTRAP_WORKDIR" "$ISO_TARGET/usr" "$ISO_TARGET/tools"
+
+JOBS="${BOOTSTRAP_JOBS:-${ISO_MAKES:-1}}"
+TARGET="${BOOTSTRAP_TARGET:-$(bootstrap_default_target)}"
+HOST="${BOOTSTRAP_HOST:-$(gcc -dumpmachine)}"
+EXTRA_CROSS="${BOOTSTRAP_CROSS_TARGET:-}"
+
+bootstrap_tool()
+{
+  local tool="$1"
+
+  if [ -x "$BOOTSTRAP_PREFIX/bin/$TARGET-$tool" ]; then
+    printf '%s\n' "$BOOTSTRAP_PREFIX/bin/$TARGET-$tool"
+  elif [ -x "$BOOTSTRAP_PREFIX/bin/$tool" ]; then
+    printf '%s\n' "$BOOTSTRAP_PREFIX/bin/$tool"
+  else
+    command -v "$TARGET-$tool" 2>/dev/null || command -v "$tool"
+  fi
+}
+
+configure_guess_for()
+{
+  local source_dir="$1"
+
+  if [ -x "$source_dir/build-aux/config.guess" ]; then
+    printf '%s\n' "$source_dir/build-aux/config.guess"
+  elif [ -x "$source_dir/scripts/config.guess" ]; then
+    printf '%s\n' "$source_dir/scripts/config.guess"
+  elif [ -x "$source_dir/config.guess" ]; then
+    printf '%s\n' "$source_dir/config.guess"
+  else
+    printf '%s\n' /usr/share/automake*/config.guess
+  fi
+}
+
+module_major_minor_version()
+{
+  local module="$1"
+  module_versions "$module" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/'
+}
+
+prepare_module_source()
+{
+  local module="$1"
+
+  load_module_metadata "$module"
+  module_primary_source "$module"
+}
+
+prepare_gcc_source_tree()
+{
+  local dest_root="$1"
+  local dep archive extracted_dir gcc_src_dir target_dir
+
+  rm -rf "$dest_root"
+  mkdir -p "$dest_root"
+  extract_archive "$(prepare_module_source gcc)" "$dest_root"
+  gcc_src_dir="$(find "$dest_root" -mindepth 1 -maxdepth 1 -type d -name 'gcc-*' | head -n 1)"
+  [ -n "$gcc_src_dir" ] || return 1
+
+  for dep in gmp mpfr libmpc; do
+    archive="$(prepare_module_source "$dep")"
+    extract_archive "$archive" "$dest_root"
+    case "$dep" in
+      libmpc)
+        extracted_dir="$(find "$dest_root" -mindepth 1 -maxdepth 1 -type d -name 'mpc-*' | sort | tail -n 1)"
+        target_dir="$gcc_src_dir/mpc"
+        ;;
+      *)
+        extracted_dir="$(find "$dest_root" -mindepth 1 -maxdepth 1 -type d -name "$dep-*" | sort | tail -n 1)"
+        target_dir="$gcc_src_dir/$dep"
+        ;;
+    esac
+    [ -n "$extracted_dir" ] || return 1
+    case "$dep" in
+      libmpc|gmp|mpfr) ;;
+    esac
+    rm -rf "$target_dir"
+    mv "$extracted_dir" "$target_dir"
+  done
+
+  if [ "${TARGET%%-*}" = "x86_64" ]; then
+    sed -e '/m64=/s/lib64/lib/' -i "$gcc_src_dir"/gcc/config/i386/t-linux64
+  fi
+}
+
+build_binutils_pass1()
+{
+  local source="$1"
+  local build_dir="$BOOTSTRAP_WORKDIR/build-binutils-pass1"
+  local src_dir
+
+  rm -rf "$build_dir"
+  mkdir -p "$build_dir/src" "$build_dir/out"
+  extract_archive "$source" "$build_dir/src"
+  src_dir="$(find "$build_dir/src" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  [ -n "$src_dir" ] || return 1
+  cd "$build_dir/out"
+  "$src_dir"/configure \
+    --prefix="$BOOTSTRAP_PREFIX" \
+    --with-sysroot="$ISO_TARGET" \
+    --target="$TARGET" \
+    --with-zstd=no \
+    --disable-nls \
+    --enable-gprofng=no \
+    --disable-werror \
+    --enable-new-dtags \
+    --enable-default-hash-style=gnu
+  make -j "$JOBS"
+  make install
+}
+
+build_gcc_pass1()
+{
+  local build_dir="$BOOTSTRAP_WORKDIR/build-gcc-pass1"
+  local src_dir glibc_version limits_dir
+
+  prepare_gcc_source_tree "$build_dir/src"
+  src_dir="$(find "$build_dir/src" -mindepth 1 -maxdepth 1 -type d -name 'gcc-*' | head -n 1)"
+  [ -n "$src_dir" ] || return 1
+  mkdir -p "$build_dir/out"
+  cd "$build_dir/out"
+  glibc_version="$(module_major_minor_version glibc)"
+  "$src_dir"/configure \
+    --target="$TARGET" \
+    --prefix="$BOOTSTRAP_PREFIX" \
+    --with-glibc-version="$glibc_version" \
+    --with-sysroot="$ISO_TARGET" \
+    --with-zstd=no \
+    --with-newlib \
+    --without-headers \
+    --enable-default-pie \
+    --enable-default-ssp \
+    --disable-nls \
+    --disable-shared \
+    --disable-multilib \
+    --disable-threads \
+    --disable-libatomic \
+    --disable-libgomp \
+    --disable-libquadmath \
+    --disable-libssp \
+    --disable-libvtv \
+    --disable-libstdcxx \
+    --enable-languages=c,c++
+  make -j "$JOBS"
+  make install
+
+  cd "$src_dir"
+  limits_dir="$(dirname "$("$BOOTSTRAP_PREFIX/bin/$TARGET-gcc" -print-libgcc-file-name)")/include"
+  mkdir -p "$limits_dir"
+  cat gcc/limitx.h gcc/glimits.h gcc/limity.h > "$limits_dir/limits.h"
+}
+
+install_kernel_headers()
+{
+  local source="$1"
+  local build_dir="$BOOTSTRAP_WORKDIR/build-kernel-headers"
+
+  rm -rf "$build_dir"
+  mkdir -p "$build_dir"
+  extract_archive "$source" "$build_dir"
+  mkdir -p "$ISO_TARGET/usr"
+  cp -a "$build_dir"/*/include "$ISO_TARGET/usr/"
+}
+
+build_glibc_pass1()
+{
+  local source="$1"
+  local build_dir="$BOOTSTRAP_WORKDIR/build-glibc-pass1"
+  local src_dir
+
+  rm -rf "$build_dir"
+  mkdir -p "$build_dir/src" "$build_dir/out"
+  extract_archive "$source" "$build_dir/src"
+  src_dir="$(find "$build_dir/src" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  [ -n "$src_dir" ] || return 1
+  cd "$src_dir"
+  if [ -f "$ISO_SOURCE/spool/glibc-$(module_versions glibc)-fhs-1.patch" ]; then
+    patch -Np1 -i "$ISO_SOURCE/spool/glibc-$(module_versions glibc)-fhs-1.patch"
+  fi
+
+  cd "$build_dir/out"
+  case "${TARGET%%-*}" in
+    i?86)
+      ln -sfv ld-linux.so.2 "$ISO_TARGET/lib/ld-lsb.so.3"
+      ;;
+    x86_64)
+      mkdir -p "$ISO_TARGET/lib64"
+      ln -sfv ../lib/ld-linux-x86-64.so.2 "$ISO_TARGET/lib64/ld-lsb-x86-64.so.3"
+      ;;
+  esac
+
+  echo "rootsbindir=/usr/sbin" > configparms
+  BUILD_CC=gcc \
+  CXX= \
+  CC="$BOOTSTRAP_PREFIX/bin/$TARGET-gcc" \
+  AR="$(bootstrap_tool ar)" \
+  RANLIB="$(bootstrap_tool ranlib)" \
+  "$src_dir"/configure \
+    --prefix=/usr \
+    --host="$TARGET" \
+    --build="$HOST" \
+    --disable-nscd \
+    libc_cv_slibdir=/usr/lib \
+    --enable-kernel=5.4
+  make -j "$JOBS" CXX=
+  make DESTDIR="$ISO_TARGET" CXX= install
+  sed '/RTLDLIST=/s@/usr@@g' -i "$ISO_TARGET/usr/bin/ldd"
+}
+
+build_libstdcpp_pass1()
+{
+  local build_dir="$BOOTSTRAP_WORKDIR/build-libstdcpp-pass1"
+  local src_dir gcc_version cfg_guess
+
+  prepare_gcc_source_tree "$build_dir/src"
+  src_dir="$(find "$build_dir/src" -mindepth 1 -maxdepth 1 -type d -name 'gcc-*' | head -n 1)"
+  [ -n "$src_dir" ] || return 1
+  mkdir -p "$build_dir/out"
+  cd "$build_dir/out"
+  gcc_version="$(module_versions gcc)"
+  cfg_guess="$(configure_guess_for "$src_dir")"
+  "$src_dir"/libstdc++-v3/configure \
+    --host="$TARGET" \
+    --build="$("$cfg_guess")" \
+    --prefix=/usr \
+    --disable-multilib \
+    --disable-nls \
+    --disable-libstdcxx-pch \
+    --with-gxx-include-dir="/tools/$TARGET/include/c++/$gcc_version"
+  make -j "$JOBS"
+  make DESTDIR="$ISO_TARGET" install
+  rm -f "$ISO_TARGET"/usr/lib/lib{stdc++{,exp,fs},supc++}.la
+}
+
+build_temp_tool_generic()
+{
+  local module="$1"
+  local source="$2"
+  local build_dir="$BOOTSTRAP_WORKDIR/build-temp-$module"
+  local src_dir cfg_guess
+
+  rm -rf "$build_dir"
+  mkdir -p "$build_dir/src"
+  extract_archive "$source" "$build_dir/src"
+  src_dir="$(find "$build_dir/src" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  cfg_guess="$(configure_guess_for "$src_dir")"
+  cd "$src_dir"
+  ./configure \
+    --prefix=/usr \
+    --host="$TARGET" \
+    --build="$("$cfg_guess")"
+  make -j "$JOBS"
+  make DESTDIR="$ISO_TARGET" install
+}
+
+build_temp_tool_ncurses()
+{
+  local source="$1"
+  local build_dir="$BOOTSTRAP_WORKDIR/build-temp-ncurses"
+  local src_dir
+
+  rm -rf "$build_dir"
+  mkdir -p "$build_dir/src"
+  extract_archive "$source" "$build_dir/src"
+  src_dir="$(find "$build_dir/src" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  cd "$src_dir"
+  mkdir -p build
+  pushd build >/dev/null
+    ../configure --prefix="$BOOTSTRAP_PREFIX" AWK=gawk
+    make -C include
+    make -C progs tic
+    install progs/tic "$BOOTSTRAP_PREFIX/bin"
+  popd >/dev/null
+  ./configure \
+    --prefix=/usr \
+    --host="$TARGET" \
+    --build="$(./config.guess)" \
+    --mandir=/usr/share/man \
+    --with-manpage-format=normal \
+    --with-shared \
+    --without-normal \
+    --with-cxx-shared \
+    --without-debug \
+    --without-ada \
+    --disable-stripping \
+    AWK=gawk
+  make -j "$JOBS"
+  make DESTDIR="$ISO_TARGET" install
+  ln -sfv libncursesw.so "$ISO_TARGET/usr/lib/libncurses.so"
+  sed -e 's/^#if.*XOPEN.*$/#if 1/' -i "$ISO_TARGET/usr/include/curses.h"
+}
+
+build_temp_tool_bash()
+{
+  local source="$1"
+  local build_dir="$BOOTSTRAP_WORKDIR/build-temp-bash"
+  local src_dir
+
+  rm -rf "$build_dir"
+  mkdir -p "$build_dir/src"
+  extract_archive "$source" "$build_dir/src"
+  src_dir="$(find "$build_dir/src" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  cd "$src_dir"
+  ./configure \
+    --prefix=/usr \
+    --build="$(sh support/config.guess)" \
+    --host="$TARGET" \
+    --without-bash-malloc
+  make -j "$JOBS"
+  make DESTDIR="$ISO_TARGET" install
+  mkdir -p "$ISO_TARGET/bin"
+  ln -sf bash "$ISO_TARGET/bin/sh"
+}
+
+build_temp_tool_file()
+{
+  local source="$1"
+  local build_dir="$BOOTSTRAP_WORKDIR/build-temp-file"
+  local src_dir
+
+  rm -rf "$build_dir"
+  mkdir -p "$build_dir/src"
+  extract_archive "$source" "$build_dir/src"
+  src_dir="$(find "$build_dir/src" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  [ -n "$src_dir" ] || return 1
+  cd "$src_dir"
+
+  mkdir -p build
+  pushd build >/dev/null
+    ../configure \
+      --disable-bzlib \
+      --disable-libseccomp \
+      --disable-xzlib \
+      --disable-zlib
+    make -j "$JOBS"
+  popd >/dev/null
+
+  ./configure \
+    --prefix=/usr \
+    --host="$TARGET" \
+    --build="$(./config.guess)"
+  make -j "$JOBS" FILE_COMPILE="$src_dir/build/src/file"
+  make DESTDIR="$ISO_TARGET" install
+  rm -f "$ISO_TARGET/usr/lib/libmagic.la"
+}
+
+build_cross_temp_tools()
+{
+  local module source
+
+  for module in $BOOTSTRAP_CROSS_TEMP_TOOLS; do
+    if ! module_exists "$module"; then
+      continue
+    fi
+    source="$(prepare_module_source "$module")"
+    bootstrap_log "Building cross temporary tool $module"
+    case "$module" in
+      ncurses) build_temp_tool_ncurses "$source" ;;
+      bash) build_temp_tool_bash "$source" ;;
+      file) build_temp_tool_file "$source" ;;
+      *) build_temp_tool_generic "$module" "$source" ;;
+    esac
+    bootstrap_write_package_entry "$module" "$(module_versions "$module")"
+  done
+}
+
+build_binutils_pass2()
+{
+  local source="$1"
+  local build_dir="$BOOTSTRAP_WORKDIR/build-binutils-pass2"
+  local src_dir cfg_guess
+
+  rm -rf "$build_dir"
+  mkdir -p "$build_dir/src" "$build_dir/out"
+  extract_archive "$source" "$build_dir/src"
+  src_dir="$(find "$build_dir/src" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  cfg_guess="$(configure_guess_for "$src_dir")"
+  cd "$src_dir"
+  sed '6031s/$add_dir//' -i ltmain.sh || true
+  cd "$build_dir/out"
+  "$src_dir"/configure \
+    --prefix=/usr \
+    --build="$("$cfg_guess")" \
+    --host="$TARGET" \
+    --with-zstd=no \
+    --disable-nls \
+    --enable-shared \
+    --enable-gprofng=no \
+    --disable-werror \
+    --enable-64-bit-bfd \
+    --enable-new-dtags \
+    --enable-default-hash-style=gnu
+  make -j "$JOBS"
+  make DESTDIR="$ISO_TARGET" install
+  rm -f "$ISO_TARGET"/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
+}
+
+build_gcc_pass2()
+{
+  local build_dir="$BOOTSTRAP_WORKDIR/build-gcc-pass2"
+  local src_dir cfg_guess
+
+  prepare_gcc_source_tree "$build_dir/src"
+  src_dir="$(find "$build_dir/src" -mindepth 1 -maxdepth 1 -type d -name 'gcc-*' | head -n 1)"
+  [ -n "$src_dir" ] || return 1
+  mkdir -p "$build_dir/out"
+  cd "$src_dir"
+  if [ "${TARGET%%-*}" = "x86_64" ]; then
+    sed '/thread_header =/s/@.*@/gthr-posix.h/' \
+      -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in
+  fi
+
+  cd "$build_dir/out"
+  cfg_guess="$(configure_guess_for "$src_dir")"
+  "$src_dir"/configure \
+    --build="$("$cfg_guess")" \
+    --host="$TARGET" \
+    --target="$TARGET" \
+    --prefix=/usr \
+    --with-build-sysroot="$ISO_TARGET" \
+    --with-zstd=no \
+    --enable-default-pie \
+    --enable-default-ssp \
+    --disable-nls \
+    --disable-multilib \
+    --disable-libatomic \
+    --disable-libgomp \
+    --disable-libquadmath \
+    --disable-libsanitizer \
+    --disable-libssp \
+    --disable-libvtv \
+    --enable-languages=c,c++ \
+    LDFLAGS_FOR_TARGET="-L$PWD/$TARGET/libgcc"
+  make -j "$JOBS"
+  make DESTDIR="$ISO_TARGET" install
+  ln -sf gcc "$ISO_TARGET/usr/bin/cc"
+}
+
+build_optional_cross()
+{
+  local cross_target="$1"
+  local binutils_source="$2"
+  local gcc_source="$3"
+  local build_dir="$BOOTSTRAP_WORKDIR/build-cross-$cross_target"
+  local gcc_src binutils_src
+
+  [ -n "$cross_target" ] || return 0
+
+  rm -rf "$build_dir"
+  mkdir -p "$build_dir/binutils-src" "$build_dir/binutils-out"
+  extract_archive "$binutils_source" "$build_dir/binutils-src"
+  binutils_src="$(find "$build_dir/binutils-src" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  [ -n "$binutils_src" ] || return 1
+  cd "$build_dir/binutils-out"
+  "$binutils_src"/configure \
+    --prefix="$BOOTSTRAP_PREFIX" \
+    --target="$cross_target" \
+    --with-sysroot="$ISO_TARGET" \
+    --with-zstd=no \
+    --disable-nls \
+    --disable-werror \
+    --enable-new-dtags \
+    --enable-default-hash-style=gnu
+  make -j "$JOBS"
+  make install
+
+  prepare_gcc_source_tree "$build_dir/gcc-src"
+  gcc_src="$(find "$build_dir/gcc-src" -mindepth 1 -maxdepth 1 -type d -name 'gcc-*' | head -n 1)"
+  [ -n "$gcc_src" ] || return 1
+  mkdir -p "$build_dir/gcc-out"
+  cd "$build_dir/gcc-out"
+  "$gcc_src"/configure \
+    --target="$cross_target" \
+    --prefix="$BOOTSTRAP_PREFIX" \
+    --with-sysroot="$ISO_TARGET" \
+    --with-zstd=no \
+    --with-newlib \
+    --without-headers \
+    --disable-nls \
+    --disable-shared \
+    --disable-multilib \
+    --disable-threads \
+    --disable-libatomic \
+    --disable-libgomp \
+    --disable-libquadmath \
+    --disable-libssp \
+    --disable-libvtv \
+    --disable-libstdcxx \
+    --enable-languages=c,c++
+  make -j "$JOBS" all-gcc all-target-libgcc
+  make install-gcc install-target-libgcc
+}
+
+link_into_usr_bin()
+{
+  local source="$1"
+  local dest="$2"
+
+  mkdir -p "$(dirname "$dest")"
+  ln -sf "$source" "$dest"
+}
+
+expose_bootstrap_toolchain()
+{
+  local tool source
+
+  mkdir -p "$ISO_TARGET/usr/bin"
+
+  for tool in ar as ld ranlib strip nm objcopy objdump readelf; do
+    if [ -x "$BOOTSTRAP_PREFIX/bin/$TARGET-$tool" ]; then
+      source="../../tools/bin/$TARGET-$tool"
+      link_into_usr_bin "$source" "$ISO_TARGET/usr/bin/$TARGET-$tool"
+      link_into_usr_bin "$source" "$ISO_TARGET/usr/bin/$tool"
+    elif [ -x "$BOOTSTRAP_PREFIX/bin/$tool" ]; then
+      source="../../tools/bin/$tool"
+      link_into_usr_bin "$source" "$ISO_TARGET/usr/bin/$tool"
+    fi
+  done
+}
+
+sanity_check_cross_toolchain()
+{
+  local dummy_log="$BOOTSTRAP_WORKDIR/toolchain-sanity.log"
+
+  bootstrap_log "Running LFS-style sanity checks for the temporary toolchain"
+  printf 'int main(){}\n' | "$BOOTSTRAP_PREFIX/bin/$TARGET-gcc" -x c - -v -Wl,--verbose &> "$dummy_log"
+  if ! grep -q "$ISO_TARGET/usr/include" "$dummy_log"; then
+    echo "[bootstrap] ERROR: temporary GCC is not searching $ISO_TARGET/usr/include" >&2
+    exit 1
+  fi
+  if ! grep -q "$ISO_TARGET/usr/lib/libc.so.6" "$dummy_log"; then
+    echo "[bootstrap] ERROR: temporary GCC is not linking against glibc in $ISO_TARGET" >&2
+    exit 1
+  fi
+  rm -f a.out "$dummy_log"
+}
+
+bootstrap_log "Building bootstrap toolchain for $TARGET"
+
+PATH="$BOOTSTRAP_PREFIX/bin:$PATH"
+export PATH
+
+binutils_source="$(prepare_module_source binutils)"
+kernel_headers_source="$(prepare_module_source kernel-headers)"
+gcc_source="$(prepare_module_source gcc)"
+glibc_source="$(prepare_module_source glibc)"
+
+build_binutils_pass1 "$binutils_source"
+build_gcc_pass1
+install_kernel_headers "$kernel_headers_source"
+build_glibc_pass1 "$glibc_source"
+build_libstdcpp_pass1
+sanity_check_cross_toolchain
+build_cross_temp_tools
+build_binutils_pass2 "$binutils_source"
+build_gcc_pass2
+build_optional_cross "$EXTRA_CROSS" "$binutils_source" "$gcc_source"
+"$SCRIPT_DIR/bootstrap-finalize-root"
+
+bootstrap_write_package_entry binutils "$(module_versions binutils)"
+bootstrap_write_package_entry kernel-headers "$(module_versions kernel-headers)"
+bootstrap_write_package_entry gcc "$(module_versions gcc)"
+bootstrap_write_package_entry glibc "$(module_versions glibc)"
