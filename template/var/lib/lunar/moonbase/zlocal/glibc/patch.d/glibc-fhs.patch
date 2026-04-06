@@ -1,0 +1,68 @@
+diff -Naur glibc-2.35-lunar/Makeconfig glibc-2.35/Makeconfig
+--- glibc-2.35-lunar/Makeconfig	2022-02-03 06:27:54.000000000 +0100
++++ glibc-2.35/Makeconfig	2022-03-04 21:49:36.818651793 +0100
+@@ -246,7 +246,7 @@
+ 
+ # Directory for the database files and Makefile for nss_db.
+ ifndef vardbdir
+-vardbdir = $(localstatedir)/db
++vardbdir = $(localstatedir)/lib/nss_db
+ endif
+ inst_vardbdir = $(install_root)$(vardbdir)
+ 
+diff -Naur glibc-2.35-lunar/nscd/nscd.h glibc-2.35/nscd/nscd.h
+--- glibc-2.35-lunar/nscd/nscd.h	2022-02-03 06:27:54.000000000 +0100
++++ glibc-2.35/nscd/nscd.h	2022-03-04 21:49:36.818651793 +0100
+@@ -160,11 +160,11 @@
+ 
+ 
+ /* Paths of the file for the persistent storage.  */
+-#define _PATH_NSCD_PASSWD_DB	"/var/db/nscd/passwd"
+-#define _PATH_NSCD_GROUP_DB	"/var/db/nscd/group"
+-#define _PATH_NSCD_HOSTS_DB	"/var/db/nscd/hosts"
+-#define _PATH_NSCD_SERVICES_DB	"/var/db/nscd/services"
+-#define _PATH_NSCD_NETGROUP_DB	"/var/db/nscd/netgroup"
++#define _PATH_NSCD_PASSWD_DB	"/var/cache/nscd/passwd"
++#define _PATH_NSCD_GROUP_DB	"/var/cache/nscd/group"
++#define _PATH_NSCD_HOSTS_DB	"/var/cache/nscd/hosts"
++#define _PATH_NSCD_SERVICES_DB	"/var/cache/nscd/services"
++#define _PATH_NSCD_NETGROUP_DB	"/var/cache/nscd/netgroup"
+ 
+ /* Path used when not using persistent storage.  */
+ #define _PATH_NSCD_XYZ_DB_TMP	"/var/run/nscd/dbXXXXXX"
+diff -Naur glibc-2.35-lunar/nss/db-Makefile glibc-2.35/nss/db-Makefile
+--- glibc-2.35-lunar/nss/db-Makefile	2022-02-03 06:27:54.000000000 +0100
++++ glibc-2.35/nss/db-Makefile	2022-03-04 21:49:36.818651793 +0100
+@@ -21,7 +21,7 @@
+ 		       /etc/rpc /etc/services /etc/shadow /etc/gshadow \
+ 		       /etc/netgroup)
+ 
+-VAR_DB = /var/db
++VAR_DB = /var/lib/nss_db
+ 
+ AWK = awk
+ MAKEDB = makedb --quiet
+diff -Naur glibc-2.35-lunar/sysdeps/generic/paths.h glibc-2.35/sysdeps/generic/paths.h
+--- glibc-2.35-lunar/sysdeps/generic/paths.h	2022-02-03 06:27:54.000000000 +0100
++++ glibc-2.35/sysdeps/generic/paths.h	2022-03-04 21:49:36.818651793 +0100
+@@ -68,7 +68,7 @@
+ /* Provide trailing slash, since mostly used for building pathnames. */
+ #define	_PATH_DEV	"/dev/"
+ #define	_PATH_TMP	"/tmp/"
+-#define	_PATH_VARDB	"/var/db/"
++#define	_PATH_VARDB	"/var/lib/nss_db/"
+ #define	_PATH_VARRUN	"/var/run/"
+ #define	_PATH_VARTMP	"/var/tmp/"
+ 
+diff -Naur glibc-2.35-lunar/sysdeps/unix/sysv/linux/paths.h glibc-2.35/sysdeps/unix/sysv/linux/paths.h
+--- glibc-2.35-lunar/sysdeps/unix/sysv/linux/paths.h	2022-02-03 06:27:54.000000000 +0100
++++ glibc-2.35/sysdeps/unix/sysv/linux/paths.h	2022-03-04 21:49:36.821985127 +0100
+@@ -68,7 +68,7 @@
+ /* Provide trailing slash, since mostly used for building pathnames. */
+ #define	_PATH_DEV	"/dev/"
+ #define	_PATH_TMP	"/tmp/"
+-#define	_PATH_VARDB	"/var/db/"
++#define	_PATH_VARDB	"/var/lib/nss_db/"
+ #define	_PATH_VARRUN	"/var/run/"
+ #define	_PATH_VARTMP	"/var/tmp/"
+ 

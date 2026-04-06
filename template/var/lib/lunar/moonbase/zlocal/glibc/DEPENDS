@@ -1,0 +1,8 @@
+depends gawk
+depends sed
+depends texinfo
+depends python
+depends kernel-headers
+depends libxcrypt
+
+optional_depends perl "" "" "for testing the installation"

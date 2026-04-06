@@ -1,0 +1,18 @@
+# Update fixed headers
+MKHEADERS=$(find /usr/libexec/gcc -name mkheaders -type f 2>/dev/null | head -n 1)
+if [ -n "$MKHEADERS" ] && [ -x "$MKHEADERS" ]; then
+  "$MKHEADERS"
+fi
+
+# The remaining steps (lunar fix, lin -c timezone-data) are only needed
+# when upgrading glibc on a running system, not during ISO bootstrap.
+# Skip them if we're in a fresh build with no timezone-data installed.
+if lsh module_installed timezone-data 2>/dev/null; then
+  lin -c timezone-data
+fi
+
+for _mod in perl libxcrypt shadow Linux-PAM util-linux openssh systemd; do
+  if lsh module_installed "$_mod" 2>/dev/null; then
+    lunar fix "$_mod"
+  fi
+done

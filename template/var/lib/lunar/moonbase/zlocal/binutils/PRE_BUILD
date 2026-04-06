@@ -1,0 +1,4 @@
+default_pre_build &&
+
+sedit 's:@bfdlibdir@:@libdir@:g' {bfd,opcodes}/Makefile.in &&
+sedit 's:@bfdincludedir@:@includedir@:g' {bfd,opcodes}/Makefile.in
