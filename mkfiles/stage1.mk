@@ -16,7 +16,9 @@ stage1-spool: $(ISO_TARGET)/.stage1-spool
 # generate the required cache files
 $(ISO_TARGET)/.stage1-moonbase: $(ISO_TARGET)/.bootstrap-modules $(ISO_TARGET)/.install-moonbase
 	@echo stage1-moonbase
-	@grep -E '^(lunar|make):' $(ISO_TARGET)/var/state/lunar/packages > $(ISO_TARGET)/var/state/lunar/packages.tmp || true
+	@grep -E '^make:' $(ISO_TARGET)/var/state/lunar/packages > $(ISO_TARGET)/var/state/lunar/packages.tmp || true
+	@LUNAR_VER=$$(grep 'VERSION=' $(ISO_TARGET)/var/lib/lunar/moonbase/zlocal/lunar/DETAILS 2>/dev/null | head -1 | sed 's/.*VERSION=//'); \
+	  echo "lunar:$$(date +%Y%m%d):installed:$${LUNAR_VER:-0}:0KB" >> $(ISO_TARGET)/var/state/lunar/packages.tmp
 	@mv $(ISO_TARGET)/var/state/lunar/packages.tmp $(ISO_TARGET)/var/state/lunar/packages
 	@cp $(ISO_TARGET)/var/state/lunar/packages $(ISO_TARGET)/var/state/lunar/packages.backup
 	@$(ISO_SOURCE)/scripts/bootstrap-finalize-root
@@ -33,7 +35,7 @@ include $(ISO_SOURCE)/conf/modules.toolchain
 
 $(ISO_TARGET)/.stage1-toolchain: $(ISO_TARGET)/.stage1-moonbase $(ISO_TARGET)/.stage1-spool
 	@echo stage1-toolchain
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; for mod in $(TOOLCHAIN_MODULES); do lin -rc $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done'
+	@$(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; for mod in $(TOOLCHAIN_MODULES); do lin -rc $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done' </dev/null
 	@touch $@
 
 stage1-toolchain: $(ISO_TARGET)/.stage1-toolchain
@@ -44,7 +46,7 @@ include $(ISO_SOURCE)/conf/modules.stage1
 
 $(ISO_TARGET)/.stage1: $(ISO_TARGET)/.stage1-toolchain
 	@echo stage1-build
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; for mod in `lsh sort_by_dependency $(filter-out $(TOOLCHAIN_MODULES),$(STAGE1_MODULES))`; do lin -rc $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done'
+	@$(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; for mod in `lsh sort_by_dependency $(filter-out $(TOOLCHAIN_MODULES),$(STAGE1_MODULES))`; do lin -rc $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done' </dev/null
 	@touch $@
 
 stage1-build: $(ISO_TARGET)/.stage1

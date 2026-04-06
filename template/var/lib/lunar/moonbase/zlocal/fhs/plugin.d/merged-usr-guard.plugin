@@ -1,0 +1,66 @@
+#
+# merged /usr guard plugin
+#
+# Verify that /bin, /lib, /sbin symlinks survive every module build.
+# A broken BUILD script (e.g. cpio -u, cp --remove-destination) can
+# replace these symlinks with real directories, breaking the system.
+#
+
+plugin_merged_usr_guard()
+{
+  # Only act on systems explicitly configured for merged /usr
+  [ -f /etc/lunar/local/merged-usr ] || return 2
+  . /etc/lunar/local/merged-usr
+  [ "$MERGED_USR" = "yes" ] || return 2
+
+  hash -r
+
+  for _link in bin:usr/bin lib:usr/lib sbin:usr/sbin; do
+    _path="/${_link%%:*}"
+    _target="${_link#*:}"
+
+    if [ -L "$_path" ] && [ "$(readlink "$_path")" = "$_target" ]; then
+      continue
+    fi
+
+    # Symlink is missing or was replaced with a directory
+    if [ -d "$_path" ] && [ ! -L "$_path" ]; then
+      # Move any contents into the real directory first
+      if [ -n "$(ls -A "$_path" 2>/dev/null)" ]; then
+        cp -af "$_path"/* "/$_target/" 2>/dev/null || true
+      fi
+      rm -rf "$_path"
+    fi
+
+    ln -snf "$_target" "$_path"
+    message "${PROBLEM_COLOR}WARNING:${DEFAULT_COLOR} ${MODULE_COLOR}$MODULE${DEFAULT_COLOR} broke ${FILE_COLOR}$_path${DEFAULT_COLOR} symlink — restored"
+  done
+
+  # Also check arch-specific lib symlinks
+  case "$(uname -m)" in
+    x86_64)
+      if [ ! -L /lib64 ] || [ "$(readlink /lib64)" != "usr/lib" ]; then
+        rm -rf /lib64
+        ln -snf usr/lib /lib64
+      fi
+      if [ ! -L /usr/lib64 ] || [ "$(readlink /usr/lib64)" != "lib" ]; then
+        rm -rf /usr/lib64
+        ln -snf lib /usr/lib64
+      fi
+      ;;
+    i686)
+      if [ ! -L /lib32 ] || [ "$(readlink /lib32)" != "usr/lib" ]; then
+        rm -rf /lib32
+        ln -snf usr/lib /lib32
+      fi
+      if [ ! -L /usr/lib32 ] || [ "$(readlink /usr/lib32)" != "lib" ]; then
+        rm -rf /usr/lib32
+        ln -snf lib /usr/lib32
+      fi
+      ;;
+  esac
+
+  return 2
+}
+
+plugin_register BUILD_POST_BUILD plugin_merged_usr_guard

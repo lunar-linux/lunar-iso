@@ -44,6 +44,9 @@ endif
 	@cp -r $(ISO_SOURCE)/template/etc $(ISO_TARGET)
 	@cp -r $(ISO_SOURCE)/template/var $(ISO_TARGET)
 	@echo MAKES=$(ISO_MAKES) > $(ISO_TARGET)/etc/lunar/local/optimizations.GNU_MAKE
+ifeq ($(ISO_MERGED_USR),yes)
+	@echo "MERGED_USR=yes" > $(ISO_TARGET)/etc/lunar/local/merged-usr
+endif
 	@touch $@
 
 bootstrap-base: $(ISO_TARGET)/.base
