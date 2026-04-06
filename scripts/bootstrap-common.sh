@@ -17,7 +17,7 @@ fi
 BOOTSTRAP_TOOLCHAIN_FETCH_MODULES="${BOOTSTRAP_TOOLCHAIN_FETCH_MODULES:-kernel-headers gmp mpfr libmpc}"
 BOOTSTRAP_TOOLCHAIN_SUPPORT_MODULES="${BOOTSTRAP_TOOLCHAIN_SUPPORT_MODULES:-gmp mpfr libmpc}"
 BOOTSTRAP_CROSS_TEMP_TOOLS="${BOOTSTRAP_CROSS_TEMP_TOOLS:-m4 ncurses bash coreutils file findutils gawk grep gzip make patch sed tar xz}"
-BOOTSTRAP_CHROOT_TEMP_TOOLS="${BOOTSTRAP_CHROOT_TEMP_TOOLS:-diffutils gettext perl bison zlib python ninja meson texinfo util-linux}"
+BOOTSTRAP_CHROOT_TEMP_TOOLS="${BOOTSTRAP_CHROOT_TEMP_TOOLS:-installwatch diffutils gettext perl bison zlib python ninja meson texinfo util-linux}"
 BOOTSTRAP_IGNORE_MODULES="${BOOTSTRAP_IGNORE_MODULES:-cmake dialog less ncurses python-setuptools python-wheel python-build python-installer dbus systemd gnu-efi pciutils kbd iptables iproute2 check autoconf-archive intltool python-markupsafe python-jinja2 python-pyelftools IO-Capture Devel-CheckLib XML-Parser kmod Linux-PAM cracklib shadow e2fsprogs rpmunpack procps}"
 
 bootstrap_default_target()

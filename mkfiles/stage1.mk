@@ -16,10 +16,6 @@ stage1-spool: $(ISO_TARGET)/.stage1-spool
 # generate the required cache files
 $(ISO_TARGET)/.stage1-moonbase: $(ISO_TARGET)/.bootstrap-modules $(ISO_TARGET)/.install-moonbase
 	@echo stage1-moonbase
-	@grep -E '^make:' $(ISO_TARGET)/var/state/lunar/packages > $(ISO_TARGET)/var/state/lunar/packages.tmp || true
-	@LUNAR_VER=$$(grep 'VERSION=' $(ISO_TARGET)/var/lib/lunar/moonbase/zlocal/lunar/DETAILS 2>/dev/null | head -1 | sed 's/.*VERSION=//'); \
-	  echo "lunar:$$(date +%Y%m%d):installed:$${LUNAR_VER:-0}:0KB" >> $(ISO_TARGET)/var/state/lunar/packages.tmp
-	@mv $(ISO_TARGET)/var/state/lunar/packages.tmp $(ISO_TARGET)/var/state/lunar/packages
 	@cp $(ISO_TARGET)/var/state/lunar/packages $(ISO_TARGET)/var/state/lunar/packages.backup
 	@$(ISO_SOURCE)/scripts/bootstrap-finalize-root
 	@$(ISO_SOURCE)/scripts/chroot-build lsh create_module_index

@@ -386,13 +386,29 @@ run_make()
   make -j "\$JOBS" "\$@"
 }
 
+# Wrapper to run install commands under installwatch so we can generate
+# an install log that lrm --upgrade can use during stage1 rebuilds.
+_iw_log="/tmp/.iw-${module}.\$\$"
+_have_iw=0
+if [ -e /usr/lib/installwatch.so ] && [ "${module}" != "installwatch" ]; then
+  _have_iw=1
+fi
+tracked_install()
+{
+  if [ "\$_have_iw" -eq 1 ]; then
+    INSTALLWATCHFILE="\$_iw_log" LD_PRELOAD=/usr/lib/installwatch.so "\$@"
+  else
+    "\$@"
+  fi
+}
+
 cd "${chroot_dir}"
 
 case "${module}" in
   bzip2)
     make -j "\$JOBS" -f Makefile-libbz2_so
     ln -sf libbz2.so.1.0 libbz2.so
-    install -m755 "libbz2.so.${VERSION}" /usr/lib/libbz2.so.${VERSION}
+    tracked_install install -m755 "libbz2.so.${VERSION}" /usr/lib/libbz2.so.${VERSION}
     ln -sf "libbz2.so.${VERSION}" /usr/lib/libbz2.so.1.0
     ln -sf "libbz2.so.1.0" /usr/lib/libbz2.so.1
     ln -sf "libbz2.so.1" /usr/lib/libbz2.so
@@ -400,7 +416,7 @@ case "${module}" in
     make clean
     make -j "\$JOBS" PREFIX=/usr
     mkdir -p /usr/bin /usr/lib /usr/include /usr/share/man/man1 /usr/lib/pkgconfig
-    make PREFIX=/usr install
+    tracked_install make PREFIX=/usr install
     ;;
   cmake)
     if [ -n "\$JOBS" ]; then
@@ -417,7 +433,7 @@ case "${module}" in
         -DCMAKE_DISABLE_FIND_PACKAGE_Libidn2=TRUE
     fi
     run_make
-    cmake --install build 2>/dev/null || make install
+    tracked_install cmake --install build 2>/dev/null || tracked_install make install
     ;;
   elfutils)
     ./configure \
@@ -428,7 +444,7 @@ case "${module}" in
       --enable-debuginfod=no \
       --enable-libdebuginfod=no
     run_make
-    make install
+    tracked_install make install
     ;;
   glib-2)
     meson setup build \
@@ -440,11 +456,11 @@ case "${module}" in
       -Dglib_debug=disabled \
       -Dnls=disabled
     ninja -C build
-    ninja -C build install
+    tracked_install ninja -C build install
     ;;
   libcap)
     make -j "\$JOBS" PAM_CAP=no GOLANG=no
-    make PAM_CAP=no GOLANG=no prefix=/usr lib=lib install
+    tracked_install make PAM_CAP=no GOLANG=no prefix=/usr lib=lib install
     ;;
   openssl)
     ./config \
@@ -454,11 +470,11 @@ case "${module}" in
       no-ssl3 \
       no-ssl3-method
     make -j "\$JOBS" LIBDIR=lib
-    make LIBDIR=lib MANDIR=/usr/share/man install_sw install_ssldirs
+    tracked_install make LIBDIR=lib MANDIR=/usr/share/man install_sw install_ssldirs
     ;;
   pbzip2)
     run_make
-    install -Dm755 pbzip2 /usr/bin/pbzip2
+    tracked_install install -Dm755 pbzip2 /usr/bin/pbzip2
     ln -sf pbzip2 /usr/bin/pbunzip2
     ;;
   perl)
@@ -468,7 +484,7 @@ case "${module}" in
       -Dman1dir=/usr/share/man/man1 \\
       -Dman3dir=/usr/share/man/man3
     run_make
-    make install
+    tracked_install make install
     ;;
   python|python3)
     mkdir -p Modules
@@ -493,18 +509,18 @@ PYEOF
       py_cv_module__lzma=disabled \\
       py_cv_module_readline=disabled
     run_make
-    make install
+    tracked_install make install
     ;;
   ninja)
     python3 configure.py --bootstrap
-    install -Dm755 ninja /usr/bin/ninja
+    tracked_install install -Dm755 ninja /usr/bin/ninja
     ;;
   meson)
     pyver="\$(python3 -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")')"
     site="/usr/lib/python\${pyver}/site-packages"
     mkdir -p "\${site}" /usr/bin /usr/share/man/man1
-    cp -a mesonbuild "\${site}/"
-    cp -a meson.py "\${site}/"
+    tracked_install cp -a mesonbuild "\${site}/"
+    tracked_install cp -a meson.py "\${site}/"
     cat > /usr/bin/meson <<'MEOF'
 #!/usr/bin/python3
 import sys
@@ -513,7 +529,7 @@ sys.exit(mesonmain.main())
 MEOF
     chmod 755 /usr/bin/meson
     if [ -f man/meson.1 ]; then
-      install -m644 man/meson.1 /usr/share/man/man1/
+      tracked_install install -m644 man/meson.1 /usr/share/man/man1/
     fi
     ;;
   texinfo)
@@ -523,14 +539,14 @@ MEOF
       --sysconfdir=/etc \\
       --localstatedir=/var
     run_make
-    make install
-    make -e TEXMF=/usr/share/texmf install-tex
+    tracked_install make install
+    tracked_install make -e TEXMF=/usr/share/texmf install-tex
     rm -f /usr/lib/texinfo/*.a /usr/lib64/texinfo/*.a
     ;;
   unzip)
     sh unix/configure
     make -j "\$JOBS" -f unix/Makefile linux_noasm
-    make -f unix/Makefile prefix=/usr install
+    tracked_install make -f unix/Makefile prefix=/usr install
     ;;
   util-linux)
     ./configure \
@@ -540,7 +556,7 @@ MEOF
       --localstatedir=/var \
       --disable-liblastlog2
     make -j "\$JOBS" getopt
-    install -Dm755 getopt /usr/bin/getopt
+    tracked_install install -Dm755 getopt /usr/bin/getopt
     ;;
   wget)
     ./configure \
@@ -552,7 +568,7 @@ MEOF
       --disable-iri \
       --without-libidn2
     run_make
-    make install
+    tracked_install make install
     ;;
   *)
     if [ -x ./configure ]; then
@@ -562,11 +578,11 @@ MEOF
         --sysconfdir=/etc \
         --localstatedir=/var
       run_make
-      make install
+      tracked_install make install
     elif [ -f meson.build ]; then
       meson setup build --prefix=/usr --libdir=lib --buildtype=release
       ninja -C build
-      ninja -C build install
+      tracked_install ninja -C build install
     elif [ -f CMakeLists.txt ]; then
       cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib
       if [ -n "\$JOBS" ]; then
@@ -574,20 +590,35 @@ MEOF
       else
         cmake --build build
       fi
-      cmake --install build
+      tracked_install cmake --install build
     elif [ -f Makefile.PL ]; then
       perl Makefile.PL PREFIX=/usr INSTALLDIRS=vendor
       run_make
-      make install
+      tracked_install make install
     elif [ -f Makefile ] || [ -f makefile ] || [ -f GNUmakefile ]; then
       run_make
-      make PREFIX=/usr install
+      tracked_install make PREFIX=/usr install
     else
       echo "unsupported chroot bootstrap module: ${module}" >&2
       exit 1
     fi
     ;;
 esac
+
+# Generate install log from installwatch output.
+# This matches lunar's parse_iw format: extract created/modified files,
+# filter out source directory and temp paths, deduplicate.
+unset LD_PRELOAD
+_install_log="/var/log/lunar/install/${module}-${VERSION}"
+if [ -f "\$_iw_log" ]; then
+  mkdir -p /var/log/lunar/install
+  _omit="\	rename\|\	symlink\|\	unlink\|\	fchmod\|\	access"
+  {
+    grep -v "\$_omit" "\$_iw_log" | cut -f3 | grep -v "^${chroot_dir}" | grep "^/"
+    cut -f4 "\$_iw_log" | grep -v "^${chroot_dir}" | grep "^/"
+  } 2>/dev/null | sort -u | grep -v -e '^/tmp' -e '^/proc' -e '^/dev' -e '^/sys' > "\$_install_log" || true
+  rm -f "\$_iw_log"
+fi
 EOF
 
   chmod 755 "$driver"
