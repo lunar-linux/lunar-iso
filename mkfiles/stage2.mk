@@ -18,12 +18,32 @@ stage2-target: $(ISO_TARGET)/.stage2-target
 # create base directory structure
 $(ISO_TARGET)/.stage2-base: stage2-target
 	@echo stage2-base
-	@ln -sf lib $(ISO_TARGET)/lib32
-	@ln -sf lib $(ISO_TARGET)/lib64
-	@mkdir -p $(ISO_TARGET)/usr
-	@ln -sf lib $(ISO_TARGET)/usr/lib32
-	@ln -sf lib $(ISO_TARGET)/usr/lib64
+	@mkdir -p $(ISO_TARGET)/usr/{bin,sbin,lib}
+ifeq ($(ISO_MERGED_USR),yes)
+	@ln -snf usr/bin $(ISO_TARGET)/bin
+	@ln -snf usr/sbin $(ISO_TARGET)/sbin
+	@ln -snf usr/lib $(ISO_TARGET)/lib
+ifeq ($(ISO_ARCH),x86_64)
+	@ln -snf usr/lib $(ISO_TARGET)/lib64
+	@ln -snf lib $(ISO_TARGET)/usr/lib64
+endif
+ifeq ($(ISO_ARCH),i686)
+	@ln -snf usr/lib $(ISO_TARGET)/lib32
+	@ln -snf lib $(ISO_TARGET)/usr/lib32
+endif
+else
+	@mkdir -p $(ISO_TARGET)/{bin,sbin,lib}
+ifeq ($(ISO_ARCH),x86_64)
+	@ln -snf lib $(ISO_TARGET)/lib64
+	@ln -snf lib $(ISO_TARGET)/usr/lib64
+endif
+ifeq ($(ISO_ARCH),i686)
+	@ln -snf lib $(ISO_TARGET)/lib32
+	@ln -snf lib $(ISO_TARGET)/usr/lib32
+endif
+endif
 	@cp -r $(ISO_SOURCE)/template/etc $(ISO_TARGET)
+	@cp -r $(ISO_SOURCE)/template/var $(ISO_TARGET)
 	@cp $(ISO_SOURCE)/kernels/conf/generic.$(ISO_ARCH) $(ISO_TARGET)/etc/lunar/local/.config.current
 	@echo MAKES=$(ISO_MAKES) > $(ISO_TARGET)/etc/lunar/local/optimizations.GNU_MAKE
 	@touch $@
@@ -63,6 +83,9 @@ $(ISO_TARGET)/.stage2-extract-moonbase: stage2-target $(ISO_SOURCE)/spool/moonba
 	@rm -r $(ISO_TARGET)/var/lib/lunar/moonbase
 	@tar -xjf $(ISO_SOURCE)/spool/moonbase.tar.bz2 -C $(ISO_TARGET)/var/lib/lunar moonbase/core moonbase/aliases
 	@mkdir -p $(ISO_TARGET)/var/lib/lunar/moonbase/zlocal
+	@if [ -d $(ISO_SOURCE)/template/var/lib/lunar/moonbase/zlocal ]; then \
+	  cp -r $(ISO_SOURCE)/template/var/lib/lunar/moonbase/zlocal/* $(ISO_TARGET)/var/lib/lunar/moonbase/zlocal/ 2>/dev/null || true; \
+	fi
 	@mkdir -p $(ISO_TARGET)/var/state/lunar/moonbase
 	@touch $(ISO_TARGET)/var/state/lunar/packages{,.backup}
 	@cp $(ISO_SOURCE)/template/var/state/lunar/depends $(ISO_TARGET)/var/state/lunar/depends
