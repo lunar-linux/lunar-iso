@@ -1,32 +1,83 @@
 #!/bin/bash
 
+set -euo pipefail
+
+is_mountpoint ()
+{
+  local path="$1"
+
+  if command -v mountpoint >/dev/null 2>&1; then
+    mountpoint -q "$path"
+    return $?
+  fi
+
+  awk -v target="$path" '$2 == target { found = 1 } END { exit(found ? 0 : 1) }' /proc/mounts
+}
+
 function mount_system_fs ()
 {
-  for mpoint in proc sys dev ; do
-    mount --bind /${mpoint} $ISO_TARGET/${mpoint} || return 1
-  done
+  mkdir -p "$ISO_TARGET/dev" "$ISO_TARGET/proc" "$ISO_TARGET/sys" "$ISO_TARGET/run" || return 1
+  if ! is_mountpoint "$ISO_TARGET/dev"; then
+    mount --bind /dev "$ISO_TARGET/dev" || return 1
+  fi
+  mkdir -p "$ISO_TARGET/dev/pts" || return 1
+  if ! is_mountpoint "$ISO_TARGET/dev/pts"; then
+    mount -t devpts devpts -o gid=5,mode=0620 "$ISO_TARGET/dev/pts" || return 1
+  fi
+  if ! is_mountpoint "$ISO_TARGET/proc"; then
+    mount -t proc proc "$ISO_TARGET/proc" || return 1
+  fi
+  if ! is_mountpoint "$ISO_TARGET/sys"; then
+    mount -t sysfs sysfs "$ISO_TARGET/sys" || return 1
+  fi
   for mpoint in run tmp ; do
-    mount -t tmpfs tmpfs $ISO_TARGET/${mpoint} || return 1
+    mkdir -p "$ISO_TARGET/${mpoint}" || return 1
+    if ! is_mountpoint "$ISO_TARGET/${mpoint}"; then
+      mount -t tmpfs tmpfs "$ISO_TARGET/${mpoint}" || return 1
+    fi
   done
+  if [ -h "$ISO_TARGET/dev/shm" ]; then
+    mkdir -p "$ISO_TARGET$(realpath /dev/shm)" || return 1
+  else
+    mkdir -p "$ISO_TARGET/dev/shm" || return 1
+    if ! is_mountpoint "$ISO_TARGET/dev/shm"; then
+      mount -t tmpfs -o nosuid,nodev tmpfs "$ISO_TARGET/dev/shm" || return 1
+    fi
+  fi
+  mkdir -p "$ISO_TARGET/etc"
+  if [ -f /etc/resolv.conf ]; then
+    cp -L /etc/resolv.conf "$ISO_TARGET/etc/resolv.conf" || return 1
+  fi
 }
 
 function umount_system_fs ()
 {
-  for mpoint in proc sys dev run tmp ; do
-    if ! umount $ISO_TARGET/${mpoint} &> /dev/null ; then
-      umount -l -f $ISO_TARGET/${mpoint} &> /dev/null
+  for mpoint in dev/shm dev/pts proc sys dev run tmp ; do
+    if ! is_mountpoint "$ISO_TARGET/${mpoint}"; then
+      continue
+    fi
+    if ! umount "$ISO_TARGET/${mpoint}" &> /dev/null ; then
+      umount -l -f "$ISO_TARGET/${mpoint}" &> /dev/null
     fi
   done
 }
 
+cleanup_chroot_mounts()
+{
+  umount_system_fs || true
+}
+
+trap cleanup_chroot_mounts EXIT INT TERM
+
 mount_system_fs &&
 
-mkdir $ISO_TARGET/run/lock &&
-mkdir $ISO_TARGET/run/lock/lunar &&
+mkdir -p "$ISO_TARGET/run/lock" &&
+mkdir -p "$ISO_TARGET/run/lock/lunar" &&
 
 chroot "$ISO_TARGET" "$@"
 RESULT=$?
 
+trap - EXIT INT TERM
 umount_system_fs
 
 exit $RESULT
