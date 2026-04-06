@@ -7,7 +7,7 @@
 
 # Which arch are we compiling for? Hint: i686 or x86_64
 
-ISO_ARCH = i686
+ISO_ARCH = x86_64
 
 # the ISO major version number
 ISO_MAJOR = 1.7.0
@@ -32,6 +32,18 @@ ISO_DATE = 20130531
 # the iso BUILD arch:
 ISO_BUILD = $(ISO_ARCH)-pc-linux-gnu
 
+# native toolchain used to seed the bootstrap
+BOOTSTRAP_HOST = $(shell gcc -dumpmachine)
+
+# target triplet for the temporary LFS-style bootstrap toolchain
+BOOTSTRAP_TARGET = $(ISO_ARCH)-lfs-linux-gnu
+
+# optional extra cross compiler target (for example aarch64-linux-gnu)
+BOOTSTRAP_CROSS_TARGET =
+
+# where to fetch moonbase metadata from
+MOONBASE_URL = https://www.lunar-linux.org/lunar
+
 # this concatenates the full name
 ISO_CNAME = $(ISO_VERSION) ($(ISO_CODENAME) - $(ISO_DATE))
 
@@ -45,4 +57,15 @@ ISO_LUNAR_MODULE = lunar
 # ISO_MAKES = 2
 
 # set this to the base optimization (e.g. i386, i586, i686, x86-64)
-ISO_GCCARCH = i686
+ISO_GCCARCH = x86-64
+
+# use merged /usr layout (/bin -> usr/bin, /lib -> usr/lib, /sbin -> usr/sbin)
+# set to 'yes' for merged or 'no' for traditional layout
+ISO_MERGED_USR = yes
+
+# set this to number of makes for bootstrap source builds or leave empty
+# defaults to ISO_MAKES if set, otherwise 1
+# BOOTSTRAP_JOBS = 2
+
+# bootstrap can ignore transitive build helpers that lunar will install later
+# BOOTSTRAP_IGNORE_MODULES = cmake dialog less meson ncurses ninja python-setuptools python-wheel python-build python-installer dbus systemd gnu-efi pciutils kbd iptables iproute2 check autoconf-archive intltool python-markupsafe python-jinja2 python-pyelftools IO-Capture Devel-CheckLib XML-Parser kmod Linux-PAM cracklib shadow e2fsprogs rpmunpack procps
