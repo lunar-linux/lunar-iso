@@ -6,7 +6,7 @@ stage2: stage2-build $(ISO_TARGET)/var/cache/lunar/packages
 
 
 # clean the target directory for stage2
-$(ISO_TARGET)/.stage2-target: stage1
+$(ISO_TARGET)/.stage2-target: $(ISO_SOURCE)/cache/.stage1
 	@echo stage2-target
 	@rm -rf $(ISO_TARGET)
 	@mkdir $(ISO_TARGET)
@@ -68,7 +68,7 @@ stage2-modules: $(ISO_TARGET)/.stage2-modules
 
 
 # copy the source files
-$(ISO_TARGET)/.stage2-spool: stage2-target download
+$(ISO_TARGET)/.stage2-spool: stage2-target $(ISO_SOURCE)/spool/.copied
 	@echo stage2-spool
 	@mkdir -p $(ISO_TARGET)/var/spool/lunar
 	@ln $(ISO_SOURCE)/spool/* $(ISO_TARGET)/var/spool/lunar/
