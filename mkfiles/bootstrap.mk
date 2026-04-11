@@ -1,21 +1,19 @@
 .INTERMEDIATE: target bootstrap bootstrap-base bootstrap-sources bootstrap-toolchain bootstrap-modules
 
-.SECONDARY: $(ISO_TARGET)/.target $(ISO_TARGET)/.base $(ISO_TARGET)/.bootstrap-sources $(ISO_TARGET)/.bootstrap-toolchain $(ISO_TARGET)/.bootstrap-modules
-
 bootstrap: bootstrap-base install-moonbase bootstrap-sources bootstrap-toolchain bootstrap-modules
 
 
 # this rule is shared with the download
-$(ISO_TARGET)/.target:
+$(ISO_STAMPS)/.target:
 	@rm -rf $(ISO_TARGET)
-	@mkdir -p $(ISO_TARGET)
+	@mkdir -p $(ISO_TARGET) $(ISO_STAMPS)
 	@touch $@
 
-target: $(ISO_TARGET)/.target
+target: $(ISO_STAMPS)/.target
 
 
 # fill the target with the base file required
-$(ISO_TARGET)/.base: $(ISO_TARGET)/.target
+$(ISO_STAMPS)/.base: $(ISO_STAMPS)/.target
 	@echo bootstrap-base
 	@mkdir -p $(ISO_TARGET)/{dev,proc,run,sys,tmp,usr/{bin,lib,sbin,src},var}
 ifeq ($(ISO_MERGED_USR),yes)
@@ -51,25 +49,25 @@ ifeq ($(ISO_MERGED_USR),yes)
 endif
 	@touch $@
 
-bootstrap-base: $(ISO_TARGET)/.base
+bootstrap-base: $(ISO_STAMPS)/.base
 
-$(ISO_TARGET)/.bootstrap-sources: $(ISO_TARGET)/.base $(ISO_TARGET)/.install-moonbase
+$(ISO_STAMPS)/.bootstrap-sources: $(ISO_STAMPS)/.base $(ISO_STAMPS)/.install-moonbase
 	@echo bootstrap-sources
 	@$(ISO_SOURCE)/scripts/bootstrap-fetch-sources bootstrap
 	@touch $@
 
-bootstrap-sources: $(ISO_TARGET)/.bootstrap-sources
+bootstrap-sources: $(ISO_STAMPS)/.bootstrap-sources
 
-$(ISO_TARGET)/.bootstrap-toolchain: $(ISO_TARGET)/.bootstrap-sources
+$(ISO_STAMPS)/.bootstrap-toolchain: $(ISO_STAMPS)/.bootstrap-sources
 	@echo bootstrap-toolchain
 	@$(ISO_SOURCE)/scripts/bootstrap-build-toolchain
 	@touch $@
 
-bootstrap-toolchain: $(ISO_TARGET)/.bootstrap-toolchain
+bootstrap-toolchain: $(ISO_STAMPS)/.bootstrap-toolchain
 
-$(ISO_TARGET)/.bootstrap-modules: $(ISO_TARGET)/.bootstrap-toolchain
+$(ISO_STAMPS)/.bootstrap-modules: $(ISO_STAMPS)/.bootstrap-toolchain
 	@echo bootstrap-modules
 	@$(ISO_SOURCE)/scripts/bootstrap-build-modules
 	@touch $@
 
-bootstrap-modules: $(ISO_TARGET)/.bootstrap-modules
+bootstrap-modules: $(ISO_STAMPS)/.bootstrap-modules

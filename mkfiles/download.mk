@@ -1,7 +1,6 @@
 .INTERMEDIATE: download install-moonbase download-lunar
 .PHONY: download-moonbase moonbase-git
 
-.SECONDARY: $(ISO_TARGET)/.install-moonbase
 
 download: download-lunar
 
@@ -15,7 +14,7 @@ download-moonbase $(ISO_SOURCE)/spool/moonbase.tar.bz2:
 
 
 # note: this installs an empty installed packages list
-$(ISO_TARGET)/.install-moonbase: $(ISO_SOURCE)/spool/moonbase.tar.bz2 target
+$(ISO_STAMPS)/.install-moonbase: $(ISO_SOURCE)/spool/moonbase.tar.bz2 target
 	@echo install-moonbase
 	@mkdir -p $(ISO_TARGET)/var/lib/lunar/moonbase
 	@rm -r $(ISO_TARGET)/var/lib/lunar/moonbase
@@ -28,7 +27,7 @@ $(ISO_TARGET)/.install-moonbase: $(ISO_SOURCE)/spool/moonbase.tar.bz2 target
 	@touch $(ISO_TARGET)/var/state/lunar/{packages,depends}{,.backup}
 	@touch $@
 
-install-moonbase: $(ISO_TARGET)/.install-moonbase
+install-moonbase: $(ISO_STAMPS)/.install-moonbase
 
 
 # download on a lunar host

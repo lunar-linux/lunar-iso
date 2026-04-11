@@ -34,6 +34,9 @@ endif
 # define the location where the ISO will be generated
 ISO_TARGET = $(ISO_SOURCE)/BUILD
 
+# persistent stamp directory for tracking build progress
+ISO_STAMPS = $(ISO_SOURCE)/stamps
+
 ###export ISO_SOURCE ISO_TARGET ISO_MAJOR ISO_MINOR ISO_VERSION ISO_CODENAME \
 ###       ISO_DATE ISO_CNAME ISO_KVER ISO_PVER ISO_GRSVER ISO_LUNAR_MODULE \
 ###       ISO_KSUFFIX ISO_MAKES ISO_REDUCE ISO_BUILD ISO_KARCH ISO_GCCARCH
@@ -54,7 +57,7 @@ include mkfiles/installer.mk
 include mkfiles/iso.mk
 
 clean:
-	rm -rf $(ISO_TARGET) $(ISO_SOURCE)/{spool,cache,efiboot.img}
+	rm -rf $(ISO_TARGET) $(ISO_SOURCE)/{spool,cache,stamps,efiboot.img}
 
 # Convenient target for development
 chroot:
