@@ -1,4 +1,6 @@
-.PHONY: target bootstrap bootstrap-base bootstrap-sources bootstrap-toolchain bootstrap-modules
+.INTERMEDIATE: target bootstrap bootstrap-base bootstrap-sources bootstrap-toolchain bootstrap-modules
+
+.SECONDARY: $(ISO_TARGET)/.target $(ISO_TARGET)/.base $(ISO_TARGET)/.bootstrap-sources $(ISO_TARGET)/.bootstrap-toolchain $(ISO_TARGET)/.bootstrap-modules
 
 bootstrap: bootstrap-base install-moonbase bootstrap-sources bootstrap-toolchain bootstrap-modules
 

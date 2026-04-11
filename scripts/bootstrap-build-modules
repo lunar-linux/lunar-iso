@@ -558,6 +558,16 @@ MEOF
     make -j "\$JOBS" getopt
     tracked_install install -Dm755 getopt /usr/bin/getopt
     ;;
+  readline)
+    ./configure \\
+      --prefix=/usr \\
+      --libdir=/usr/lib \\
+      --sysconfdir=/etc \\
+      --localstatedir=/var \\
+      --disable-static
+    make -j "\$JOBS" SHLIB_LIBS=-lncurses
+    tracked_install make SHLIB_LIBS=-lncurses install
+    ;;
   wget)
     ./configure \
       --prefix=/usr \

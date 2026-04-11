@@ -7,7 +7,7 @@ kernel: linux
 $(ISO_TARGET)/var/cache/lunar/linux-$(ISO_ARCH).tar: stage2
 	@echo linux
 	@cp $(ISO_SOURCE)/kernels/conf/generic.$(ISO_ARCH) $(ISO_TARGET)/etc/lunar/local/.config.current
-	@yes n | tr -d '\n' | $(ISO_SOURCE)/scripts/chroot-build lin -c linux
+	@$(ISO_SOURCE)/scripts/chroot-build bash -c 'lin -c linux' </dev/null
 	@mv $(ISO_TARGET)/boot/vmlinuz-* $(ISO_TARGET)/boot/linux
 	@mv $(ISO_TARGET)/boot/initramfs-*.img $(ISO_TARGET)/boot/initrd
 	@xz -d -c $(ISO_TARGET)/var/cache/lunar/linux-$$($(ISO_SOURCE)/scripts/chroot-build lvu installed linux)-$(ISO_BUILD).tar.xz > $@.tmp

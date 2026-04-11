@@ -4,7 +4,6 @@ pack: pack-base
 
 
 # Create listing of all potention installed files
-.INTERMEDIATE: $(ISO_TARGET)/.aaa_base.found
 $(ISO_TARGET)/.aaa_base.found: stage2
 	@echo pack-find
 	@find $(ISO_TARGET) ! -path '$(ISO_TARGET)/.*' -a \
@@ -33,7 +32,6 @@ $(ISO_TARGET)/.aaa_base.found: stage2
 	-path '$(ISO_TARGET)/var/state/lunar' \) -prune > $@
 
 # Create listing of all installed files
-.INTERMEDIATE: $(ISO_TARGET)/.aaa_base.tracked
 $(ISO_TARGET)/.aaa_base.tracked: stage2
 	@echo pack-tracked
 	@sort -u $(ISO_TARGET)/var/log/lunar/install/* > $@

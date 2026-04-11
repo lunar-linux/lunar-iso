@@ -15,7 +15,7 @@ download-moonbase $(ISO_SOURCE)/spool/moonbase.tar.bz2:
 
 
 # note: this installs an empty installed packages list
-$(ISO_TARGET)/.install-moonbase: $(ISO_SOURCE)/spool/moonbase.tar.bz2 $(ISO_TARGET)/.target
+$(ISO_TARGET)/.install-moonbase: $(ISO_SOURCE)/spool/moonbase.tar.bz2 target
 	@echo install-moonbase
 	@mkdir -p $(ISO_TARGET)/var/lib/lunar/moonbase
 	@rm -r $(ISO_TARGET)/var/lib/lunar/moonbase
@@ -32,7 +32,7 @@ install-moonbase: $(ISO_TARGET)/.install-moonbase
 
 
 # download on a lunar host
-$(ISO_SOURCE)/spool/.copied: $(ISO_TARGET)/.install-moonbase
+$(ISO_SOURCE)/spool/.copied: install-moonbase
 	@echo download-lunar
 	@$(ISO_SOURCE)/scripts/download-lunar-spool
 	@touch $@
