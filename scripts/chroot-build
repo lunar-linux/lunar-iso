@@ -46,6 +46,7 @@ function mount_system_fs ()
   fi
   mkdir -p "$ISO_TARGET/etc"
   if [ -f /etc/resolv.conf ]; then
+    rm -f "$ISO_TARGET/etc/resolv.conf"
     cp -L /etc/resolv.conf "$ISO_TARGET/etc/resolv.conf" || return 1
   fi
 }

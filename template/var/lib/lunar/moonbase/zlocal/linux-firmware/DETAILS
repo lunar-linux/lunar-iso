@@ -1,0 +1,19 @@
+# To build a new tarball:
+# git clone git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
+# git archive --format=tar --prefix linux-firmware-$(date +%Y%m%d)/ main | xz -9 > linux-firmware-$(date +%Y%m%d).tar.xz
+          MODULE=linux-firmware
+         VERSION=20250523
+          SOURCE=${MODULE}-${VERSION}.tar.xz
+# This is a temporary fix until the kernel.org folks get things squared away
+      SOURCE_URL=$MIRROR_URL
+SOURCE_DIRECTORY=$BUILD_DIRECTORY/$MODULE-$VERSION
+      SOURCE_VFY=sha256:277cf45ba7074d9b69bb6653a03e96c76513e73ae97e4b10058d19b528984925
+        WEB_SITE="https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/"
+         ENTERED=20100925
+         UPDATED=20250523
+           SHORT="Kernel firmware for various hardware"
+PSAFE=no
+
+cat << EOF
+Kernel firmware for various hardware.
+EOF

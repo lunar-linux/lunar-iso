@@ -44,6 +44,7 @@ ISO_MODULES=acl            \
             libaio         \
             libcap         \
             libffi         \
+            libxcrypt      \
             libidn         \
             libidn2        \
             libgcrypt      \
