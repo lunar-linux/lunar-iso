@@ -121,7 +121,7 @@ include $(ISO_SOURCE)/conf/modules.exclude
 
 $(ISO_STAMPS)/.stage2-toolchain: stage2-moonbase stage2-spool $(ISO_SOURCE)/conf/modules.all
 	@echo stage2-toolchain
-	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; for mod in $(STAGE2_MODULES); do lin -c $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done' </dev/null
+	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; mods=($(STAGE2_MODULES)); n=0; for mod in $${mods[@]}; do n=$$((n+1)); echo "-> BUILDING $$mod ($$n of $${#mods[@]})"; lin -c $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done' </dev/null
 	@touch $@
 
 stage2-toolchain: $(ISO_STAMPS)/.stage2-toolchain
@@ -129,7 +129,7 @@ stage2-toolchain: $(ISO_STAMPS)/.stage2-toolchain
 $(ISO_STAMPS)/.stage2: stage2-toolchain
 	@echo stage2-build
 	@cp /etc/resolv.conf $(ISO_TARGET)/etc/resolv.conf
-	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; for mod in `lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES))`; do lin -c $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done' </dev/null
+	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; mods=($$(lsh sort_by_dependency $(filter-out $(KERNEL_MODULES) $(STAGE2_MODULES) $(EXCLUDE_MODULES),$(ALL_MODULES)))); n=0; for mod in $${mods[@]}; do n=$$((n+1)); echo "-> BUILDING $$mod ($$n of $${#mods[@]})"; lin -c $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done' </dev/null
 	# Rebuild systemd again to enable cryptsetup (cyclic dependency)
 	@perl -pe -i 'if(/^systemd:cryptsetup/) { s/:off:/:on:/; }' $(ISO_TARGET)/var/state/lunar/depends
 	@ASK_FOR_REBUILDS=n PROMPT_DELAY=0 $(ISO_SOURCE)/scripts/chroot-build bash -c 'lin -c systemd' </dev/null

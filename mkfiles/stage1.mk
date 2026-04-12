@@ -31,7 +31,7 @@ include $(ISO_SOURCE)/conf/modules.toolchain
 
 $(ISO_STAMPS)/.stage1-toolchain: stage1-moonbase stage1-spool
 	@echo stage1-toolchain
-	@$(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; for mod in $(TOOLCHAIN_MODULES); do lin -rc $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done' </dev/null
+	@$(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; mods=($(TOOLCHAIN_MODULES)); n=0; for mod in $${mods[@]}; do n=$$((n+1)); echo "-> BUILDING $$mod ($$n of $${#mods[@]})"; lin -rc $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done' </dev/null
 	@touch $@
 
 stage1-toolchain: $(ISO_STAMPS)/.stage1-toolchain
@@ -42,7 +42,7 @@ include $(ISO_SOURCE)/conf/modules.stage1
 
 $(ISO_STAMPS)/.stage1: stage1-toolchain
 	@echo stage1-build
-	@$(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; for mod in `lsh sort_by_dependency $(filter-out $(TOOLCHAIN_MODULES),$(STAGE1_MODULES))`; do lin -rc $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done' </dev/null
+	@$(ISO_SOURCE)/scripts/chroot-build bash -c 'export LANG=C LC_ALL=C; mods=($$(lsh sort_by_dependency $(filter-out $(TOOLCHAIN_MODULES),$(STAGE1_MODULES)))); n=0; for mod in $${mods[@]}; do n=$$((n+1)); echo "-> BUILDING $$mod ($$n of $${#mods[@]})"; lin -rc $$mod; lsh module_installed $$mod || { echo "ERROR: $$mod failed to build" >&2; exit 1; }; done' </dev/null
 	@touch $@
 
 stage1-build: $(ISO_STAMPS)/.stage1
