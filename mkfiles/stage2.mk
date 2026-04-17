@@ -63,6 +63,7 @@ $(ISO_STAMPS)/.stage2-modules: stage2-target
 	@grep -v "`sed 's/^/^/;s/:.*/:/' $(ISO_SOURCE)/cache/packages`" $(ISO_TARGET)/var/state/lunar/packages.backup | cat > $(ISO_TARGET)/var/state/lunar/packages
 	@cat $(ISO_SOURCE)/cache/packages >> $(ISO_TARGET)/var/state/lunar/packages
 	@cp $(ISO_TARGET)/var/state/lunar/packages $(ISO_TARGET)/var/state/lunar/packages.backup
+	@$(ISO_SOURCE)/scripts/chroot-build /sbin/ldconfig
 	@touch $@
 
 stage2-modules: $(ISO_STAMPS)/.stage2-modules
