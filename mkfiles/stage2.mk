@@ -45,6 +45,7 @@ endif
 endif
 	@cp -r $(ISO_SOURCE)/template/etc $(ISO_TARGET)
 	@cp -r $(ISO_SOURCE)/template/var $(ISO_TARGET)
+	@[ ! -d $(ISO_SOURCE)/template/usr ] || cp -r $(ISO_SOURCE)/template/usr $(ISO_TARGET)
 	@cp $(ISO_SOURCE)/kernels/conf/generic.$(ISO_ARCH) $(ISO_TARGET)/etc/lunar/local/.config.current
 	@echo MAKES=$(ISO_MAKES) > $(ISO_TARGET)/etc/lunar/local/optimizations.GNU_MAKE
 	@touch $@

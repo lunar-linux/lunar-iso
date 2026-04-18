@@ -1,0 +1,14 @@
+default_pre_build &&
+
+if ! in_depends $MODULE gtk-doc; then
+	patch -Np1 -i $SCRIPT_DIRECTORY/kmod-34.1-remove_gtk-doc_check.patch &&
+	rm gtk-doc.make &&
+	rm libkmod/docs/gtk-doc.make &&
+	rm m4/gtk-doc.m4
+fi &&
+
+autoreconf -fi &&
+
+# Prevents installing to /lib/pkgconfig
+sedit '/^pkgconfigdir = /s/@pkgconfigdir@/\/usr\/lib\/pkgconfig/' Makefile.in &&
+sedit '/^noarch_pkgconfigdir = /s/@noarch_pkgconfigdir@/\/usr\/lib\/pkgconfig/' Makefile.in
