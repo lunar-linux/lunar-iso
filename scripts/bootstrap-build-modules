@@ -72,6 +72,7 @@ bootstrap_unpack_module()
   local module="$1"
   local build_root
   local source
+  local src_dir
 
   build_root="$(module_build_root "$module")"
   rm -rf "$build_root"
@@ -83,11 +84,13 @@ bootstrap_unpack_module()
   done < <(module_sources "$module")
 
   if [ -n "${SOURCE_DIRECTORY:-}" ] && [ -d "$build_root/$SOURCE_DIRECTORY" ]; then
-    printf '%s\n' "$build_root/$SOURCE_DIRECTORY"
-    return 0
+    src_dir="$build_root/$SOURCE_DIRECTORY"
+  else
+    src_dir="$(find "$build_root" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
   fi
 
-  find "$build_root" -mindepth 1 -maxdepth 1 -type d | head -n 1
+  apply_module_patches "$module" "$(module_dir "$module")" "${VERSION:-}" "$src_dir" || return 1
+  printf '%s\n' "$src_dir"
 }
 
 bootstrap_configure_flags()

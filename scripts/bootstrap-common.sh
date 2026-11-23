@@ -411,6 +411,45 @@ extract_archive()
   esac
 }
 
+# Apply a module's patch.d/ and zlocal/_patches/ the same way lunar's
+# build-zpatches.plugin does: sorted by basename, hidden files skipped,
+# compressed/tarred patches unpacked, -p1 tried before -p0.
+# All output goes to stderr so callers can capture stdout.
+apply_module_patches()
+{
+  local module="$1"
+  local module_dir="$2"
+  local version="$3"
+  local src_dir="$4"
+  local zpatches="${MOONBASE_ROOT%/*}/zlocal/_patches/$module"
+  local -a dirs=()
+  local dir fpatch name catcmd tarcmd
+
+  for dir in "$module_dir/patch.d" "$zpatches" "$zpatches/$version"; do
+    [ -d "$dir" ] && dirs+=("$dir")
+  done
+  [ "${#dirs[@]}" -gt 0 ] || return 0
+
+  while read -r fpatch name; do
+    bootstrap_log "Applying $name for $module" >&2
+    case "$name" in
+      *.bz2) catcmd="bzip2 -dc" ;;
+      *.gz) catcmd="gzip -dc" ;;
+      *.xz|*.lzma) catcmd="xz -dc" ;;
+      *) catcmd=cat ;;
+    esac
+    case "$name" in
+      *.tar*) tarcmd="tar x -O" ;;
+      *) tarcmd=cat ;;
+    esac
+    if ! (cd "$src_dir" && $catcmd "$fpatch" | $tarcmd | patch -N -p1 -t >&2) &&
+       ! (cd "$src_dir" && $catcmd "$fpatch" | $tarcmd | patch -N -p0 -t >&2); then
+      bootstrap_log "Failed to apply $name for $module" >&2
+      return 1
+    fi
+  done < <(find "${dirs[@]}" -maxdepth 1 -type f -name '[^.]*' | sed 's;[^/]*$;& &;' | sort -t ' ' -k 2)
+}
+
 module_primary_source()
 {
   local module="$1"
