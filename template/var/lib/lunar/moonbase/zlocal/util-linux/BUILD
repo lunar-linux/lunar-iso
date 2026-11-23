@@ -29,6 +29,14 @@ make install DESTDIR=$(cd _pkg && pwd) &&
 mv _pkg/sbin/sulogin _pkg/usr/sbin &&
 mv _pkg/bin/lsblk _pkg/usr/bin &&
 
+# From core: transition hack for systemd 258 -> >=260. Only needed on
+# split /usr; on merged /usr the staging merge below moves everything.
+if [ ! -L /lib ]; then
+  cp -l _pkg/bin/mount _pkg/usr/bin &&
+  cp -l _pkg/sbin/agetty _pkg/usr/sbin &&
+  cp -l _pkg/sbin/swapon _pkg/usr/sbin
+fi &&
+
 chmod 700 _pkg/usr/bin/wall &&
 chmod 4711 _pkg/usr/bin/newgrp &&
 if [ -f _pkg/usr/bin/chsh ]; then

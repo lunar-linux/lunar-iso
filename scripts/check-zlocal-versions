@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Fail when a zlocal override pins a different VERSION than the core
+# module it shadows. zlocal overrides are full module copies, so they go
+# stale as core moves on; lin then silently builds the old version (e.g.
+# downgrading glibc underneath binaries built against the newer one).
+#
+# usage: check-zlocal-versions <moonbase dir>
+
+moonbase="${1:?usage: $0 <moonbase dir>}"
+
+get_version()
+{
+  sed -n 's/^[[:space:]]*VERSION=//p' "$1" | head -n 1
+}
+
+status=0
+for details in "$moonbase"/zlocal/*/DETAILS; do
+  [ -f "$details" ] || continue
+  module="$(basename "$(dirname "$details")")"
+  core="$(find "$moonbase/core" -mindepth 2 -maxdepth 3 -type f -path "*/$module/DETAILS" | head -n 1)"
+  [ -n "$core" ] || continue
+
+  zver="$(get_version "$details")"
+  cver="$(get_version "$core")"
+  if [ "$zver" != "$cver" ]; then
+    echo "ERROR: zlocal/$module VERSION=$zver does not match core VERSION=$cver" >&2
+    status=1
+  fi
+done
+
+if [ "$status" -ne 0 ]; then
+  echo "Rebase the listed zlocal overrides on the current core modules" >&2
+  echo "(template/var/lib/lunar/moonbase/zlocal/)." >&2
+fi
+exit "$status"

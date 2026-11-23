@@ -89,6 +89,7 @@ $(ISO_STAMPS)/.stage2-extract-moonbase: stage2-target $(ISO_SOURCE)/spool/moonba
 	@if [ -d $(ISO_SOURCE)/template/var/lib/lunar/moonbase/zlocal ]; then \
 	  cp -r $(ISO_SOURCE)/template/var/lib/lunar/moonbase/zlocal/* $(ISO_TARGET)/var/lib/lunar/moonbase/zlocal/ 2>/dev/null || true; \
 	fi
+	@$(ISO_SOURCE)/scripts/check-zlocal-versions $(ISO_TARGET)/var/lib/lunar/moonbase
 	@mkdir -p $(ISO_TARGET)/var/state/lunar/moonbase
 	@touch $(ISO_TARGET)/var/state/lunar/packages{,.backup}
 	@cp $(ISO_SOURCE)/template/var/state/lunar/depends $(ISO_TARGET)/var/state/lunar/depends
