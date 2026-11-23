@@ -543,6 +543,23 @@ MEOF
     tracked_install make -e TEXMF=/usr/share/texmf install-tex
     rm -f /usr/lib/texinfo/*.a /usr/lib64/texinfo/*.a
     ;;
+  libxcrypt)
+    # Mirror moonbase OPTS; upstream defaults to -Werror, which breaks
+    # against glibc's C23 const-preserving strchr.
+    ./configure \\
+      --prefix=/usr \\
+      --libdir=/usr/lib \\
+      --includedir=/usr/include \\
+      --sysconfdir=/etc \\
+      --localstatedir=/var \\
+      --enable-hashes=strong,glibc \\
+      --enable-obsolete-api=no \\
+      --disable-failure-tokens \\
+      --disable-static \\
+      --disable-werror
+    run_make
+    tracked_install make install
+    ;;
   unzip)
     sh unix/configure
     make -j "\$JOBS" -f unix/Makefile linux_noasm
