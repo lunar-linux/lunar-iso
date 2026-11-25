@@ -37,13 +37,13 @@ transfer()
           # handle swap
           if [ "$FSYS" == "swap" ]; then
             infobox "Setting up swap on $PART..." 30
-            if ! mkswap $PART &> $LOG; then
+            if ! mkswap $CHECK $PART &> $LOG; then
               msgbox "Problem creating swap on $PART. Installation will continue."
             fi
             # create the filesystems if needed for every partition
           elif [ "$FORMAT" == "yes" ]; then
             infobox "Formatting $PART as $FSYS..." 30
-            if ! mkfs.$FSYS $FORCE $PART $CHECK &> $LOG; then
+            if ! mkfs.$FSYS $FORCE $CHECK $PART &> $LOG; then
               msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue."
             fi
           fi
@@ -68,17 +68,14 @@ transfer()
               mkdir -p $TARGET$MOUNTPOINT &> $LOG
             fi
             if [ "$MNT_OPTS" != "defaults" ]; then
-              MNTOPTARGS="-e $MNT_OPTS"
+              MNTOPTARGS="-o $MNT_OPTS"
             else
               MNTOPTARGS=""
             fi
             infobox "Mounting $PART as $FSYS" 30
             LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
-            if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTSARGS &> $LOG; then
+            if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTARGS &> $LOG; then
               FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
-              if [ "$FSYS" == "swap" ]; then
-                umount -n $PART &> $LOG
-              fi
             else
               msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue."
             fi
