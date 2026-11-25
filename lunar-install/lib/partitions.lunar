@@ -146,7 +146,7 @@ menu_select_partitions()
       unset FORCE
     fi
 
-    PARTITIONS[${#PARTITIONS[@]}]="$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT"
+    PARTITIONS+=( "$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT" )
 
     if [ "$MNTPNT" == "/" ]; then
       ROOT=$PART
