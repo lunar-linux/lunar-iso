@@ -102,7 +102,7 @@ menu_select_partitions()
       if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$PART" ]; then
         msgbox "Unassigned partition $PART. You can now change the parameters for this partition if you wish."
         block_devices free $PART
-        unset PARTITIONS[$N]
+        PARTITIONS=( "${PARTITIONS[@]:0:N}" "${PARTITIONS[@]:N+1}" )
         continue 2
       fi
     done
