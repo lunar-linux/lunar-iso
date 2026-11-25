@@ -102,7 +102,7 @@ menu_select_partitions()
       if [ "$(echo ${PARTITIONS[$N]} | cut -d: -f1)" == "$PART" ]; then
         msgbox "Unassigned partition $PART. You can now change the parameters for this partition if you wish."
         block_devices free $PART
-        unset PARTITIONS[$N]
+        PARTITIONS=( "${PARTITIONS[@]:0:N}" "${PARTITIONS[@]:N+1}" )
         continue 2
       fi
     done
@@ -130,8 +130,8 @@ menu_select_partitions()
       FORMAT=no
     fi
     MNT_OPTS=$(determine_mount_opts $PART $FSYS) &&
-    if [ "$MNT_PNT" != "/" ]; then
-      MNT_PNT=${MNT_PNT%%/}
+    if [ "$MNTPNT" != "/" ]; then
+      MNT_PNT=${MNTPNT%%/}
     fi
     FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
     if [ "$FSYS" == "xfs" ]; then
@@ -146,7 +146,7 @@ menu_select_partitions()
       unset FORCE
     fi
 
-    PARTITIONS[${#PARTITIONS[@]}]="$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT"
+    PARTITIONS+=( "$PART:$MNTPNT:$FSYS:$MNT_OPTS:$FSCK_PASS:$CHECK:$FORCE:$FORMAT" )
 
     if [ "$MNTPNT" == "/" ]; then
       ROOT=$PART
