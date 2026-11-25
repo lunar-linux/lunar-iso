@@ -130,8 +130,8 @@ menu_select_partitions()
       FORMAT=no
     fi
     MNT_OPTS=$(determine_mount_opts $PART $FSYS) &&
-    if [ "$MNT_PNT" != "/" ]; then
-      MNT_PNT=${MNT_PNT%%/}
+    if [ "$MNTPNT" != "/" ]; then
+      MNT_PNT=${MNTPNT%%/}
     fi
     FSCK_PASS=$(determine_fsck_pass $FSYS $MNTPNT) &&
     if [ "$FSYS" == "xfs" ]; then
