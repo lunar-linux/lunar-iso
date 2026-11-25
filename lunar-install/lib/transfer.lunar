@@ -76,9 +76,6 @@ transfer()
             LABEL=$(fstab_style $PART $FSYS $MOUNTPOINT)
             if mount -n $PART $TARGET$MOUNTPOINT -t $FSYS $MNTOPTARGS &> $LOG; then
               FSTAB="$FSTAB\n$LABEL\t$MOUNTPOINT\t$FSYS\t$MNT_OPTS\t0 $FSCK_PASS"
-              if [ "$FSYS" == "swap" ]; then
-                umount -n $PART &> $LOG
-              fi
             else
               msgbox "Problem mounting $FSYS filesystem on $PART. Installation will continue."
             fi
