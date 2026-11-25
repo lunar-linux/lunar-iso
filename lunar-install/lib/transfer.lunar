@@ -37,13 +37,13 @@ transfer()
           # handle swap
           if [ "$FSYS" == "swap" ]; then
             infobox "Setting up swap on $PART..." 30
-            if ! mkswap $PART &> $LOG; then
+            if ! mkswap $CHECK $PART &> $LOG; then
               msgbox "Problem creating swap on $PART. Installation will continue."
             fi
             # create the filesystems if needed for every partition
           elif [ "$FORMAT" == "yes" ]; then
             infobox "Formatting $PART as $FSYS..." 30
-            if ! mkfs.$FSYS $FORCE $PART $CHECK &> $LOG; then
+            if ! mkfs.$FSYS $FORCE $CHECK $PART &> $LOG; then
               msgbox "Problem creating $FSYS filesystem on $PART. Installation will continue."
             fi
           fi
