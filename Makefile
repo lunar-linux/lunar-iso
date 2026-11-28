@@ -60,5 +60,7 @@ chroot:
 
 dist:
 	@sha1sum lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.sha1
+	@sha256sum lunar-$(ISO_VERSION).iso > lunar-$(ISO_VERSION).iso.sha256
 	@xz lunar-$(ISO_VERSION).iso
 	@sha1sum lunar-$(ISO_VERSION).iso.xz > lunar-$(ISO_VERSION).iso.xz.sha1
+	@sha256sum lunar-$(ISO_VERSION).iso.xz > lunar-$(ISO_VERSION).iso.xz.sha256
